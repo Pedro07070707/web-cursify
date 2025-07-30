@@ -10,7 +10,7 @@ const Navbar = () => {
       <div className="nav-links">
         <Link to="/">Início</Link>
         <Link to="/courses">Cursos</Link>
-        <Link to="/dashboard">Painel</Link>
+        <Link to="/dashboard">Progresso</Link>
       </div>
       <div className="nav-auth">
         <Link to="/login">Entrar</Link>
