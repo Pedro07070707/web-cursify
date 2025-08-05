@@ -1,210 +1,223 @@
-/* Layout Principal */
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+:root {
+  --verde-muco: #8FBC8F;
+  --azul-marinho: #4682B4;
+  --gradient: linear-gradient(135deg, var(--verde-muco), var(--azul-marinho));
 }
 
-.main-content {
-  flex: 1;
-  padding: 20px;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background: var(--gradient);
+  min-height: 100vh;
+}
+
+.container {
   max-width: 1200px;
   margin: 0 auto;
-  width: 100%;
+  padding: 20px;
 }
 
-/* Navbar */
-.navbar {
+.header {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background: #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
 }
 
-.nav-links {
+.logo {
   display: flex;
-  gap: 2rem;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
-.nav-links a {
-  text-decoration: none;
-  color: #333;
+.logo img {
+  width: 32px;
+  height: 32px;
 }
 
-.nav-auth {
+.nav-buttons {
   display: flex;
   gap: 1rem;
 }
 
-.btn-primary {
-  background: #007bff;
-  color: white !important;
+.btn {
   padding: 0.5rem 1rem;
-  border-radius: 4px;
-  text-decoration: none;
-  display: inline-block;
-  text-align: center;
-  cursor: pointer;
-  border: none;
-}
-
-.btn-primary:hover {
-  background: #0056b3;
-}
-
-.cta-button {
-  background: #ff6b6b;
-  color: white !important;
-  padding: 1rem 2rem;
   border: none;
   border-radius: 5px;
-  font-size: 1.1rem;
   cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
+  font-weight: bold;
+  transition: all 0.3s;
 }
 
-.cta-button:hover {
-  background: #ff5252;
-}
-
-/* Home */
-.hero {
-  text-align: center;
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.btn-primary {
+  background: var(--azul-marinho);
   color: white;
-  margin-bottom: 3rem;
 }
 
-.hero h1 {
+.btn-secondary {
+  background: var(--verde-muco);
+  color: white;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  padding: 2rem;
+  margin: 1rem 0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.course-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+}
+
+.topic-list {
+  list-style: none;
+  padding: 0;
+}
+
+.topic-item {
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.topic-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.dashboard {
+  min-height: 80vh;
+}
+
+.welcome-section {
+  text-align: center;
+  color: white;
+  margin: 3rem 0;
+}
+
+.welcome-section h1 {
   font-size: 3rem;
   margin-bottom: 1rem;
 }
 
-
-
-/* Course Grid */
-.course-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
-}
-
-.course-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1.5rem;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.course-card h3 {
-  margin-bottom: 0.5rem;
-  color: #333;
-}
-
-.price {
-  color: #007bff;
-  font-weight: bold;
+.welcome-section p {
   font-size: 1.2rem;
-}
-
-/* Forms */
-.login, .register {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 60vh;
-}
-
-.login-form, .register-form {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  width: 100%;
-  max-width: 400px;
-}
-
-.login-form input, .register-form input {
-  width: 100%;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
-.login-form button, .register-form button {
-  width: 100%;
-  background: #007bff;
-  color: white;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-/* Dashboard */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
   margin-bottom: 2rem;
 }
 
-.stat-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  text-align: center;
+.chat-container {
+  display: flex;
+  height: 70vh;
+  gap: 1rem;
 }
 
-.progress-bar {
-  background: #f0f0f0;
-  border-radius: 10px;
-  height: 8px;
-  margin: 0.5rem 0;
+.chat-list {
+  flex: 0 0 300px;
+  overflow-y: auto;
 }
 
-.progress {
-  background: #007bff;
-  height: 100%;
-  border-radius: 10px;
-  transition: width 0.3s ease;
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Footer */
-.footer {
-  background: #333;
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  max-height: 400px;
+}
+
+.message {
+  margin-bottom: 1rem;
+  display: flex;
+}
+
+.message.own {
+  justify-content: flex-end;
+}
+
+.message-bubble {
+  max-width: 70%;
+  padding: 0.5rem 1rem;
+  border-radius: 15px;
+}
+
+.message.own .message-bubble {
+  background: var(--azul-marinho);
   color: white;
-  padding: 2rem;
-  margin-top: auto;
 }
 
-.footer-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+.message:not(.own) .message-bubble {
+  background: #e9ecef;
+  color: black;
 }
 
-.footer-section a {
-  color: #ccc;
-  text-decoration: none;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.footer-bottom {
+.video-player {
+  background: #000;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  margin: 2rem 0;
+  border-radius: 10px;
   text-align: center;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #555;
 }
