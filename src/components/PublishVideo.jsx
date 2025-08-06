@@ -28,7 +28,7 @@ function PublishVideo() {
       <header className="header">
         <div className="logo">
           <img src="/folder-icon.svg" alt="Web Cursify" />
-          Web Cursify - Publicar Vídeo Aula
+          Cursify - Publicar Vídeo Aula
         </div>
         <div className="nav-buttons">
           <button className="btn btn-secondary" onClick={() => navigate('/teacher')}>

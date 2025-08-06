@@ -46,7 +46,7 @@ function VideoClass() {
       <header className="header">
         <div className="logo">
           <img src="/folder-icon.svg" alt="Web Cursify" />
-          Web Cursify - Vídeo Aula
+          Cursify - Vídeo Aula
         </div>
         <div className="nav-buttons">
           <button className="btn btn-secondary" onClick={() => navigate(-1)}>

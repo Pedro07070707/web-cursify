@@ -39,7 +39,7 @@ function Chat() {
       <header className="header">
         <div className="logo">
           <img src="/folder-icon.svg" alt="Web Cursify" />
-          Web Cursify - Chat {userType === 'teacher' ? 'com Alunos' : 'com Professores'}
+          Cursify - Chat {userType === 'teacher' ? 'com Alunos' : 'com Professores'}
         </div>
         <div className="nav-buttons">
           <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : '/student')}>
@@ -75,13 +75,13 @@ function Chat() {
               ) : (
                 <div
                   className="topic-item"
-                  onClick={() => setSelectedChat({ id: 1, studentName: 'Professor João Silva' })}
+                  onClick={() => setSelectedChat({ id: 1, studentName: 'Professor' })}
                   style={{
                     background: selectedChat ? 'var(--verde-muco)' : 'rgba(255, 255, 255, 0.5)',
                     color: selectedChat ? 'white' : 'black'
                   }}
                 >
-                  <div style={{fontWeight: 'bold'}}>Professor João Silva</div>
+                  <div style={{fontWeight: 'bold'}}>Professor</div>
                   <div style={{fontSize: '0.8rem', opacity: 0.8}}>Matemática Básica</div>
                 </div>
               )}
@@ -93,7 +93,7 @@ function Chat() {
             {selectedChat ? (
               <>
                 <div style={{borderBottom: '1px solid #eee', padding: '1rem', background: '#f8f9fa'}}>
-                  <h4>{userType === 'teacher' ? selectedChat.studentName : 'Professor João Silva'}</h4>
+                  <h4>{userType === 'teacher' ? selectedChat.studentName : 'Professor'}</h4>
                 </div>
 
                 <div style={{flex: 1, padding: '1rem', overflowY: 'auto', maxHeight: '400px'}}>

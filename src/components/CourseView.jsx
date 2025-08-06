@@ -25,7 +25,7 @@ function CourseView() {
       <header className="header">
         <div className="logo">
           <img src="/folder-icon.svg" alt="Web Cursify" />
-          Web Cursify - {topic}
+          Cursify - {topic}
         </div>
         <div className="nav-buttons">
           <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>

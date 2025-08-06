@@ -17,7 +17,7 @@ function TeacherDashboard() {
       <header className="header">
         <div className="logo">
           <img src="/folder-icon.svg" alt="Web Cursify" />
-          Web Cursify - Área do Professor
+          Cursify - Área do Professor
         </div>
         <div className="nav-buttons">
           <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
@@ -29,7 +29,7 @@ function TeacherDashboard() {
 
       <div className="container dashboard">
         <h2 style={{color: 'white', textAlign: 'center', marginBottom: '2rem'}}>
-          Tarefas e Propostas de Temas
+          Cursos publicados
         </h2>
 
         <div style={{textAlign: 'center', marginBottom: '2rem'}}>

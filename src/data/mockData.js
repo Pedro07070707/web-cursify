@@ -3,7 +3,7 @@ export const mockCourses = [
     id: 1,
     title: 'Matemática Básica - Ensino Fundamental',
     description: 'Curso completo de matemática para ensino fundamental com exercícios práticos',
-    instructor: 'Prof. João Silva',
+    instructor: 'Prof. João',
     level: 'Fundamental',
     subject: 'Matemática',
     duration: '40 horas',
@@ -18,7 +18,7 @@ export const mockCourses = [
     id: 2,
     title: 'Português - Literatura Brasileira',
     description: 'Explore os principais autores e movimentos da literatura brasileira',
-    instructor: 'Prof. Maria Santos',
+    instructor: 'Prof. Maria',
     level: 'Médio',
     subject: 'Português',
     duration: '35 horas',
@@ -33,7 +33,7 @@ export const mockCourses = [
     id: 3,
     title: 'Matemática Avançada - Funções',
     description: 'Estudo completo de funções matemáticas para ensino médio',
-    instructor: 'Prof. Carlos Lima',
+    instructor: 'Prof. Carlos',
     level: 'Médio',
     subject: 'Matemática',
     duration: '50 horas',
@@ -49,14 +49,14 @@ export const mockCourses = [
 export const mockChats = [
   {
     id: 1,
-    studentName: 'Ana Costa',
+    studentName: 'Aquiles',
     lastMessage: 'Tenho dúvidas sobre frações',
     timestamp: '10:30',
     unread: true
   },
   {
     id: 2,
-    studentName: 'Pedro Oliveira',
+    studentName: 'Pedro',
     lastMessage: 'Obrigado pela explicação!',
     timestamp: '09:15',
     unread: false

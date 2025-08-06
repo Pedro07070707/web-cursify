@@ -21,7 +21,7 @@ function SearchCourse() {
       <header className="header">
         <div className="logo">
           <img src="/folder-icon.svg" alt="Web Cursify" />
-          Web Cursify - Pesquisar Cursos
+          Cursify - Pesquisar Cursos
         </div>
         <div className="nav-buttons">
           <button className="btn btn-secondary" onClick={() => navigate('/student')}>

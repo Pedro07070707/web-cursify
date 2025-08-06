@@ -37,7 +37,7 @@ function PublishCourse() {
       <header className="header">
         <div className="logo">
           <img src="/folder-icon.svg" alt="Web Cursify" />
-          Web Cursify - Publicar Curso
+          Cursify - Publicar Curso
         </div>
         <div className="nav-buttons">
           <button className="btn btn-secondary" onClick={() => navigate('/teacher')}>

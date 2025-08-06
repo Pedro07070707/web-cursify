@@ -8,7 +8,7 @@ function Home() {
       <header className="header">
         <div className="logo">
           <img src="/folder-icon.svg" alt="Web Cursify" />
-          Web Cursify
+          Cursify
         </div>
         <div className="nav-buttons">
           <button className="btn btn-secondary" onClick={() => navigate('/login')}>
@@ -22,16 +22,16 @@ function Home() {
 
       <div className="container">
         <div className="welcome-section">
-          <h1>Web Cursify</h1>
-          <p>Plataforma de cursos online de Matemática e Português</p>
+          <h1>Cursify</h1>
+          <p>Plataforma de cursos online</p>
           <p>Do ensino fundamental ao ensino médio</p>
         </div>
 
         <div className="card">
           <h2>Sobre a Plataforma</h2>
           <p>
-            O Web Cursify é uma plataforma educacional completa que oferece cursos de 
-            Matemática e Português para estudantes do ensino fundamental ao ensino médio.
+            O Cursify é uma plataforma educacional completa que oferece cursos 
+            para estudantes do ensino fundamental ao ensino médio.
           </p>
           <p>
             Nossa missão é democratizar o acesso à educação de qualidade através de 

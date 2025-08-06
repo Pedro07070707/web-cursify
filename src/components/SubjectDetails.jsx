@@ -47,7 +47,7 @@ function SubjectDetails() {
       <header className="header">
         <div className="logo">
           <img src="/folder-icon.svg" alt="Web Cursify" />
-          Web Cursify - {subject.name} - {level.name}
+          Cursify - {subject.name} - {level.name}
         </div>
         <div className="nav-buttons">
           <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>

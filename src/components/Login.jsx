@@ -25,7 +25,7 @@ function Login() {
       <header className="header">
         <div className="logo">
           <img src="/folder-icon.svg" alt="Web Cursify" />
-          Web Cursify
+          Cursify
         </div>
         <div className="nav-buttons">
           <button className="btn btn-secondary" onClick={() => navigate('/')}>
