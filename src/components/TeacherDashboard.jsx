@@ -16,7 +16,7 @@ function TeacherDashboard() {
     <div>
       <header className="header">
         <div className="logo">
-          <img src="/folder-icon.svg" alt="Web Cursify" />
+          <img src="/logoCursiFy.png" alt="Web Cursify" />
           Cursify - Área do Professor
         </div>
         <div className="nav-buttons">
