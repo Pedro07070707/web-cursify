@@ -1,35 +1,39 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function PublishCourse() {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [subject, setSubject] = useState('Matemática');
-  const [level, setLevel] = useState('Fundamental');
-  const [duration, setDuration] = useState('');
+  const [titulo, setTitulo] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [materia, setMateria] = useState('Matemática');
+  const [nivel, setNivel] = useState('Fundamental');
+  const [duracao, setDuracao] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const newCourse = {
-      id: Date.now(),
-      title,
-      description,
-      instructor: localStorage.getItem('userName') || 'Professor',
-      level,
-      subject,
-      duration: duration + ' horas',
-      enrolled: false,
-      videos: []
+
+    const novoCurso = {
+      titulo,
+      descricao,
+      materia,
+      nivel,
+      duracao: `${duracao} horas`,
+      instrutor: localStorage.getItem('userName') || 'Professor',
+      dataPublicacao: new Date().toISOString().replace('Z', ''),
+      ativo: true
     };
 
-    const publishedCourses = JSON.parse(localStorage.getItem('publishedCourses') || '[]');
-    publishedCourses.push(newCourse);
-    localStorage.setItem('publishedCourses', JSON.stringify(publishedCourses));
+    try {
+      const response = await axios.post('http://localhost:8080/api/v1/Curso', novoCurso);
+      alert('Curso publicado com sucesso!');
+      console.log('Curso criado:', response.data);
 
-    alert('Curso publicado com sucesso!');
-    navigate('/teacher');
+      navigate('/teacher');
+    } catch (error) {
+      console.error('Erro ao publicar curso:', error);
+      alert('Erro ao publicar o curso. Verifique os dados e tente novamente.');
+    }
   };
 
   return (
@@ -47,15 +51,15 @@ function PublishCourse() {
       </header>
 
       <div className="container">
-        <div className="card" style={{maxWidth: '600px', margin: '2rem auto'}}>
+        <div className="card" style={{ maxWidth: '600px', margin: '2rem auto' }}>
           <h2>Publicar Novo Curso</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Título do Curso:</label>
               <input
                 type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
                 required
                 placeholder="Ex: Matemática Básica - Ensino Fundamental"
               />
@@ -64,17 +68,17 @@ function PublishCourse() {
             <div className="form-group">
               <label>Descrição:</label>
               <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
                 required
                 placeholder="Descreva o conteúdo e objetivos do curso..."
-                style={{minHeight: '100px', resize: 'vertical'}}
+                style={{ minHeight: '100px', resize: 'vertical' }}
               />
             </div>
 
             <div className="form-group">
               <label>Matéria:</label>
-              <select value={subject} onChange={(e) => setSubject(e.target.value)}>
+              <select value={materia} onChange={(e) => setMateria(e.target.value)}>
                 <option value="Matemática">Matemática</option>
                 <option value="Português">Português</option>
               </select>
@@ -82,7 +86,7 @@ function PublishCourse() {
 
             <div className="form-group">
               <label>Nível:</label>
-              <select value={level} onChange={(e) => setLevel(e.target.value)}>
+              <select value={nivel} onChange={(e) => setNivel(e.target.value)}>
                 <option value="Fundamental">Ensino Fundamental</option>
                 <option value="Médio">Ensino Médio</option>
               </select>
@@ -92,20 +96,27 @@ function PublishCourse() {
               <label>Duração (em horas):</label>
               <input
                 type="number"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
+                value={duracao}
+                onChange={(e) => setDuracao(e.target.value)}
                 required
                 placeholder="Ex: 40"
                 min="1"
               />
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{width: '100%'}}>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
               📚 Publicar Curso
             </button>
           </form>
 
-          <div style={{marginTop: '2rem', padding: '1rem', background: '#f0f8ff', borderRadius: '5px'}}>
+          <div
+            style={{
+              marginTop: '2rem',
+              padding: '1rem',
+              background: '#f0f8ff',
+              borderRadius: '5px'
+            }}
+          >
             <h4>💡 Dica:</h4>
             <p>Após publicar o curso, você poderá adicionar vídeo aulas na área de gerenciamento.</p>
           </div>

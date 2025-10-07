@@ -1,11 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { courses, teacherTasks } from '../data/courses';
+import axios from 'axios';
 
 function TeacherDashboard() {
+  const [courses, setCourses] = useState([]);
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName') || 'Professor';
 
+  // 🔹 Buscar cursos do professor
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/v1/curso');
+        setCourses(response.data);
+      } catch (error) {
+        console.error('Erro ao carregar cursos:', error);
+        alert('Erro ao carregar cursos. Verifique a API.');
+      }
+    };
+    fetchCourses();
+  }, []);
+
+  // 🔹 Função para deletar curso
+  const handleDelete = async (id, titulo) => {
+    if (!window.confirm(`Tem certeza que deseja excluir o curso "${titulo}"?`)) return;
+
+    try {
+      await axios.delete(`http://localhost:8080/api/v1/curso/${id}`);
+      setCourses(courses.filter(course => course.id !== id));
+      alert(`Curso "${titulo}" excluído com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao excluir curso:', error);
+      alert('Erro ao excluir o curso. Tente novamente.');
+    }
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -20,7 +48,7 @@ function TeacherDashboard() {
           Cursify - Área do Professor
         </div>
         <div className="nav-buttons">
-          <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
+          <span style={{ color: 'white', marginRight: '1rem' }}>Olá, {userName}!</span>
           <button className="btn btn-secondary" onClick={handleLogout}>
             Sair
           </button>
@@ -28,12 +56,16 @@ function TeacherDashboard() {
       </header>
 
       <div className="container dashboard">
-        <h2 style={{color: 'white', textAlign: 'center', marginBottom: '2rem'}}>
-          Cursos publicados
+        <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '2rem' }}>
+          Cursos Publicados
         </h2>
 
-        <div style={{textAlign: 'center', marginBottom: '2rem'}}>
-          <button className="btn btn-primary" onClick={() => navigate('/publish-course')} style={{marginRight: '1rem'}}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate('/publish-course')}
+            style={{ marginRight: '1rem' }}
+          >
             📚 Publicar Novo Curso
           </button>
           <button className="btn btn-secondary" onClick={() => navigate('/chat')}>
@@ -42,20 +74,49 @@ function TeacherDashboard() {
         </div>
 
         <div className="course-grid">
-          {Object.entries(courses).map(([subjectKey, subject]) => 
-            Object.entries(subject.levels).map(([levelKey, level]) => (
-              <div key={`${subjectKey}-${levelKey}`} className="card course-card" onClick={() => navigate(`/subject/${subjectKey}/${levelKey}`)}>
-                <h3>{subject.name} - {level.name}</h3>
-                <p><strong>Tópicos:</strong> {level.topics.length}</p>
-                <p><strong>Duração:</strong> 40 horas</p>
-                
-                <div style={{textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: '#666'}}>
-                  👁️ Clique para ver detalhes
-                </div>
+          {courses.map(course => (
+            <div
+              key={course.id}
+              className="card course-card"
+              style={{ position: 'relative' }}
+            >
+              {/* 🔴 Botão de deletar */}
+              <button
+                onClick={() => handleDelete(course.id, course.titulo)}
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  size: 22,
+                  color: "red",
+                }}
+                title="Excluir curso"
+              >
+              </button>
+
+              <div onClick={() => navigate(`/course/${course.id}`)} style={{ cursor: 'pointer' }}>
+                <h3>{course.titulo}</h3>
+                <p><strong>Matéria:</strong> {course.materia}</p>
+                <p><strong>Nível:</strong> {course.nivel}</p>
+                <p><strong>Duração:</strong> {course.duracao}</p>
+                <p>{course.descricao}</p>
               </div>
-            ))
-          ).flat()}
+
+              <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
+                👁️ Clique para ver detalhes
+              </div>
+            </div>
+          ))}
         </div>
+
+        {courses.length === 0 && (
+          <div className="card" style={{ textAlign: 'center' }}>
+            <p>Nenhum curso publicado ainda.</p>
+          </div>
+        )}
       </div>
     </div>
   );

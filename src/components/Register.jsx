@@ -1,24 +1,48 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function Register() {
-  const [name, setName] = useState('');
+  const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState('student');
+  const [senha, setSenha] = useState('');
+  const [nivelAcesso, setNivelAcesso] = useState('ALUNO'); // padrão aluno
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulação de cadastro - em produção seria uma API
-    localStorage.setItem('userType', userType);
-    localStorage.setItem('userEmail', email);
-    localStorage.setItem('userName', name);
-    
-    if (userType === 'teacher') {
-      navigate('/teacher');
-    } else {
-      navigate('/student');
+
+    const novoUsuario = {
+      nome,
+      email,
+      senha,
+      nivelAcesso,
+      dataCadastro: new Date().toISOString().replace('Z', ''), // sem timezone
+      statusUsuario: true, // em vez de "ATIVO"
+    };
+
+    try {
+      const response = await axios.post('http://localhost:8080/api/v1/Usuario', novoUsuario);
+      alert('Usuário cadastrado com sucesso!');
+      console.log('Resposta da API:', response.data);
+
+      // salva informações básicas no localStorage
+      localStorage.setItem('userName', nome);
+      localStorage.setItem('userEmail', email);
+      localStorage.setItem('nivelAcesso', nivelAcesso);
+
+      // redireciona de acordo com o tipo de usuário
+      if (nivelAcesso === 'PROFESSOR') {
+        navigate('/teacher');
+      } else if (nivelAcesso === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/student');
+      }
+
+    } catch (error) {
+      console.error('Erro ao cadastrar usuário:', error);
+      alert('Erro ao cadastrar. Verifique os dados e tente novamente.');
     }
   };
 
@@ -27,29 +51,30 @@ function Register() {
       <header className="header">
         <div className="logo">
           <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify
+          Cursify - Cadastro
         </div>
         <div className="nav-buttons">
           <button className="btn btn-secondary" onClick={() => navigate('/')}>
-            Início
+            Voltar
           </button>
         </div>
       </header>
 
       <div className="container">
-        <div className="card" style={{maxWidth: '400px', margin: '2rem auto'}}>
-          <h2>Cadastrar</h2>
+        <div className="card" style={{ maxWidth: '400px', margin: '2rem auto' }}>
+          <h2>Criar Conta</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Nome:</label>
               <input
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
                 required
-                placeholder="Digite seu nome completo"
+                placeholder="Digite seu nome"
               />
             </div>
+
             <div className="form-group">
               <label>Email:</label>
               <input
@@ -60,29 +85,40 @@ function Register() {
                 placeholder="Digite seu email"
               />
             </div>
+
             <div className="form-group">
               <label>Senha:</label>
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
                 required
                 placeholder="Digite sua senha"
               />
             </div>
+
             <div className="form-group">
-              <label>Tipo de usuário:</label>
-              <select value={userType} onChange={(e) => setUserType(e.target.value)}>
-                <option value="student">Aluno</option>
-                <option value="teacher">Professor</option>
+              <label>Nível de Acesso:</label>
+              <select value={nivelAcesso} onChange={(e) => setNivelAcesso(e.target.value)}>
+                <option value="ALUNO">Aluno</option>
+                <option value="PROFESSOR">Professor</option>
+                <option value="ADMIN">Administrador</option>
               </select>
             </div>
-            <button type="submit" className="btn btn-primary" style={{width: '100%'}}>
-              Cadastrar
+
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+              Criar Conta
             </button>
           </form>
-          <p style={{textAlign: 'center', marginTop: '1rem'}}>
-            Já tem conta? <span style={{color: 'var(--azul-marinho)', cursor: 'pointer'}} onClick={() => navigate('/login')}>Entre aqui</span>
+
+          <p style={{ textAlign: 'center', marginTop: '1rem' }}>
+            Já tem conta?{' '}
+            <span
+              style={{ color: 'var(--azul-marinho)', cursor: 'pointer' }}
+              onClick={() => navigate('/login')}
+            >
+              Entrar
+            </span>
           </p>
         </div>
       </div>
