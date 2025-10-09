@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 function PublishCourse() {
-  const [titulo, setTitulo] = useState('');
+  const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [materia, setMateria] = useState('Matemática');
   const [nivel, setNivel] = useState('Fundamental');
@@ -14,7 +14,7 @@ function PublishCourse() {
     e.preventDefault();
 
     const novoCurso = {
-      titulo,
+      nome,
       descricao,
       materia,
       nivel,
@@ -25,7 +25,7 @@ function PublishCourse() {
     };
 
     try {
-      const response = await axios.post('http://localhost:8080/api/v1/Curso', novoCurso);
+      const response = await axios.post('http://localhost:8080/api/v1/curso', novoCurso);
       alert('Curso publicado com sucesso!');
       console.log('Curso criado:', response.data);
 
@@ -59,7 +59,7 @@ function PublishCourse() {
               <input
                 type="text"
                 value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
+                onChange={(e) => setNome(e.target.value)}
                 required
                 placeholder="Ex: Matemática Básica - Ensino Fundamental"
               />

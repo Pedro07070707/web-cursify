@@ -22,7 +22,7 @@ function Register() {
     };
 
     try {
-      const response = await axios.post('http://localhost:8080/api/v1/Usuario', novoUsuario);
+      const response = await axios.post('http://localhost:8080/api/v1/usuario', novoUsuario);
       alert('Usuário cadastrado com sucesso!');
       console.log('Resposta da API:', response.data);
 

@@ -12,7 +12,7 @@ function Login() {
 
     try {
       // Busca o usuário pelo email (ou autentica via API se existir endpoint de login)
-      const response = await axios.get('http://localhost:8080/api/v1/Usuario');
+      const response = await axios.get('http://localhost:8080/api/v1/usuario');
       const usuarios = response.data;
 
       const usuario = usuarios.find(
