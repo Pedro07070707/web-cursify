@@ -12,7 +12,7 @@ function SearchCourse() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/v1/Curso');
+        const response = await axios.get('http://localhost:8080/api/v1/curso');
         setCourses(response.data);
       } catch (error) {
         console.error('Erro ao carregar cursos:', error);
