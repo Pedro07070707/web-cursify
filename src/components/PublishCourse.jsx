@@ -5,8 +5,8 @@ import axios from 'axios';
 function PublishCourse() {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [materia, setMateria] = useState('Matemática');
-  const [nivel, setNivel] = useState('Fundamental');
+  //const [materia, setMateria] = useState('Matemática');
+  //const [nivel, setNivel] = useState('Fundamental');
   const [duracao, setDuracao] = useState('');
   const navigate = useNavigate();
 
@@ -16,12 +16,12 @@ function PublishCourse() {
     const novoCurso = {
       nome,
       descricao,
-      materia,
-      nivel,
+      //materia,
+      //nivel,
       duracao: `${duracao} horas`,
       instrutor: localStorage.getItem('userName') || 'Professor',
       dataPublicacao: new Date().toISOString().replace('Z', ''),
-      ativo: true
+      statusCurso: true
     };
 
     try {
@@ -30,6 +30,12 @@ function PublishCourse() {
       console.log('Curso criado:', response.data);
 
       navigate('/teacher');
+
+      // salva informações básicas no localStorage
+      localStorage.setItem('userName', nome);
+      localStorage.setItem('userDescricao', descricao);
+      localStorage.setItem('nivelDuracao', duracao);
+
     } catch (error) {
       console.error('Erro ao publicar curso:', error);
       alert('Erro ao publicar o curso. Verifique os dados e tente novamente.');
@@ -77,22 +83,6 @@ function PublishCourse() {
             </div>
 
             <div className="form-group">
-              <label>Matéria:</label>
-              <select value={materia} onChange={(e) => setMateria(e.target.value)}>
-                <option value="Matemática">Matemática</option>
-                <option value="Português">Português</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Nível:</label>
-              <select value={nivel} onChange={(e) => setNivel(e.target.value)}>
-                <option value="Fundamental">Ensino Fundamental</option>
-                <option value="Médio">Ensino Médio</option>
-              </select>
-            </div>
-
-            <div className="form-group">
               <label>Duração (em horas):</label>
               <input
                 type="number"
@@ -123,6 +113,22 @@ function PublishCourse() {
         </div>
       </div>
     </div>
+
+    /*<div className="form-group">
+              <label>Matéria:</label>
+              <select value={materia} onChange={(e) => setMateria(e.target.value)}>
+                <option value="Matemática">Matemática</option>
+                <option value="Português">Português</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Nível:</label>
+              <select value={nivel} onChange={(e) => setNivel(e.target.value)}>
+                <option value="Fundamental">Ensino Fundamental</option>
+                <option value="Médio">Ensino Médio</option>
+              </select>
+            </div>*/
   );
 }
 
