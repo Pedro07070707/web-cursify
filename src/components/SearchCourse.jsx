@@ -81,7 +81,7 @@ function SearchCourse() {
               style={{ cursor: 'pointer' }}
             >
               <h3>{course.titulo}</h3>
-              <p><strong>Professor:</strong> {course.professorNome}</p>
+              <p><strong>Professor:</strong> {course.instrutor}</p>
               <p><strong>Nível:</strong> {course.nivel}</p>
               <p><strong>Duração:</strong> {course.duracao}</p>
               <p>{course.descricao}</p>

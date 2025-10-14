@@ -58,7 +58,7 @@ function PublishCourse() {
               <label>Título do Curso:</label>
               <input
                 type="text"
-                value={titulo}
+                value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 required
                 placeholder="Ex: Matemática Básica - Ensino Fundamental"

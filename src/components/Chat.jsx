@@ -7,7 +7,7 @@ function Chat() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const navigate = useNavigate();
-  const userType = localStorage.getItem('userType');
+  const userType = localStorage.getItem('nivelAcesso') === 'PROFESSOR' ? 'teacher' : 'student';
   const userName = localStorage.getItem('userName') || 'Usuário';
 
   useEffect(() => {
