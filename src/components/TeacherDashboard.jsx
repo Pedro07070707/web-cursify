@@ -49,6 +49,9 @@ function TeacherDashboard() {
         </div>
         <div className="nav-buttons">
           <span style={{ color: 'white', marginRight: '1rem' }}>Olá, {userName}!</span>
+          <button className="btn btn-primary" onClick={() => navigate('/profile')}>
+            Perfil
+          </button>
           <button className="btn btn-secondary" onClick={handleLogout}>
             Sair
           </button>

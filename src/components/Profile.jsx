@@ -4,10 +4,11 @@ import axios from 'axios';
 
 function Profile() {
     const [users, setUsers] = useState([]);
+    const userType = localStorage.getItem('nivelAcesso') === 'PROFESSOR' ? 'teacher' : 'student';
     const navigate = useNavigate();
     const userName = localStorage.getItem('userName') || 'Aluno';
     const userEmail = localStorage.getItem('userEmail') || 'Aluno';
-    const [progress, setProgress] = useState({});
+    const userId = localStorage.getItem('userId');
 
     useEffect(() => {
     const fetchUsers = async () => {
@@ -20,11 +21,6 @@ function Profile() {
         }
         };
         fetchUsers();
-
-        const savedProgress = localStorage.getItem('studentProgress');
-        if (savedProgress) {
-            setProgress(JSON.parse(savedProgress));
-        }
     }, []);
 
     // 🔹 Função para deletar usuário
@@ -41,11 +37,6 @@ function Profile() {
         }
     };
 
-    const handleLogout = () => {
-        localStorage.clear();
-        navigate('/');
-    };
-
     return (
     <div>
         <header className="header">
@@ -55,8 +46,8 @@ function Profile() {
         </div>
         <div className="nav-buttons">
           <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
-          <button className="btn btn-secondary" onClick={handleLogout}>
-            Sair
+          <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : '/student')}>
+            Voltar
           </button>
         </div>
       </header>
@@ -66,14 +57,14 @@ function Profile() {
             <h2 style={{color: '', textAlign: 'center', marginBottom: '2rem'}}>
             Seu Perfil
             </h2>
-            <div key={usuario.id} className="nav-buttons">
-                <button className="btn btn-secondary" onClick={handleDelete(usuario.id, usuario.nome)}>
-                    Excluir usuário
-                </button>
-            </div>
             <div>
                 <h3>Nome: {userName}</h3>
                 <p><strong>Email:</strong> {userEmail}</p>
+            </div>
+            <div className="nav-buttons">
+              <button className="btn btn-secondary" onClick={() => handleDelete(userId, userName)}>
+                Excluir usuário
+              </button>
             </div>
         </div>
       </div>
