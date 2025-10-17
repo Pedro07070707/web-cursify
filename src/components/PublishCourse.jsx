@@ -7,7 +7,8 @@ function PublishCourse() {
   const [descricao, setDescricao] = useState('');
   //const [materia, setMateria] = useState('Matemática');
   //const [nivel, setNivel] = useState('Fundamental');
-  const [duracao, setDuracao] = useState('');
+  const [categoria, setCategoria] = useState('');
+  const [cargaHoraria, setCargaHoraria] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -18,9 +19,10 @@ function PublishCourse() {
       descricao,
       //materia,
       //nivel,
-      duracao: `${duracao} horas`,
+      categoria,
+      cargaHoraria: `${cargaHoraria} horas`,
       instrutor: localStorage.getItem('userName') || 'Professor',
-      dataPublicacao: new Date().toISOString().replace('Z', ''),
+      dataCriacao: new Date().toISOString().replace('Z', ''),
       statusCurso: true
     };
 
@@ -34,7 +36,8 @@ function PublishCourse() {
       // salva informações básicas no localStorage
       localStorage.setItem('userName', nome);
       localStorage.setItem('userDescricao', descricao);
-      localStorage.setItem('nivelDuracao', duracao);
+      localStorage.setItem('categoria', categoria);
+      localStorage.setItem('nivelCargaHoraria', cargaHoraria);
 
     } catch (error) {
       console.error('Erro ao publicar curso:', error);
@@ -83,11 +86,20 @@ function PublishCourse() {
             </div>
 
             <div className="form-group">
+              <label>Categoria:</label>
+              <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+                <option value="PORTUGUES">Português</option>
+                <option value="MATEMATICA">Matemática</option>
+                <option value="HISTORIA">História</option>
+              </select>
+            </div>
+
+            <div className="form-group">
               <label>Duração (em horas):</label>
               <input
                 type="number"
-                value={duracao}
-                onChange={(e) => setDuracao(e.target.value)}
+                value={cargaHoraria}
+                onChange={(e) => setCargaHoraria(e.target.value)}
                 required
                 placeholder="Ex: 40"
                 min="1"
