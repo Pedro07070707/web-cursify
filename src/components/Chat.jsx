@@ -7,7 +7,8 @@ function Chat() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const navigate = useNavigate();
-  const userType = localStorage.getItem('nivelAcesso') === 'PROFESSOR' ? 'teacher' : 'student';
+  const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const userType = nivelAcesso === 'PROFESSOR' ? 'teacher' : nivelAcesso === 'ADMIN' ? 'admin' : 'student';
   const userName = localStorage.getItem('userName') || 'Usuário';
 
   useEffect(() => {
@@ -42,7 +43,7 @@ function Chat() {
           Cursify - Chat {userType === 'teacher' ? 'com Alunos' : 'com Professores'}
         </div>
         <div className="nav-buttons">
-          <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : '/student')}>
+          <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : userType === 'admin' ? '/admin' : '/student')}>
             Voltar
           </button>
         </div>

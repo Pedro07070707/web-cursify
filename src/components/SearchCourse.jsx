@@ -8,6 +8,8 @@ function SearchCourse() {
   const [filterSubject, setFilterSubject] = useState('');
   const [filterLevel, setFilterLevel] = useState('');
   const navigate = useNavigate();
+  const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'student';
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -39,7 +41,7 @@ function SearchCourse() {
           Cursify - Pesquisar Cursos
         </div>
         <div className="nav-buttons">
-          <button className="btn btn-secondary" onClick={() => navigate('/student')}>
+          <button className="btn btn-secondary" onClick={() => navigate(userType === 'admin' ? '/admin' : '/student')}>
             Voltar
           </button>
         </div>

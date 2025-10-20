@@ -13,6 +13,7 @@ import PublishVideo from './components/PublishVideo';
 import Chat from './components/Chat';
 import SubjectDetails from './components/SubjectDetails';
 import TeacherTopicView from './components/TeacherTopicView';
+import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
           <Route path="/publish-course" element={<PublishCourse />} />
           <Route path="/publish-video/:courseId" element={<PublishVideo />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/subject/:subjectKey/:levelKey" element={<SubjectDetails />} />
         </Routes>
       </div>

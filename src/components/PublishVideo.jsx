@@ -7,6 +7,8 @@ function PublishVideo() {
   const [duration, setDuration] = useState('');
   const [videoFile, setVideoFile] = useState(null);
   const navigate = useNavigate();
+  const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'teacher';
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -20,7 +22,7 @@ function PublishVideo() {
 
     // Em produção, aqui seria feito upload do vídeo
     alert('Vídeo aula publicada com sucesso!');
-    navigate('/teacher');
+    navigate(userType === 'admin' ? '/admin' : '/teacher');
   };
 
   return (
@@ -31,7 +33,7 @@ function PublishVideo() {
           Cursify - Publicar Vídeo Aula
         </div>
         <div className="nav-buttons">
-          <button className="btn btn-secondary" onClick={() => navigate('/teacher')}>
+          <button className="btn btn-secondary" onClick={() => navigate(userType === 'admin' ? '/admin' : '/teacher')}>
             Voltar
           </button>
         </div>

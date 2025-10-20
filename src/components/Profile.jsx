@@ -4,7 +4,8 @@ import axios from 'axios';
 
 function Profile() {
     const [users, setUsers] = useState([]);
-    const userType = localStorage.getItem('nivelAcesso') === 'PROFESSOR' ? 'teacher' : 'student';
+    const nivelAcesso = localStorage.getItem('nivelAcesso');
+    const userType = nivelAcesso === 'PROFESSOR' ? 'teacher' : nivelAcesso === 'ADMIN' ? 'admin' : 'student';
     const navigate = useNavigate();
     const userName = localStorage.getItem('userName') || 'Aluno';
     const userEmail = localStorage.getItem('userEmail') || 'Aluno';
@@ -46,7 +47,7 @@ function Profile() {
         </div>
         <div className="nav-buttons">
           <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
-          <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : '/student')}>
+          <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : userType === 'admin' ? '/admin' : '/student')}>
             Voltar
           </button>
         </div>

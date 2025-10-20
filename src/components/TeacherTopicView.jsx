@@ -6,6 +6,8 @@ function TeacherTopicView() {
   const { subject, level, topic } = useParams();
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName') || 'Professor';
+  const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'teacher';
 
   const handleLogout = () => {
     localStorage.clear();
@@ -28,7 +30,7 @@ function TeacherTopicView() {
         </div>
         <div className="nav-buttons">
           <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
-          <button className="btn btn-secondary" onClick={() => navigate(`/subject/${subject}/${level}`)}>
+          <button className="btn btn-secondary" onClick={() => navigate(userType === 'admin' ? '/admin' : `/subject/${subject}/${level}`)}>
             Voltar
           </button>
           <button className="btn btn-primary" onClick={handleLogout}>

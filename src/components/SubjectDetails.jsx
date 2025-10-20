@@ -7,7 +7,8 @@ function SubjectDetails() {
   const { subjectKey, levelKey } = useParams();
   const navigate = useNavigate();
   const [progress, setProgress] = useState({});
-  const userType = localStorage.getItem('userType');
+  const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const userType = nivelAcesso === 'PROFESSOR' ? 'teacher' : nivelAcesso === 'ADMIN' ? 'admin' : 'student';
   const userName = localStorage.getItem('userName') || 'Usuário';
 
   useEffect(() => {
@@ -51,7 +52,7 @@ function SubjectDetails() {
         </div>
         <div className="nav-buttons">
           <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
-          <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : '/student')}>
+          <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : userType === 'admin' ? '/admin' : '/student')}>
             Voltar
           </button>
           <button className="btn btn-primary" onClick={handleLogout}>

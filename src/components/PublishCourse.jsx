@@ -10,6 +10,8 @@ function PublishCourse() {
   const [categoria, setCategoria] = useState('MATEMATICA');
   const [cargaHoraria, setCargaHoraria] = useState('');
   const navigate = useNavigate();
+  const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'teacher';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +33,7 @@ function PublishCourse() {
       alert('Curso publicado com sucesso!');
       console.log('Curso criado:', response.data);
 
-      navigate('/teacher');
+      navigate(userType === 'admin' ? '/admin' : '/teacher');
 
 
 
@@ -49,7 +51,7 @@ function PublishCourse() {
           Cursify - Publicar Curso
         </div>
         <div className="nav-buttons">
-          <button className="btn btn-secondary" onClick={() => navigate('/teacher')}>
+          <button className="btn btn-secondary" onClick={() => navigate(userType === 'admin' ? '/admin' : '/teacher')}>
             Voltar
           </button>
         </div>
