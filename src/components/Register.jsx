@@ -27,6 +27,7 @@ function Register() {
       console.log('Resposta da API:', response.data);
 
       // salva informações básicas no localStorage
+      localStorage.setItem('userId', response.data.id);
       localStorage.setItem('userName', nome);
       localStorage.setItem('userEmail', email);
       localStorage.setItem('nivelAcesso', nivelAcesso);

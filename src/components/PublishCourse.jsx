@@ -7,7 +7,7 @@ function PublishCourse() {
   const [descricao, setDescricao] = useState('');
   //const [materia, setMateria] = useState('Matemática');
   //const [nivel, setNivel] = useState('Fundamental');
-  const [categoria, setCategoria] = useState('');
+  const [categoria, setCategoria] = useState('MATEMATICA');
   const [cargaHoraria, setCargaHoraria] = useState('');
   const navigate = useNavigate();
 
@@ -33,11 +33,7 @@ function PublishCourse() {
 
       navigate('/teacher');
 
-      // salva informações básicas no localStorage
-      localStorage.setItem('userName', nome);
-      localStorage.setItem('userDescricao', descricao);
-      localStorage.setItem('categoria', categoria);
-      localStorage.setItem('nivelCargaHoraria', cargaHoraria);
+
 
     } catch (error) {
       console.error('Erro ao publicar curso:', error);
@@ -126,21 +122,7 @@ function PublishCourse() {
       </div>
     </div>
 
-    /*<div className="form-group">
-              <label>Matéria:</label>
-              <select value={materia} onChange={(e) => setMateria(e.target.value)}>
-                <option value="Matemática">Matemática</option>
-                <option value="Português">Português</option>
-              </select>
-            </div>
 
-            <div className="form-group">
-              <label>Nível:</label>
-              <select value={nivel} onChange={(e) => setNivel(e.target.value)}>
-                <option value="Fundamental">Ensino Fundamental</option>
-                <option value="Médio">Ensino Médio</option>
-              </select>
-            </div>*/
   );
 }
 

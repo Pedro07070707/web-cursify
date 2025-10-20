@@ -24,6 +24,7 @@ function Login() {
         console.log('Usuário logado:', usuario);
 
         // Salva informações no localStorage
+        localStorage.setItem('userId', usuario.id);
         localStorage.setItem('userName', usuario.nome);
         localStorage.setItem('userEmail', usuario.email);
         localStorage.setItem('nivelAcesso', usuario.nivelAcesso);

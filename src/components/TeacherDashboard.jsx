@@ -35,6 +35,25 @@ function TeacherDashboard() {
     }
   };
 
+  // 🔹 Função para atualizar status do curso
+  const handleUpdate = async (id, titulo, currentStatus) => {
+    const newStatus = !currentStatus;
+    const action = newStatus ? 'ativar' : 'desativar';
+    
+    if (!window.confirm(`Tem certeza que deseja ${action} o curso "${titulo}"?`)) return;
+
+    try {
+      await axios.put(`http://localhost:8080/api/v1/curso/${id}`, { statusCurso: newStatus });
+      setCourses(courses.map(course => 
+        course.id === id ? { ...course, statusCurso: newStatus } : course
+      ));
+      alert(`Curso "${titulo}" ${action === 'ativar' ? 'ativado' : 'desativado'} com sucesso!`);
+    } catch (error) {
+      console.error(`Erro ao ${action} curso:`, error);
+      alert(`Erro ao ${action} o curso. Tente novamente.`);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     navigate('/');
@@ -105,7 +124,21 @@ function TeacherDashboard() {
                 <p><strong>Matéria:</strong> {course.materia}</p>
                 <p><strong>Nível:</strong> {course.nivel}</p>
                 <p><strong>Duração:</strong> {course.duracao}</p>
+                <p><strong>Status:</strong> {course.statusCurso ? 'Ativo' : 'Inativo'}</p>
                 <p>{course.descricao}</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                <button 
+                  className={`btn ${course.statusCurso ? 'btn-secondary' : 'btn-primary'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUpdate(course.id, course.titulo, course.statusCurso);
+                  }}
+                  style={{ fontSize: '0.8rem' }}
+                >
+                  {course.statusCurso ? '⏸️ Desativar' : '▶️ Ativar'}
+                </button>
               </div>
 
               <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
