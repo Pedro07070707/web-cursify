@@ -32,17 +32,27 @@ function AdminDashboard() {
     fetchCourses();
   }, []);
 
-  const handleUpdate = async (userId) => {
+  const handleUpdate = async (userId, userName) => {
     const user = users.find(u => u.id === userId);
     const newStatus = !user.statusUsuario;
+    const action = newStatus ? 'ativar' : 'inativar';
+    
+    if (!window.confirm(`Tem certeza que deseja ${action} o usuário "${userName}"?`)) return;
     
     try {
-      await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, { statusUsuario: newStatus });
+      await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, {
+        ...user,
+        statusUsuario: newStatus
+      });
+      
       setUsers(users.map(u => 
         u.id === userId ? { ...u, statusUsuario: newStatus } : u
       ));
+      
+      alert(`Usuário "${userName}" ${newStatus ? 'ativado' : 'inativado'} com sucesso!`);
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
+      alert('Erro ao atualizar status do usuário. Tente novamente.');
     }
   };
 
@@ -126,11 +136,16 @@ function AdminDashboard() {
                     <span style={{
                       padding: '4px 8px',
                       borderRadius: '4px',
-                      backgroundColor: user.tipoUsuario === 'PROFESSOR' ? '#e3f2fd' : '#f3e5f5',
-                      color: user.tipoUsuario === 'PROFESSOR' ? '#1976d2' : '#7b1fa2',
+                      backgroundColor: 
+                        user.nivelAcesso === 'PROFESSOR' ? '#e3f2fd' : 
+                        user.nivelAcesso === 'ADMIN' ? '#fff3e0' : '#f3e5f5',
+                      color: 
+                        user.nivelAcesso === 'PROFESSOR' ? '#1976d2' : 
+                        user.nivelAcesso === 'ADMIN' ? '#f57c00' : '#7b1fa2',
                       fontSize: '12px'
                     }}>
-                      {user.tipoUsuario === 'PROFESSOR' ? 'Professor' : 'Estudante'}
+                      {user.nivelAcesso === 'PROFESSOR' ? 'Professor' : 
+                       user.nivelAcesso === 'ADMIN' ? 'Admin' : 'Estudante'}
                     </span>
                   </td>
                   <td style={{ padding: '12px', border: '1px solid #ddd' }}>
@@ -144,10 +159,18 @@ function AdminDashboard() {
                       {user.statusUsuario ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
-                  <td style={{ padding: '12px', border: '1px solid #ddd' }}>{user.dataCriacao ? new Date(user.dataCriacao).toLocaleDateString() : '-'}</td>
+                  <td style={{ padding: '12px', border: '1px solid #ddd' }}>
+                    {user.dataCadastro ? 
+                      new Date(user.dataCadastro).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit', 
+                        year: 'numeric'
+                      }) : '-'
+                    }
+                  </td>
                   <td style={{ padding: '12px', border: '1px solid #ddd' }}>
                     <button
-                      onClick={() => handleUpdate(user.id)}
+                      onClick={() => handleUpdate(user.id, user.nome)}
                       style={{
                         padding: '6px 12px',
                         backgroundColor: user.statusUsuario ? '#dc3545' : '#28a745',
@@ -179,13 +202,19 @@ function AdminDashboard() {
                 padding: '20px',
                 backgroundColor: '#f8f9fa'
               }}>
-                <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>{course.titulo}</h3>
+                <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>{course.nome}</h3>
+                <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#555' }}><strong>Matéria:</strong> {course.materia || course.categoria}</p>
+                <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#555' }}><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
                 <p style={{ margin: '0 0 10px 0', color: '#666' }}>{course.descricao}</p>
-                <div style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#555' }}>
-                  <span><strong>Nível:</strong> {course.nivel}</span>
-                  <span><strong>Matéria:</strong> {course.materia}</span>
-                  <span><strong>Duração:</strong> {course.duracao}</span>
-                  <span><strong>Status:</strong> {course.statusCurso ? 'Ativo' : 'Inativo'}</span>
+                <div style={{ display: 'flex', gap: '10px', fontSize: '12px' }}>
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: course.statusCurso ? '#e8f5e8' : '#ffebee',
+                    color: course.statusCurso ? '#2e7d32' : '#c62828'
+                  }}>
+                    {course.statusCurso ? 'Ativo' : 'Inativo'}
+                  </span>
                 </div>
               </div>
             ))}

@@ -36,21 +36,27 @@ function TeacherDashboard() {
   };
 
   // 🔹 Função para atualizar status do curso
-  const handleUpdate = async (id, titulo, currentStatus) => {
-    const newStatus = !currentStatus;
-    const action = newStatus ? 'ativar' : 'desativar';
+  const handleUpdate = async (id, nome, currentStatus) => {
+    const course = courses.find(c => c.id === id);
+    const newStatus = !course.statusCurso;
+    const action = newStatus ? 'ativar' : 'inativar';
     
-    if (!window.confirm(`Tem certeza que deseja ${action} o curso "${titulo}"?`)) return;
+    if (!window.confirm(`Tem certeza que deseja ${action} o curso "${nome}"?`)) return;
 
     try {
-      await axios.put(`http://localhost:8080/api/v1/curso/${id}`, { statusCurso: newStatus });
-      setCourses(courses.map(course => 
-        course.id === id ? { ...course, statusCurso: newStatus } : course
+      await axios.put(`http://localhost:8080/api/v1/curso/${id}`, {
+        ...course,
+        statusCurso: newStatus
+      });
+      
+      setCourses(courses.map(c => 
+        c.id === id ? { ...c, statusCurso: newStatus } : c
       ));
-      alert(`Curso "${titulo}" ${action === 'ativar' ? 'ativado' : 'desativado'} com sucesso!`);
+      
+      alert(`Curso "${nome}" ${newStatus ? 'ativado' : 'inativado'} com sucesso!`);
     } catch (error) {
-      console.error(`Erro ao ${action} curso:`, error);
-      alert(`Erro ao ${action} o curso. Tente novamente.`);
+      console.error('Erro ao atualizar curso:', error);
+      alert('Erro ao atualizar status do curso. Tente novamente.');
     }
   };
 
@@ -119,25 +125,41 @@ function TeacherDashboard() {
               >
               </button>
 
-              <div onClick={() => navigate(`/course/${course.id}`)} style={{ cursor: 'pointer' }}>
-                <h3>{course.titulo}</h3>
-                <p><strong>Matéria:</strong> {course.materia}</p>
-                <p><strong>Nível:</strong> {course.nivel}</p>
-                <p><strong>Duração:</strong> {course.duracao}</p>
-                <p><strong>Status:</strong> {course.statusCurso ? 'Ativo' : 'Inativo'}</p>
+              <div onClick={() => navigate(`/course-view/${course.id}`)} style={{ cursor: 'pointer' }}>
+                <h3>{course.nome}</h3>
+                <p><strong>Matéria:</strong> {course.materia || course.categoria}</p>
+                <p><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
+                <div style={{ marginBottom: '10px' }}>
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: course.statusCurso ? '#e8f5e8' : '#ffebee',
+                    color: course.statusCurso ? '#2e7d32' : '#c62828',
+                    fontSize: '12px'
+                  }}>
+                    {course.statusCurso ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
                 <p>{course.descricao}</p>
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                <button 
-                  className={`btn ${course.statusCurso ? 'btn-secondary' : 'btn-primary'}`}
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleUpdate(course.id, course.titulo, course.statusCurso);
+                    handleUpdate(course.id, course.nome, course.statusCurso);
                   }}
-                  style={{ fontSize: '0.8rem' }}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: course.statusCurso ? '#dc3545' : '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}
                 >
-                  {course.statusCurso ? '⏸️ Desativar' : '▶️ Ativar'}
+                  {course.statusCurso ? 'Inativar' : 'Ativar'}
                 </button>
               </div>
 

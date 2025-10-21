@@ -20,6 +20,12 @@ function Login() {
       );
 
       if (usuario) {
+        // Verifica se o usuário está ativo
+        if (!usuario.statusUsuario) {
+          alert('Sua conta foi desativada. Entre em contato com o administrador.');
+          return;
+        }
+
         alert('Login realizado com sucesso!');
         console.log('Usuário logado:', usuario);
 

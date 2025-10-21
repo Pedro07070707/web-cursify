@@ -5,8 +5,7 @@ import axios from 'axios';
 function PublishCourse() {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
-  //const [materia, setMateria] = useState('Matemática');
-  //const [nivel, setNivel] = useState('Fundamental');
+  const [materia, setMateria] = useState('Matemática');
   const [categoria, setCategoria] = useState('MATEMATICA');
   const [cargaHoraria, setCargaHoraria] = useState('');
   const navigate = useNavigate();
@@ -19,27 +18,29 @@ function PublishCourse() {
     const novoCurso = {
       nome,
       descricao,
-      //materia,
-      //nivel,
+      materia,
       categoria,
-      cargaHoraria: `${cargaHoraria} horas`,
+      duracao: `${cargaHoraria} horas`,
+      cargaHoraria: parseInt(cargaHoraria),
       instrutor: localStorage.getItem('userName') || 'Professor',
       dataCriacao: new Date().toISOString().replace('Z', ''),
       statusCurso: true
     };
 
     try {
+      console.log('Dados enviados:', novoCurso);
       const response = await axios.post('http://localhost:8080/api/v1/curso', novoCurso);
       alert('Curso publicado com sucesso!');
       console.log('Curso criado:', response.data);
 
       navigate(userType === 'admin' ? '/admin' : '/teacher');
-
-
-
     } catch (error) {
-      console.error('Erro ao publicar curso:', error);
-      alert('Erro ao publicar o curso. Verifique os dados e tente novamente.');
+      console.error('Erro completo:', error);
+      console.error('Resposta do servidor:', error.response?.data);
+      console.error('Status:', error.response?.status);
+      
+      const errorMsg = error.response?.data?.message || error.response?.data || error.message;
+      alert(`Erro ao publicar curso: ${errorMsg}`);
     }
   };
 
@@ -84,11 +85,24 @@ function PublishCourse() {
             </div>
 
             <div className="form-group">
+              <label>Matéria:</label>
+              <select value={materia} onChange={(e) => setMateria(e.target.value)}>
+                <option value="Matemática">Matemática</option>
+                <option value="Português">Português</option>
+                <option value="História">História</option>
+                <option value="Ciências">Ciências</option>
+                <option value="Geografia">Geografia</option>
+              </select>
+            </div>
+
+            <div className="form-group">
               <label>Categoria:</label>
               <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-                <option value="PORTUGUES">Português</option>
                 <option value="MATEMATICA">Matemática</option>
+                <option value="PORTUGUES">Português</option>
                 <option value="HISTORIA">História</option>
+                <option value="CIENCIAS">Ciências</option>
+                <option value="GEOGRAFIA">Geografia</option>
               </select>
             </div>
 

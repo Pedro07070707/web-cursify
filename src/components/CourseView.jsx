@@ -1,37 +1,58 @@
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { courses } from '../data/courses';
-import { topicContent } from '../data/topicContent';
-import { topicVideos } from '../data/topicVideos';
+import axios from 'axios';
 
 function CourseView() {
-  const { subject, level, topic } = useParams();
+  const { id } = useParams();
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName') || 'Aluno';
   const nivelAcesso = localStorage.getItem('nivelAcesso');
-  const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'student';
+  const userType = nivelAcesso === 'PROFESSOR' ? 'teacher' : nivelAcesso === 'ADMIN' ? 'admin' : 'student';
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        console.log('Carregando curso com ID:', id);
+        const response = await axios.get(`http://localhost:8080/api/v1/curso/${id}`);
+        console.log('Curso carregado:', response.data);
+        setCourse(response.data);
+      } catch (error) {
+        console.error('Erro ao carregar curso:', error);
+        console.error('ID do curso:', id);
+        alert('Erro ao carregar curso.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    console.log('ID recebido:', id);
+    if (id) {
+      fetchCourse();
+    } else {
+      setLoading(false);
+    }
+  }, [id]);
 
   const handleLogout = () => {
     localStorage.clear();
     navigate('/');
   };
 
-  const courseData = courses[subject];
-  const levelData = courseData?.levels[level];
-  const content = topicContent[topic] || { description: 'Conteúdo em desenvolvimento', content: 'Descrição não disponível', duration: '4 horas' };
-  const videos = topicVideos[topic] || [];
-
-  if (!courseData || !levelData) return <div>Conteúdo não encontrado</div>;
+  if (loading) return <div>Carregando...</div>;
+  if (!course) return <div>Curso não encontrado</div>;
 
   return (
     <div>
       <header className="header">
         <div className="logo">
           <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - {topic}
+          Cursify - {course.nome}
         </div>
         <div className="nav-buttons">
           <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
-          <button className="btn btn-secondary" onClick={() => navigate(userType === 'admin' ? '/admin' : `/subject/${subject}/${level}`)}>
+          <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : userType === 'admin' ? '/admin' : '/student')}>
             Voltar
           </button>
           <button className="btn btn-primary" onClick={handleLogout}>
@@ -42,39 +63,26 @@ function CourseView() {
 
       <div className="container">
         <div className="card">
-          <h2>{topic}</h2>
-          <p><strong>Matéria:</strong> {courseData.name}</p>
-          <p><strong>Nível:</strong> {levelData.name}</p>
-          <p><strong>Duração:</strong> {content.duration}</p>
+          <h2>{course.nome}</h2>
+          <p><strong>Matéria:</strong> {course.materia || course.categoria}</p>
+          <p><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
+          <p><strong>Professor:</strong> {course.instrutor}</p>
+          <div style={{ marginBottom: '10px' }}>
+            <span style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              backgroundColor: course.statusCurso ? '#e8f5e8' : '#ffebee',
+              color: course.statusCurso ? '#2e7d32' : '#c62828',
+              fontSize: '12px'
+            }}>
+              {course.statusCurso ? 'Ativo' : 'Inativo'}
+            </span>
+          </div>
           
           <div style={{marginTop: '2rem'}}>
-            <h3>Descrição</h3>
-            <p>{content.description}</p>
+            <h3>Descrição do Curso</h3>
+            <p>{course.descricao}</p>
           </div>
-
-          <div style={{marginTop: '2rem'}}>
-            <h3>Conteúdo do Tópico</h3>
-            <p>{content.content}</p>
-          </div>
-
-          {videos.length > 0 && (
-            <div style={{marginTop: '2rem'}}>
-              <h3>Vídeo Aulas ({videos.length})</h3>
-              <div className="topic-list">
-                {videos.map(video => (
-                  <div 
-                    key={video.id} 
-                    className="topic-item" 
-                    onClick={() => navigate(`/video/topic-${subject}-${level}-${topic}/${video.id}`)}
-                    style={{display: 'flex', justifyContent: 'space-between', cursor: 'pointer'}}
-                  >
-                    <span>🎥 {video.title}</span>
-                    <span>{video.duration}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div style={{marginTop: '2rem'}}>
             <h3>Atividades</h3>
@@ -82,28 +90,18 @@ function CourseView() {
               <div className="topic-item">📚 Leitura do material base</div>
               <div className="topic-item">✏️ Exercícios práticos</div>
               <div className="topic-item">🎯 Atividades de fixação</div>
-              <div className="topic-item">📝 Avaliação do módulo</div>
+              <div className="topic-item">📝 Avaliação do curso</div>
             </div>
           </div>
 
           <div style={{marginTop: '2rem'}}>
-            {videos.length > 0 && (
-              <button 
-                className="btn btn-primary" 
-                onClick={() => navigate(`/video/topic-${subject}-${level}-${topic}/${videos[0].id}`)}
-                style={{marginRight: '1rem'}}
-              >
-                🎥 Assistir Vídeo Aulas
-              </button>
-            )}
+            <button className="btn btn-primary" onClick={() => navigate('/chat')} style={{marginRight: '1rem'}}>
+              💬 Chat com Professor
+            </button>
             <button 
               className="btn btn-secondary"
               onClick={() => {
-                const progressKey = `${subject}-${level}-${topic}`;
-                const currentProgress = JSON.parse(localStorage.getItem('studentProgress') || '{}');
-                currentProgress[progressKey] = true;
-                localStorage.setItem('studentProgress', JSON.stringify(currentProgress));
-                alert('Tópico marcado como concluído!');
+                alert('Curso marcado como concluído!');
               }}
             >
               ✅ Marcar como Concluído

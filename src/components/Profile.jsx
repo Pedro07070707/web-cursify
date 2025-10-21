@@ -59,12 +59,28 @@ function Profile() {
             Seu Perfil
             </h2>
             <div>
-                <h3>Nome: {userName}</h3>
-                <p><strong>Email:</strong> {userEmail}</p>
+                <p><strong>Nome:</strong> {userName}</p><br></br>
+                <p><strong>Email:</strong> {userEmail}</p><br></br>
+                <p><strong>Tipo de usuário:</strong> {nivelAcesso === 'PROFESSOR' ? 'Professor' : nivelAcesso === 'ADMIN' ? 'Administrador' : 'Estudante'}</p>
             </div>
-            <div className="nav-buttons">
-              <button className="btn btn-secondary" onClick={() => handleDelete(userId, userName)}>
-                Excluir usuário
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <button 
+                onClick={() => handleDelete(userId, userName)}
+                style={{
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  margin: '0 auto'
+                }}
+              >
+                🗑️ Excluir Conta
               </button>
             </div>
         </div>

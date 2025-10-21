@@ -5,8 +5,8 @@ import axios from 'axios';
 function SearchCourse() {
   const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterSubject, setFilterSubject] = useState('');
-  const [filterLevel, setFilterLevel] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
   const navigate = useNavigate();
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'student';
@@ -15,7 +15,9 @@ function SearchCourse() {
     const fetchCourses = async () => {
       try {
         const response = await axios.get('http://localhost:8080/api/v1/curso');
-        setCourses(response.data);
+        // Filtra apenas cursos ativos
+        const activeCourses = response.data.filter(course => course.statusCurso === true);
+        setCourses(activeCourses);
       } catch (error) {
         console.error('Erro ao carregar cursos:', error);
         alert('Erro ao carregar os cursos. Verifique a API.');
@@ -27,9 +29,8 @@ function SearchCourse() {
 
   const filteredCourses = courses.filter(course => {
     return (
-      course.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterSubject === '' || course.materia === filterSubject) &&
-      (filterLevel === '' || course.nivel === filterLevel)
+      (course.nome || course.titulo)?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (filterCategory === '' || course.categoria === filterCategory)
     );
   });
 
@@ -58,47 +59,29 @@ function SearchCourse() {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ flex: 1, minWidth: '200px', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '5px' }}
             />
-            <select value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} style={{ padding: '0.5rem' }}>
-              <option value="">Todas as matérias</option>
-              <option value="Matemática">Matemática</option>
-              <option value="Português">Português</option>
-              <option value="História">História</option>
-              <option value="Ciências">Ciências</option>
-            </select>
-            <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} style={{ padding: '0.5rem' }}>
-              <option value="">Todos os níveis</option>
-              <option value="Fundamental">Fundamental</option>
-              <option value="Médio">Médio</option>
-              <option value="Superior">Superior</option>
+            <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} style={{ padding: '0.5rem' }}>
+              <option value="">Todas as categorias</option>
+              <option value="MATEMATICA">Matemática</option>
+              <option value="PORTUGUES">Português</option>
+              <option value="HISTORIA">História</option>
+              <option value="CIENCIAS">Ciências</option>
+              <option value="GEOGRAFIA">Geografia</option>
             </select>
           </div>
         </div>
 
         <div className="course-grid">
           {filteredCourses.map(course => (
-            <div
-              key={course.id}
-              className="card course-card"
-              onClick={() => navigate(`/course/${course.id}`)}
-              style={{ cursor: 'pointer' }}
-            >
-              <h3>{course.titulo}</h3>
-              <p><strong>Professor:</strong> {course.instrutor}</p>
-              <p><strong>Nível:</strong> {course.nivel}</p>
-              <p><strong>Duração:</strong> {course.duracao}</p>
-              <p>{course.descricao}</p>
-              <div style={{ marginTop: '1rem' }}>
-                <span
-                  style={{
-                    background: 'var(--azul-marinho)',
-                    color: 'white',
-                    padding: '0.3rem 0.8rem',
-                    borderRadius: '15px',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  {course.materia}
-                </span>
+            <div key={course.id} className="card course-card">
+              <div onClick={() => navigate(`/course-view/${course.id}`)} style={{ cursor: 'pointer' }}>
+                <h3>{course.nome || course.titulo}</h3>
+                <p><strong>Matéria:</strong> {course.materia || course.categoria}</p>
+                <p><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
+                <p><strong>Professor:</strong> {course.instrutor}</p>
+                <p>{course.descricao}</p>
+              </div>
+              <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
+                👁️ Clique para ver detalhes
               </div>
             </div>
           ))}

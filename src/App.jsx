@@ -29,6 +29,7 @@ function App() {
           <Route path="/teacher" element={<TeacherDashboard />} />
           <Route path="/search" element={<SearchCourse />} />
           <Route path="/course/:id" element={<CourseView />} />
+          <Route path="/course-view/:id" element={<CourseView />} />
           <Route path="/video/:courseId/:videoId" element={<VideoClass />} />
           <Route path="/course/:subject/:level/:topic" element={<CourseView />} />
           <Route path="/teacher-topic/:subject/:level/:topic" element={<TeacherTopicView />} />

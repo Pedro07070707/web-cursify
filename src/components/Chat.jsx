@@ -1,37 +1,88 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockChats } from '../data/mockData';
+import axios from 'axios';
 
 function Chat() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [users, setUsers] = useState([]);
   const navigate = useNavigate();
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const userType = nivelAcesso === 'PROFESSOR' ? 'teacher' : nivelAcesso === 'ADMIN' ? 'admin' : 'student';
   const userName = localStorage.getItem('userName') || 'Usuário';
+  const currentUserId = localStorage.getItem('userId');
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/v1/usuario');
+        const allUsers = response.data;
+        
+        // Filtra usuários baseado no tipo do usuário atual
+        let filteredUsers = [];
+        if (userType === 'teacher') {
+          // Professor vê estudantes
+          filteredUsers = allUsers.filter(user => 
+            (user.nivelAcesso === 'ESTUDANTE' || user.nivelAcesso === 'ALUNO') && user.id !== parseInt(currentUserId)
+          );
+        } else if (userType === 'student') {
+          // Estudante vê professores
+          filteredUsers = allUsers.filter(user => 
+            user.nivelAcesso === 'PROFESSOR' && user.id !== parseInt(currentUserId)
+          );
+        } else {
+          // Admin vê todos
+          filteredUsers = allUsers.filter(user => user.id !== parseInt(currentUserId));
+        }
+        
+        setUsers(filteredUsers);
+      } catch (error) {
+        console.error('Erro ao carregar usuários:', error);
+      }
+    };
+
+    fetchUsers();
+  }, [userType, currentUserId]);
 
   useEffect(() => {
     if (selectedChat) {
-      // Simula mensagens do chat
-      setMessages([
-        { id: 1, sender: 'student', text: 'Olá professor, tenho dúvidas sobre frações', time: '10:25' },
-        { id: 2, sender: 'teacher', text: 'Olá! Claro, qual é sua dúvida específica?', time: '10:27' },
-        { id: 3, sender: 'student', text: 'Como somar frações com denominadores diferentes?', time: '10:30' }
-      ]);
+      fetchMessages();
     }
   }, [selectedChat]);
 
-  const sendMessage = () => {
+  const fetchMessages = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/v1/chat');
+      const allMessages = response.data;
+      
+      // Ordena por data
+      allMessages.sort((a, b) => new Date(a.dataChat) - new Date(b.dataChat));
+      
+      setMessages(allMessages);
+    } catch (error) {
+      console.error('Erro ao carregar mensagens:', error);
+    }
+  };
+
+  const sendMessage = async () => {
     if (message.trim()) {
-      const newMessage = {
-        id: Date.now(),
-        sender: userType,
-        text: message,
-        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages([...messages, newMessage]);
-      setMessage('');
+      try {
+        const newMessage = {
+          dataChat: new Date().toISOString(),
+          statusChat: true
+        };
+        
+        console.log('Enviando mensagem:', newMessage);
+        const response = await axios.post('http://localhost:8080/api/v1/chat', newMessage);
+        console.log('Resposta:', response.data);
+        
+        setMessage('');
+        fetchMessages();
+      } catch (error) {
+        console.error('Erro ao enviar mensagem:', error.response?.data || error.message);
+        alert('Erro ao enviar mensagem');
+      }
     }
   };
 
@@ -55,35 +106,29 @@ function Chat() {
           <div className="card" style={{flex: '0 0 300px', padding: '1rem'}}>
             <h3>Conversas</h3>
             <div style={{marginTop: '1rem'}}>
-              {userType === 'teacher' ? (
-                mockChats.map(chat => (
+              {users.length > 0 ? (
+                users.map(user => (
                   <div
-                    key={chat.id}
+                    key={user.id}
                     className="topic-item"
-                    onClick={() => setSelectedChat(chat)}
+                    onClick={() => setSelectedChat(user)}
                     style={{
-                      background: selectedChat?.id === chat.id ? 'var(--verde-muco)' : 'rgba(255, 255, 255, 0.5)',
-                      color: selectedChat?.id === chat.id ? 'white' : 'black',
+                      background: selectedChat?.id === user.id ? 'var(--verde-muco)' : 'rgba(255, 255, 255, 0.5)',
+                      color: selectedChat?.id === user.id ? 'white' : 'black',
                       marginBottom: '0.5rem'
                     }}
                   >
-                    <div style={{fontWeight: 'bold'}}>{chat.studentName}</div>
-                    <div style={{fontSize: '0.8rem', opacity: 0.8}}>{chat.lastMessage}</div>
-                    <div style={{fontSize: '0.7rem', opacity: 0.6}}>{chat.timestamp}</div>
-                    {chat.unread && <span style={{color: 'red'}}>●</span>}
+                    <div style={{fontWeight: 'bold'}}>{user.nome}</div>
+                    <div style={{fontSize: '0.8rem', opacity: 0.8}}>
+                      {user.nivelAcesso === 'PROFESSOR' ? 'Professor' : 
+                       user.nivelAcesso === 'ADMIN' ? 'Admin' : 'Estudante'}
+                    </div>
+                    <div style={{fontSize: '0.8rem', opacity: 0.8}}>{user.email}</div>
                   </div>
                 ))
               ) : (
-                <div
-                  className="topic-item"
-                  onClick={() => setSelectedChat({ id: 1, studentName: 'Professor' })}
-                  style={{
-                    background: selectedChat ? 'var(--verde-muco)' : 'rgba(255, 255, 255, 0.5)',
-                    color: selectedChat ? 'white' : 'black'
-                  }}
-                >
-                  <div style={{fontWeight: 'bold'}}>Professor</div>
-                  <div style={{fontSize: '0.8rem', opacity: 0.8}}>Matemática Básica</div>
+                <div style={{padding: '1rem', textAlign: 'center', color: '#666'}}>
+                  Nenhum usuário disponível
                 </div>
               )}
             </div>
@@ -94,7 +139,11 @@ function Chat() {
             {selectedChat ? (
               <>
                 <div style={{borderBottom: '1px solid #eee', padding: '1rem', background: '#f8f9fa'}}>
-                  <h4>{userType === 'teacher' ? selectedChat.studentName : 'Professor'}</h4>
+                  <h4>{selectedChat.nome}</h4>
+                  <p style={{margin: 0, fontSize: '0.9rem', color: '#666'}}>
+                    {selectedChat.nivelAcesso === 'PROFESSOR' ? 'Professor' : 
+                     selectedChat.nivelAcesso === 'ADMIN' ? 'Admin' : 'Estudante'}
+                  </p>
                 </div>
 
                 <div style={{flex: 1, padding: '1rem', overflowY: 'auto', maxHeight: '400px'}}>
@@ -104,21 +153,21 @@ function Chat() {
                       style={{
                         marginBottom: '1rem',
                         display: 'flex',
-                        justifyContent: msg.sender === userType ? 'flex-end' : 'flex-start'
+                        justifyContent: 'flex-start'
                       }}
                     >
                       <div
                         style={{
-                          background: msg.sender === userType ? 'var(--azul-marinho)' : '#e9ecef',
-                          color: msg.sender === userType ? 'white' : 'black',
+                          background: '#e9ecef',
+                          color: 'black',
                           padding: '0.5rem 1rem',
                           borderRadius: '15px',
                           maxWidth: '70%'
                         }}
                       >
-                        <div>{msg.text}</div>
+                        <div>Mensagem #{msg.id}</div>
                         <div style={{fontSize: '0.7rem', opacity: 0.7, marginTop: '0.2rem'}}>
-                          {msg.time}
+                          {new Date(msg.dataChat).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
                     </div>

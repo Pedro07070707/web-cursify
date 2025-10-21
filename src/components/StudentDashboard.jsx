@@ -13,7 +13,9 @@ function StudentDashboard() {
     const fetchCourses = async () => {
       try {
         const response = await axios.get('http://localhost:8080/api/v1/curso');
-        setCourses(response.data);
+        // Filtra apenas cursos ativos para estudantes
+        const activeCourses = response.data.filter(course => course.statusCurso === true);
+        setCourses(activeCourses);
       } catch (error) {
         console.error('Erro ao carregar cursos:', error);
         alert('Erro ao carregar cursos. Verifique a API.');
@@ -74,11 +76,10 @@ function StudentDashboard() {
         <div className="course-grid">
           {courses.map(course => (
             <div key={course.id} className="card course-card" style={{ position: 'relative' }}>
-              <div onClick={() => navigate(`/course/${course.id}`)} style={{ cursor: 'pointer' }}>
-                <h3>{course.titulo}</h3>
-                <p><strong>Matéria:</strong> {course.materia}</p>
-                <p><strong>Nível:</strong> {course.nivel}</p>
-                <p><strong>Duração:</strong> {course.duracao}</p>
+              <div onClick={() => navigate(`/course-view/${course.id}`)} style={{ cursor: 'pointer' }}>
+                <h3>{course.nome}</h3>
+                <p><strong>Matéria:</strong> {course.materia || course.categoria}</p>
+                <p><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
                 <p>{course.descricao}</p>
               </div>
               <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
