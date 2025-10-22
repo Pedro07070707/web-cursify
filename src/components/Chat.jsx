@@ -45,12 +45,6 @@ function Chat() {
     fetchUsers();
   }, [userType, currentUserId]);
 
-  useEffect(() => {
-    if (selectedChat) {
-      fetchMessages();
-    }
-  }, [selectedChat]);
-
   const fetchMessages = async () => {
     try {
       const response = await axios.get('http://localhost:8080/api/v1/chat');
@@ -65,12 +59,21 @@ function Chat() {
     }
   };
 
+  useEffect(() => {
+    if (selectedChat) {
+      fetchMessages();
+    }
+  }, [selectedChat]);
+
   const sendMessage = async () => {
     if (message.trim()) {
       try {
         const newMessage = {
+          mensagem: message,
           dataChat: new Date().toISOString(),
-          statusChat: true
+          statusChat: true,
+          usuarioId: parseInt(currentUserId),
+          destinatarioId: selectedChat.id
         };
         
         console.log('Enviando mensagem:', newMessage);
