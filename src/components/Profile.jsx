@@ -24,14 +24,19 @@ function Profile() {
         fetchUsers();
     }, []);
 
+    const handlePasswordChange = () => {
+        navigate('/change-password');
+    };
+
     // 🔹 Função para deletar usuário
   const handleDelete = async (id, nome) => {
     if (!window.confirm(`Tem certeza que deseja excluir o usuário "${nome}"?`)) return;
 
     try {
     await axios.delete(`http://localhost:8080/api/v1/usuario/${id}`);
-        setUsers(users.filter(usuario => usuario.id !== id));
         alert(`Usuário "${nome}" excluído com sucesso!`);
+        localStorage.clear();
+        navigate('/');
         } catch (error) {
         console.error('Erro ao excluir usuário:', error);
         alert('Erro ao excluir o usuário. Tente novamente.');
@@ -63,7 +68,24 @@ function Profile() {
                 <p><strong>Email:</strong> {userEmail}</p><br></br>
                 <p><strong>Tipo de usuário:</strong> {nivelAcesso === 'PROFESSOR' ? 'Professor' : nivelAcesso === 'ADMIN' ? 'Administrador' : 'Estudante'}</p>
             </div>
-            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <div style={{ textAlign: 'center', marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button 
+                onClick={handlePasswordChange}
+                style={{
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                🔑 Alterar Senha
+              </button>
               <button 
                 onClick={() => handleDelete(userId, userName)}
                 style={{
@@ -76,8 +98,7 @@ function Profile() {
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  margin: '0 auto'
+                  gap: '8px'
                 }}
               >
                 🗑️ Excluir Conta

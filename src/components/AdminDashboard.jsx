@@ -32,7 +32,7 @@ function AdminDashboard() {
     fetchCourses();
   }, []);
 
-  const handleUpdate = async (userId, userName) => {
+  const handleUpdateStatus = async (userId, userName) => {
     const user = users.find(u => u.id === userId);
     const newStatus = !user.statusUsuario;
     const action = newStatus ? 'ativar' : 'inativar';
@@ -53,6 +53,85 @@ function AdminDashboard() {
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
       alert('Erro ao atualizar status do usuário. Tente novamente.');
+    }
+  };
+
+  const handleDelete = async (userId, userName) => {
+    if (!window.confirm(`Tem certeza que deseja excluir o usuário "${userName}"?`)) return;
+
+    try {
+      await axios.delete(`http://localhost:8080/api/v1/usuario/${userId}`);
+      setUsers(users.filter(u => u.id !== userId));
+      alert(`Usuário "${userName}" excluído com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+      alert('Erro ao excluir o usuário. Tente novamente.');
+    }
+  };
+
+  const handleCourseUpdate = async (courseId, courseName) => {
+    const course = courses.find(c => c.id === courseId);
+    const newStatus = !course.statusCurso;
+    const action = newStatus ? 'ativar' : 'inativar';
+    
+    if (!window.confirm(`Tem certeza que deseja ${action} o curso "${courseName}"?`)) return;
+    
+    try {
+      await axios.put(`http://localhost:8080/api/v1/curso/${courseId}`, {
+        ...course,
+        statusCurso: newStatus
+      });
+      
+      setCourses(courses.map(c => 
+        c.id === courseId ? { ...c, statusCurso: newStatus } : c
+      ));
+      
+      alert(`Curso "${courseName}" ${newStatus ? 'ativado' : 'inativado'} com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao atualizar curso:', error);
+      alert('Erro ao atualizar status do curso. Tente novamente.');
+    }
+  };
+
+  const handleCourseDelete = async (courseId, courseName) => {
+    if (!window.confirm(`Tem certeza que deseja excluir o curso "${courseName}"?`)) return;
+
+    try {
+      await axios.delete(`http://localhost:8080/api/v1/curso/${courseId}`);
+      setCourses(courses.filter(c => c.id !== courseId));
+      alert(`Curso "${courseName}" excluído com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao excluir curso:', error);
+      alert('Erro ao excluir o curso. Tente novamente.');
+    }
+  };
+
+  const handleUpdate = async (userId, userName) => {
+    const newPassword = prompt('Digite a nova senha:');
+    if (!newPassword) return;
+    
+    const hasLetters = /[a-zA-Z]/.test(newPassword);
+    const hasNumbers = /\d/.test(newPassword);
+    const validLength = newPassword.length >= 8 && newPassword.length <= 20;
+    
+    if (!hasLetters || !hasNumbers || !validLength) {
+      alert('A nova senha deve ter entre 8 e 20 caracteres, incluindo letras e números.');
+      return;
+    }
+    
+    if (!window.confirm(`Tem certeza que deseja alterar a senha do usuário "${userName}"?`)) return;
+    
+    try {
+      const user = users.find(u => u.id === userId);
+      await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, {
+        ...user,
+        senha: newPassword
+      });
+      
+      alert(`Senha do usuário "${userName}" alterada com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao alterar senha:', error);
+      alert('Erro ao alterar senha. Tente novamente.');
     }
   };
 
@@ -169,20 +248,50 @@ function AdminDashboard() {
                     }
                   </td>
                   <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                    <button
-                      onClick={() => handleUpdate(user.id, user.nome)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: user.statusUsuario ? '#dc3545' : '#28a745',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      {user.statusUsuario ? 'Inativar' : 'Ativar'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleUpdateStatus(user.id, user.nome)}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: user.statusUsuario ? '#dc3545' : '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        {user.statusUsuario ? 'Inativar' : 'Ativar'}
+                      </button>
+                      <button
+                        onClick={() => handleUpdate(user.id, user.nome)}
+                        style={{
+                          padding: '6px 8px',
+                          backgroundColor: '#007bff',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        🔑
+                      </button>
+                      <button
+                        onClick={() => handleDelete(user.id, user.nome)}
+                        style={{
+                          padding: '6px 8px',
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -206,15 +315,46 @@ function AdminDashboard() {
                 <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#555' }}><strong>Matéria:</strong> {course.materia || course.categoria}</p>
                 <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#555' }}><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
                 <p style={{ margin: '0 0 10px 0', color: '#666' }}>{course.descricao}</p>
-                <div style={{ display: 'flex', gap: '10px', fontSize: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
                   <span style={{
                     padding: '4px 8px',
                     borderRadius: '4px',
                     backgroundColor: course.statusCurso ? '#e8f5e8' : '#ffebee',
-                    color: course.statusCurso ? '#2e7d32' : '#c62828'
+                    color: course.statusCurso ? '#2e7d32' : '#c62828',
+                    fontSize: '12px'
                   }}>
                     {course.statusCurso ? 'Ativo' : 'Inativo'}
                   </span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => handleCourseUpdate(course.id, course.nome)}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: course.statusCurso ? '#dc3545' : '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      {course.statusCurso ? 'Inativar' : 'Ativar'}
+                    </button>
+                    <button
+                      onClick={() => handleCourseDelete(course.id, course.nome)}
+                      style={{
+                        padding: '6px 8px',
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

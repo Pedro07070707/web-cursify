@@ -9,8 +9,20 @@ function Register() {
   const [nivelAcesso, setNivelAcesso] = useState('ALUNO'); // padrão aluno
   const navigate = useNavigate();
 
+  const validatePassword = (password) => {
+    const hasLetters = /[a-zA-Z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const validLength = password.length >= 8 && password.length <= 20;
+    return hasLetters && hasNumbers && validLength;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validatePassword(senha)) {
+      alert('A senha deve ter entre 8 e 20 caracteres, incluindo letras e números.');
+      return;
+    }
 
     const novoUsuario = {
       nome,
@@ -96,6 +108,13 @@ function Register() {
                 required
                 placeholder="Digite sua senha"
               />
+              <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                A senha deve ter:
+                <br />
+                Entre 8 e 20 caracteres
+                <br />
+                Letras e números.
+              </small>
             </div>
 
             <div className="form-group">

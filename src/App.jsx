@@ -14,6 +14,7 @@ import Chat from './components/Chat';
 import SubjectDetails from './components/SubjectDetails';
 import TeacherTopicView from './components/TeacherTopicView';
 import AdminDashboard from './components/AdminDashboard';
+import ChangePassword from './components/ChangePassword';
 import './App.css';
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
           <Route path="/publish-video/:courseId" element={<PublishVideo />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/subject/:subjectKey/:levelKey" element={<SubjectDetails />} />
         </Routes>
       </div>
