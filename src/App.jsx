@@ -6,7 +6,9 @@ import Register from './components/Register';
 import StudentDashboard from './components/StudentDashboard';
 import TeacherDashboard from './components/TeacherDashboard';
 import SearchCourse from './components/SearchCourse';
-import CourseView from './components/CourseView';
+import CourseRedirect from './components/CourseRedirect';
+import StudentCourseView from './components/StudentCourseView';
+import TeacherCourseView from './components/TeacherCourseView';
 import VideoClass from './components/VideoClass';
 import PublishCourse from './components/PublishCourse';
 import PublishVideo from './components/PublishVideo';
@@ -29,10 +31,12 @@ function App() {
           <Route path="/student" element={<StudentDashboard />} />
           <Route path="/teacher" element={<TeacherDashboard />} />
           <Route path="/search" element={<SearchCourse />} />
-          <Route path="/course/:id" element={<CourseView />} />
-          <Route path="/course-view/:id" element={<CourseView />} />
+          <Route path="/course/:id" element={<CourseRedirect />} />
+          <Route path="/course-view/:id" element={<CourseRedirect />} />
+          <Route path="/student-course/:id" element={<StudentCourseView />} />
+          <Route path="/teacher-course/:id" element={<TeacherCourseView />} />
           <Route path="/video/:courseId/:videoId" element={<VideoClass />} />
-          <Route path="/course/:subject/:level/:topic" element={<CourseView />} />
+          <Route path="/course/:subject/:level/:topic" element={<CourseRedirect />} />
           <Route path="/teacher-topic/:subject/:level/:topic" element={<TeacherTopicView />} />
           <Route path="/publish-course" element={<PublishCourse />} />
           <Route path="/publish-video/:courseId" element={<PublishVideo />} />

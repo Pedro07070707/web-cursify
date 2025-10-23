@@ -30,7 +30,6 @@ function PublishCourse() {
     try {
       console.log('Dados enviados:', novoCurso);
       const response = await axios.post('http://localhost:8080/api/v1/curso', novoCurso);
-      alert('Curso publicado com sucesso!');
       console.log('Curso criado:', response.data);
 
       navigate(userType === 'admin' ? '/admin' : '/teacher');

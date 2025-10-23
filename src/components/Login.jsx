@@ -26,7 +26,6 @@ function Login() {
           return;
         }
 
-        alert('Login realizado com sucesso!');
         console.log('Usuário logado:', usuario);
 
         // Salva informações no localStorage

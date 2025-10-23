@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-function CourseView() {
+function StudentCourseView() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -113,4 +113,4 @@ function CourseView() {
   );
 }
 
-export default CourseView;
+export default StudentCourseView;
