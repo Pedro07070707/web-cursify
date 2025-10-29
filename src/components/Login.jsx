@@ -11,7 +11,7 @@ function Login() {
     e.preventDefault();
 
     try {
-      // Busca o usuário pelo email (ou autentica via API se existir endpoint de login)
+      // Busca o usuário pelo email
       const response = await axios.get('http://localhost:8080/api/v1/usuario');
       const usuarios = response.data;
 

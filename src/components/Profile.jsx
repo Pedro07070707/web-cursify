@@ -28,7 +28,7 @@ function Profile() {
         navigate('/change-password');
     };
 
-    // 🔹 Função para deletar usuário
+    // Função para deletar usuário
   const handleDelete = async (id, nome) => {
     if (!window.confirm(`Tem certeza que deseja excluir o usuário "${nome}"?`)) return;
 

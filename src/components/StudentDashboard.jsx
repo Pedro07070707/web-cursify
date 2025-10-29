@@ -8,7 +8,7 @@ function StudentDashboard() {
   const userName = localStorage.getItem('userName') || 'Aluno';
   const [progress, setProgress] = useState({});
 
-  // 🔹 Buscar cursos do aluno
+  // Buscar cursos do aluno
   useEffect(() => {
     const fetchCourses = async () => {
       try {

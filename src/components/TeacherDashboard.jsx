@@ -7,7 +7,7 @@ function TeacherDashboard() {
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName') || 'Professor';
 
-  // 🔹 Buscar cursos do professor
+  // Buscar cursos do professor
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -21,7 +21,7 @@ function TeacherDashboard() {
     fetchCourses();
   }, []);
 
-  // 🔹 Função para deletar curso
+  // Função para deletar curso
   const handleDelete = async (id, titulo) => {
     if (!window.confirm(`Tem certeza que deseja excluir o curso "${titulo}"?`)) return;
 
@@ -35,7 +35,7 @@ function TeacherDashboard() {
     }
   };
 
-  // 🔹 Função para atualizar status do curso
+  // Função para atualizar status do curso
   const handleUpdate = async (id, nome, currentStatus) => {
     const course = courses.find(c => c.id === id);
     const newStatus = !course.statusCurso;
@@ -108,7 +108,7 @@ function TeacherDashboard() {
               className="card course-card"
               style={{ position: 'relative' }}
             >
-              {/* 🔴 Botão de deletar */}
+              {/* Botão de deletar */}
               <button
                 onClick={() => handleDelete(course.id, course.titulo)}
                 style={{

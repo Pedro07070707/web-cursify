@@ -6,7 +6,7 @@ function Register() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [nivelAcesso, setNivelAcesso] = useState('ALUNO'); // padrão aluno
+  const [nivelAcesso, setNivelAcesso] = useState('ALUNO');
   const navigate = useNavigate();
 
   const validatePassword = (password) => {
@@ -29,8 +29,8 @@ function Register() {
       email,
       senha,
       nivelAcesso,
-      dataCadastro: new Date().toISOString().replace('Z', ''), // sem timezone
-      statusUsuario: true, // em vez de "ATIVO"
+      dataCadastro: new Date().toISOString().replace('Z', ''),
+      statusUsuario: true,
     };
 
     try {

@@ -20,7 +20,6 @@ function PublishVideo() {
       file: videoFile?.name || 'video.mp4'
     };
 
-    // Em produção, aqui seria feito upload do vídeo
     alert('Vídeo aula publicada com sucesso!');
     navigate(userType === 'admin' ? '/admin' : '/teacher');
   };
