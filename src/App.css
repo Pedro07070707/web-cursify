@@ -14,7 +14,7 @@ body {
   font-family: 'Arial', sans-serif;
   background: var(--gradient);
   min-height: 100vh;
-  background-image: url(/public/Wallpaper.jpg);
+  background-image: url(/Wallpaper.jpg);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
