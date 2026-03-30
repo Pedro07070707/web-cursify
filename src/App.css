@@ -14,6 +14,19 @@ body {
   font-family: 'Arial', sans-serif;
   background: var(--gradient);
   min-height: 100vh;
+  background-image: url(/public/Wallpaper.jpg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.carousel {
+  max-width: 800px;
+  margin: 200px;
+}
+
+.carousel-item {
+  
 }
 
 .container {

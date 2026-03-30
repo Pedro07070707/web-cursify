@@ -1,3 +1,4 @@
+import { Carousel } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
 function Home() {
@@ -24,7 +25,18 @@ function Home() {
         <div className="welcome-section">
           <h1>Cursify</h1>
           <p>Plataforma de cursos online</p>
-          <p>Do ensino fundamental ao ensino médio</p>
+        </div>
+
+        <div className="carousel">
+          <div className="carousel-item">
+            <img src="/ImgCurso1.jpg"></img>
+          </div>
+          <div className="carousel-item">
+            <img src="/ImgCurso2.jpg"></img>
+          </div>
+          <div className="carousel-item">
+            <img src="/ImgCurso3.jpg"></img>
+          </div>
         </div>
 
         <div className="card">
