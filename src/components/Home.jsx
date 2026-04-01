@@ -4,94 +4,7 @@ import { useNavigate } from 'react-router-dom';
 function Home() {
   const navigate = useNavigate();
 
-  return (
-    <div>
-      <header className="header">
-        <div className="logo">
-          <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify
-        </div>
-        <div className="nav-buttons">
-          <button className="btn btn-secondary" onClick={() => navigate('/login')}>
-            Entrar
-          </button>
-          <button className="btn btn-primary" onClick={() => navigate('/register')}>
-            Cadastrar
-          </button>
-        </div>
-      </header>
-
-      <div className="container">
-        <div className="welcome-section">
-          <h1>Cursify</h1>
-          <p>Plataforma de cursos online</p>
-        </div>
-
-        <div className="card">
-          <div className="carousel">
-            <div className="carousel-item">
-              <img src="/1.jpg"></img>
-            </div>
-            <div className="carousel-item">
-              <img src="/2.jpg"></img>
-            </div>
-            <div className="carousel-item">
-              <img src="/3.jpg"></img>
-            </div>
-          </div>
-        </div>
-
-        --------
-            <div class="options">
-
-        <div class="option active"
-             style="--optionImage: url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200');">
-            <div class="label">
-                <div class="icon"><i class="fas fa-walking"></i></div>
-                <div class="info">
-                    <div class="main">Nature Walk</div>
-                    <div class="sub">Beautiful mountain scenery</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="option"
-             style="--optionImage: url('https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=1200');">
-            <div class="label">
-                <div class="icon"><i class="fas fa-tree"></i></div>
-                <div class="info">
-                    <div class="main">Forest</div>
-                    <div class="sub">Green & peaceful environment</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="option"
-             style="--optionImage: url('https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?w=1200');">
-            <div class="label">
-                <div class="icon"><i class="fas fa-mountain"></i></div>
-                <div class="info">
-                    <div class="main">Mountains</div>
-                    <div class="sub">Snowy high peaks</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="option"
-             style="--optionImage: url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200');">
-            <div class="label">
-                <div class="icon"><i class="fas fa-water"></i></div>
-                <div class="info">
-                    <div class="main">Lake View</div>
-                    <div class="sub">Calm and relaxing water</div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <script>
-        const options = document.querySelectorAll(".option");
+  const options = document.querySelectorAll(".option");
         let currentIndex = 0;
 
         // Manual click activation
@@ -113,8 +26,93 @@ function Home() {
             currentIndex = (currentIndex + 1) % options.length;
             setActive(currentIndex);
         }, 3000);
-    </script>
-    ----------
+
+        /*
+        <div className="carousel">
+          <div className="carousel-item">
+            <img src="/1.jpg"></img>
+          </div>
+          <div className="carousel-item">
+            <img src="/2.jpg"></img>
+          </div>
+          <div className="carousel-item">
+            <img src="/3.jpg"></img>
+          </div>
+        </div>
+        */
+
+  return (
+    <div>
+      <header className="header">
+        <div className="logo">
+          <img src="/logoCursiFy.png" alt="Web Cursify" />
+          Cursify
+        </div>
+        <div className="nav-buttons">
+          <button className="btn btn-secondary" onClick={() => navigate('/login')}>
+            Entrar
+          </button>
+          <button className="btn btn-primary" onClick={() => navigate('/register')}>
+            Cadastrar
+          </button>
+        </div>
+      </header>
+
+      <div className="card-home">
+      <div className="container">
+        <div className="welcome-section">
+          <h1>Cursify</h1>
+          <p>Plataforma de cursos online</p>
+        </div>
+
+        
+
+        <div className="options">
+          <div className="option active">
+            <img src="/1.jpg"></img>
+              <div className="label">
+                  <div className="icon"></div>
+                 <div className="info">
+                      <div className="main">CursiFy</div>
+                      <div className="sub">Plataforma de cursos online</div>
+                  </div>
+             </div>
+          </div>
+
+          <div className="option">
+            <img src="/2.jpg"></img>
+              <div className="label">
+                 <div className="icon"></div>
+                  <div className="info">
+                      <div className="main">Cursos</div>
+                      <div className="sub">Ensino fundamental ao médio</div>
+                 </div>
+             </div>
+          </div>
+
+          <div className="option">
+            <img src="/3.jpg"></img>
+             <div className="label">
+                  <div className="icon"></div>
+                  <div className="info">
+                      <div className="main">Professores</div>
+                      <div className="sub">Professores avaliados e verificados</div>
+                  </div>
+              </div>
+          </div>
+
+          <div className="option">
+            <img src="/4.jpg"></img>
+              <div className="label">
+                  <div className="icon"></div>
+                  <div className="info">
+                      <div className="main">Cursos gratuitos</div>
+                      <div className="sub">Gratuidade total</div>
+                  </div>
+              </div>
+          </div>
+        </div>
+
         <div className="card">
           <h2>Sobre a Plataforma</h2>
           <p>
@@ -135,6 +133,7 @@ function Home() {
           </ul>
           <p><strong>Cadastre-se agora para ter acesso completo aos nossos cursos!</strong></p>
         </div>
+      </div>
       </div>
     </div>
   );

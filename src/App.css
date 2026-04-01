@@ -37,76 +37,74 @@ body {
     transition: all ease-in-out 0.5s;
 }
 
--------
-        .options {
-            display: flex;
-            gap: 10px;
-            width: 90%;
-            height: 300px;
-        }
+.options {
+  display: flex;
+  gap: 10px;
+  width: 90%;
+  height: 300px;
+}
 
-        .option {
-            flex: 1;
-            background-image: var(--optionImage);
-            background-size: cover;
-            background-position: center;
-            border-radius: 30px;
-            position: relative;
-            cursor: pointer;
-            transition: flex 0.6s ease;
-            overflow: hidden;
-        }
+.option {
+  flex: 1;
+  background-image: var(--optionImage);
+  background-size: cover;
+  background-position: center;
+  border-radius: 30px;
+  position: relative;
+  cursor: pointer;
+  transition: flex 0.6s ease;
+  overflow: hidden;
+}
 
-        .option.active {
-            flex: 4;
-        }
+.option.active {
+  flex: 4;
+}
 
-        .option:not(.active) {
-            filter: brightness(0.6);
-        }
+.option:not(.active) {
+  filter: brightness(0.6);
+}
 
-        .label {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #fff;
-            opacity: 0;
-            transition: 0.4s ease;
-        }
+.label {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  opacity: 0;
+  transition: 0.4s ease;
+}
 
-        .option.active .label {
-            opacity: 1;
-        }
+.option.active .label {
+  opacity: 1;
+}
 
-        .icon {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-width: 40px;
-            min-height: 40px;
-            border-radius: 50%;
-            background-color: rgba(255,255,255,0.2);
-            color: white;
-        }
+.icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255,255,255,0.2);
+  color: white;
+}
 
-        .info {
-            display: flex;
-            flex-direction: column;
-        }
+.info {
+  display: flex;
+  flex-direction: column;
+}
 
-        .info .main {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
+.info .main {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
 
-        .info .sub {
-            font-size: 0.8rem;
-            opacity: 0.8;
-        }
-        --------
+.info .sub {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
 
 .container {
   max-width: 1200px;
@@ -175,6 +173,16 @@ body {
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
+.card-home {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  padding: 2rem;
+  margin-left: 10rem;
+  margin-right: 10rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
 .form-group {
   margin-bottom: 1rem;
 }
@@ -238,7 +246,7 @@ body {
 
 .welcome-section {
   text-align: center;
-  color: white;
+  color: rgba(255, 255, 255);
   margin: 3rem 0;
 }
 
