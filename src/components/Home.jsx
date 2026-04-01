@@ -1,50 +1,14 @@
-import { Carousel } from 'react-bootstrap';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function Home() {
   const navigate = useNavigate();
-
-  const options = document.querySelectorAll(".option");
-        let currentIndex = 0;
-
-        // Manual click activation
-        options.forEach((option, index) => {
-            option.addEventListener("click", () => {
-                setActive(index);
-            });
-        });
-
-        // Function to activate selected slide
-        function setActive(index) {
-            options.forEach(o => o.classList.remove("active"));
-            options[index].classList.add("active");
-            currentIndex = index;
-        }
-
-        // Auto slide every 3 seconds
-        setInterval(() => {
-            currentIndex = (currentIndex + 1) % options.length;
-            setActive(currentIndex);
-        }, 3000);
-
-        /*
-        <div className="carousel">
-          <div className="carousel-item">
-            <img src="/1.jpg"></img>
-          </div>
-          <div className="carousel-item">
-            <img src="/2.jpg"></img>
-          </div>
-          <div className="carousel-item">
-            <img src="/3.jpg"></img>
-          </div>
-        </div>
-        */
+  const [activeIndex, setActiveIndex] = useState(null);
 
   return (
     <div>
       <header className="header">
-        <div className="logo">
+        <div className="logo" onClick={() => navigate('/')} style={{cursor: 'pointer'}}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
           Cursify
         </div>
@@ -61,55 +25,31 @@ function Home() {
       <div className="card-home">
       <div className="container">
         <div className="welcome-section">
-          <h1>Cursify</h1>
+          <h1><img src="/logoCursiFy.png" alt="Web Cursify" style={{width: '3.3rem', height: '3.8rem', marginRight: '0.2rem', verticalAlign: 'top'}} />CursiFy</h1>
           <p>Plataforma de cursos online</p>
         </div>
 
         
 
         <div className="options">
-          <div className="option active">
-            <img src="/1.jpg"></img>
-              <div className="label">
-                  <div className="icon"></div>
-                 <div className="info">
-                      <div className="main">CursiFy</div>
-                      <div className="sub">Plataforma de cursos online</div>
-                  </div>
-             </div>
+          <div className={`option${activeIndex === 0 ? ' active' : ''}`} onMouseEnter={() => setActiveIndex(0)} onMouseLeave={() => setActiveIndex(null)}>
+            <div className="option-bg" style={{backgroundImage: 'url(/carousel-1.jpg)'}}></div>
+            <div className="option-bg option-bg-hover" style={{backgroundImage: 'url(/carousel-1-hover.jpg)'}}></div>
           </div>
 
-          <div className="option">
-            <img src="/2.jpg"></img>
-              <div className="label">
-                 <div className="icon"></div>
-                  <div className="info">
-                      <div className="main">Cursos</div>
-                      <div className="sub">Ensino fundamental ao médio</div>
-                 </div>
-             </div>
+          <div className={`option${activeIndex === 1 ? ' active' : ''}`} onMouseEnter={() => setActiveIndex(1)} onMouseLeave={() => setActiveIndex(null)}>
+            <div className="option-bg" style={{backgroundImage: 'url(/carousel-2.jpg)'}}></div>
+            <div className="option-bg option-bg-hover" style={{backgroundImage: 'url(/carousel-2-hover.jpg)'}}></div>
           </div>
 
-          <div className="option">
-            <img src="/3.jpg"></img>
-             <div className="label">
-                  <div className="icon"></div>
-                  <div className="info">
-                      <div className="main">Professores</div>
-                      <div className="sub">Professores avaliados e verificados</div>
-                  </div>
-              </div>
+          <div className={`option${activeIndex === 2 ? ' active' : ''}`} onMouseEnter={() => setActiveIndex(2)} onMouseLeave={() => setActiveIndex(null)}>
+            <div className="option-bg" style={{backgroundImage: 'url(/carousel-3.jpg)'}}></div>
+            <div className="option-bg option-bg-hover" style={{backgroundImage: 'url(/carousel-3-hover.jpg)'}}></div>
           </div>
 
-          <div className="option">
-            <img src="/4.jpg"></img>
-              <div className="label">
-                  <div className="icon"></div>
-                  <div className="info">
-                      <div className="main">Cursos gratuitos</div>
-                      <div className="sub">Gratuidade total</div>
-                  </div>
-              </div>
+          <div className={`option${activeIndex === 3 ? ' active' : ''}`} onMouseEnter={() => setActiveIndex(3)} onMouseLeave={() => setActiveIndex(null)}>
+            <div className="option-bg" style={{backgroundImage: 'url(/carousel-4.jpg)'}}></div>
+            <div className="option-bg option-bg-hover" style={{backgroundImage: 'url(/carousel-4-hover.jpg)'}}></div>
           </div>
         </div>
 

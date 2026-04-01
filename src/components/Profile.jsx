@@ -46,7 +46,7 @@ function Profile() {
     return (
     <div>
         <header className="header">
-        <div className="logo">
+        <div className="logo" onClick={() => navigate("/")} style={{cursor: "pointer"}}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
           Cursify - Perfil do Aluno
         </div>
