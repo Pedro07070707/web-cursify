@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const NIVEIS = {
+  FUNDAMENTAL_1: 'Fundamental 1 (1º ao 5º ano)',
+  FUNDAMENTAL_2: 'Fundamental 2 (6º ao 9º ano)',
+  MEDIO_1: 'Ensino Médio - 1º ano',
+  MEDIO_2: 'Ensino Médio - 2º ano',
+  MEDIO_3: 'Ensino Médio - 3º ano',
+  OUTROS: 'Outros',
+};
+
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -71,8 +80,9 @@ function AdminDashboard() {
 
   const handleCourseUpdate = async (courseId, courseName) => {
     const course = courses.find(c => c.id === courseId);
-    const newStatus = !course.statusCurso;
-    const action = newStatus ? 'ativar' : 'inativar';
+    const isAtivo = course.statusCurso === 'Ativo';
+    const newStatus = isAtivo ? 'Inativo' : 'Ativo';
+    const action = isAtivo ? 'inativar' : 'ativar';
     
     if (!window.confirm(`Tem certeza que deseja ${action} o curso "${courseName}"?`)) return;
     
@@ -86,7 +96,7 @@ function AdminDashboard() {
         c.id === courseId ? { ...c, statusCurso: newStatus } : c
       ));
       
-      alert(`Curso "${courseName}" ${newStatus ? 'ativado' : 'inativado'} com sucesso!`);
+      alert(`Curso "${courseName}" ${isAtivo ? 'inativado' : 'ativado'} com sucesso!`);
     } catch (error) {
       console.error('Erro ao atualizar curso:', error);
       alert('Erro ao atualizar status do curso. Tente novamente.');
@@ -143,7 +153,7 @@ function AdminDashboard() {
   return (
     <div>
       <header className="header">
-        <div className="logo">
+        <div className="logo" onClick={() => navigate("/")} style={{cursor: "pointer"}}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
           Cursify - Área do Administrador
         </div>
@@ -312,25 +322,25 @@ function AdminDashboard() {
                 backgroundColor: '#f8f9fa'
               }}>
                 <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>{course.nome}</h3>
-                <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#555' }}><strong>Matéria:</strong> {course.materia || course.categoria}</p>
+                <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#555' }}><strong>Nível:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
                 <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#555' }}><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
                 <p style={{ margin: '0 0 10px 0', color: '#666' }}>{course.descricao}</p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
                   <span style={{
                     padding: '4px 8px',
                     borderRadius: '4px',
-                    backgroundColor: course.statusCurso ? '#e8f5e8' : '#ffebee',
-                    color: course.statusCurso ? '#2e7d32' : '#c62828',
+                    backgroundColor: course.statusCurso === 'Ativo' ? '#e8f5e8' : '#ffebee',
+                    color: course.statusCurso === 'Ativo' ? '#2e7d32' : '#c62828',
                     fontSize: '12px'
                   }}>
-                    {course.statusCurso ? 'Ativo' : 'Inativo'}
+                    {course.statusCurso === 'Ativo' ? 'Ativo' : 'Inativo'}
                   </span>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       onClick={() => handleCourseUpdate(course.id, course.nome)}
                       style={{
                         padding: '6px 12px',
-                        backgroundColor: course.statusCurso ? '#dc3545' : '#28a745',
+                        backgroundColor: course.statusCurso === 'Ativo' ? '#dc3545' : '#28a745',
                         color: 'white',
                         border: 'none',
                         borderRadius: '4px',
@@ -338,7 +348,7 @@ function AdminDashboard() {
                         fontSize: '12px'
                       }}
                     >
-                      {course.statusCurso ? 'Inativar' : 'Ativar'}
+                      {course.statusCurso === 'Ativo' ? 'Inativar' : 'Ativar'}
                     </button>
                     <button
                       onClick={() => handleCourseDelete(course.id, course.nome)}

@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const NIVEIS = {
+  FUNDAMENTAL_1: 'Fundamental 1 (1º ao 5º ano)',
+  FUNDAMENTAL_2: 'Fundamental 2 (6º ao 9º ano)',
+  MEDIO_1: 'Ensino Médio - 1º ano',
+  MEDIO_2: 'Ensino Médio - 2º ano',
+  MEDIO_3: 'Ensino Médio - 3º ano',
+  OUTROS: 'Outros',
+};
+
 function TeacherCourseView() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
@@ -94,7 +103,7 @@ function TeacherCourseView() {
   return (
     <div>
       <header className="header">
-        <div className="logo">
+        <div className="logo" onClick={() => navigate("/")} style={{cursor: "pointer"}}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
           Cursify - {course.nome}
         </div>
@@ -112,7 +121,7 @@ function TeacherCourseView() {
       <div className="container">
         <div className="card">
           <h2>{course.nome}</h2>
-          <p><strong>Matéria:</strong> {course.materia || course.categoria}</p>
+          <p><strong>Nível:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
           <p><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
           <p><strong>Professor:</strong> {course.instrutor}</p>
           <div style={{ marginBottom: '10px' }}>
@@ -135,9 +144,18 @@ function TeacherCourseView() {
           <div style={{marginTop: '2rem'}}>
             <h3>Atividades</h3>
             <div className="topic-list">
-              <div className="topic-item">📚 Leitura do material base</div>
-              <div className="topic-item">✏️ Exercícios práticos</div>
-              <div className="topic-item">🎯 Atividades de fixação</div>
+              {course.linkLeitura
+                ? <a className="topic-item" href={course.linkLeitura} target="_blank" rel="noreferrer" style={{display:'block',textDecoration:'none',color:'inherit'}}>{course.nomeLinkLeitura || '📚 Leitura do material base'}</a>
+                : null
+              }
+              {course.linkExercicios
+                ? <a className="topic-item" href={course.linkExercicios} target="_blank" rel="noreferrer" style={{display:'block',textDecoration:'none',color:'inherit'}}>{course.nomeLinkExercicios || '✏️ Exercícios práticos'}</a>
+                : null
+              }
+              {course.linkFixacao
+                ? <a className="topic-item" href={course.linkFixacao} target="_blank" rel="noreferrer" style={{display:'block',textDecoration:'none',color:'inherit'}}>{course.nomeLinkFixacao || '🎯 Atividades de fixação'}</a>
+                : null
+              }
               <div className="topic-item">📝 Avaliação do curso</div>
             </div>
           </div>
@@ -148,7 +166,7 @@ function TeacherCourseView() {
             </button>
             <button 
               className="btn btn-warning"
-              onClick={handleUpdate}
+              onClick={() => navigate(`/update-course/${id}`)}
             >
               ✏️ Atualizar Curso
             </button>

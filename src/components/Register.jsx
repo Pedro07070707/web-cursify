@@ -29,7 +29,7 @@ function Register() {
       email,
       senha,
       nivelAcesso,
-      dataCadastro: new Date().toISOString().replace('Z', ''),
+      dataCadastro: new Date().toISOString().slice(0, 19),
       statusUsuario: true,
     };
 
@@ -54,14 +54,15 @@ function Register() {
 
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error);
-      alert('Erro ao cadastrar. Verifique os dados e tente novamente.');
+      const msg = error.response?.data?.message || error.response?.data || error.message;
+      alert(`Erro ao cadastrar: ${JSON.stringify(msg)}`);
     }
   };
 
   return (
     <div>
       <header className="header">
-        <div className="logo">
+        <div className="logo" onClick={() => navigate("/")} style={{cursor: "pointer"}}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
           Cursify - Cadastro
         </div>
