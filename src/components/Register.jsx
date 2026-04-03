@@ -29,7 +29,7 @@ function Register() {
       email,
       senha,
       nivelAcesso,
-      dataCadastro: new Date().toISOString().replace('Z', ''),
+      dataCadastro: new Date().toISOString().slice(0, 19),
       statusUsuario: true,
     };
 
@@ -54,7 +54,8 @@ function Register() {
 
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error);
-      alert('Erro ao cadastrar. Verifique os dados e tente novamente.');
+      const msg = error.response?.data?.message || error.response?.data || error.message;
+      alert(`Erro ao cadastrar: ${JSON.stringify(msg)}`);
     }
   };
 

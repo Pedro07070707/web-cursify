@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const NIVEIS = {
+  FUNDAMENTAL_1: 'Fundamental 1 (1º ao 5º ano)',
+  FUNDAMENTAL_2: 'Fundamental 2 (6º ao 9º ano)',
+  MEDIO_1: 'Ensino Médio - 1º ano',
+  MEDIO_2: 'Ensino Médio - 2º ano',
+  MEDIO_3: 'Ensino Médio - 3º ano',
+  OUTROS: 'Outros',
+};
+
 function TeacherDashboard() {
   const [courses, setCourses] = useState([]);
   const navigate = useNavigate();
@@ -38,8 +47,9 @@ function TeacherDashboard() {
   // Função para atualizar status do curso
   const handleUpdate = async (id, nome, currentStatus) => {
     const course = courses.find(c => c.id === id);
-    const newStatus = !course.statusCurso;
-    const action = newStatus ? 'ativar' : 'inativar';
+    const isAtivo = course.statusCurso === 'Ativo';
+    const newStatus = isAtivo ? 'Inativo' : 'Ativo';
+    const action = isAtivo ? 'inativar' : 'ativar';
     
     if (!window.confirm(`Tem certeza que deseja ${action} o curso "${nome}"?`)) return;
 
@@ -53,7 +63,7 @@ function TeacherDashboard() {
         c.id === id ? { ...c, statusCurso: newStatus } : c
       ));
       
-      alert(`Curso "${nome}" ${newStatus ? 'ativado' : 'inativado'} com sucesso!`);
+      alert(`Curso "${nome}" ${isAtivo ? 'inativado' : 'ativado'} com sucesso!`);
     } catch (error) {
       console.error('Erro ao atualizar curso:', error);
       alert('Erro ao atualizar status do curso. Tente novamente.');
@@ -127,7 +137,7 @@ function TeacherDashboard() {
 
               <div onClick={() => navigate(`/course-view/${course.id}`)} style={{ cursor: 'pointer' }}>
                 <h3>{course.nome}</h3>
-                <p><strong>Matéria:</strong> {course.materia || course.categoria}</p>
+                <p><strong>Nível:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
                 <p><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
                 <div style={{ marginBottom: '10px' }}>
                   <span style={{

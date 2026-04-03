@@ -5,9 +5,15 @@ import axios from 'axios';
 function PublishCourse() {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [categoria, setCategoria] = useState('FUNDAMENTAL_1');
   const [materia, setMateria] = useState('Matemática');
-  const [categoria, setCategoria] = useState('MATEMATICA');
   const [cargaHoraria, setCargaHoraria] = useState('');
+  const [links, setLinks] = useState([]);
+  const [nomeEditado, setNomeEditado] = useState(false);
+
+  const handleMateriaChange = (e) => {
+    setMateria(e.target.value);
+  };
   const navigate = useNavigate();
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'teacher';
@@ -16,15 +22,18 @@ function PublishCourse() {
     e.preventDefault();
 
     const novoCurso = {
-      nome,
+      nome: `${materia} - ${nome}`,
       descricao,
-      materia,
       categoria,
-      duracao: `${cargaHoraria} horas`,
+      materia,
       cargaHoraria: parseInt(cargaHoraria),
-      instrutor: localStorage.getItem('userName') || 'Professor',
-      dataCriacao: new Date().toISOString().replace('Z', ''),
-      statusCurso: true
+      linkLeitura: links[0]?.url || '',
+      nomeLinkLeitura: links[0]?.nome || '',
+      linkExercicios: links[1]?.url || '',
+      nomeLinkExercicios: links[1]?.nome || '',
+      linkFixacao: links[2]?.url || '',
+      nomeLinkFixacao: links[2]?.nome || '',
+      dataCriacao: new Date().toISOString().slice(0, 19),
     };
 
     try {
@@ -66,10 +75,13 @@ function PublishCourse() {
               <input
                 type="text"
                 value={nome}
-                onChange={(e) => setNome(e.target.value)}
+                onChange={(e) => { setNome(e.target.value); setNomeEditado(true); }}
                 required
-                placeholder="Ex: Matemática Básica - Ensino Fundamental"
+                placeholder="Ex: Matemática Básica"
               />
+              <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                Título final: <strong>{materia} - {nome || '...'}</strong>
+              </small>
             </div>
 
             <div className="form-group">
@@ -83,30 +95,37 @@ function PublishCourse() {
               />
             </div>
 
-            <div className="form-group">
+           <div className="form-group">
               <label>Matéria:</label>
-              <select value={materia} onChange={(e) => setMateria(e.target.value)}>
+              <select value={materia} onChange={handleMateriaChange}>
                 <option value="Matemática">Matemática</option>
                 <option value="Português">Português</option>
                 <option value="História">História</option>
                 <option value="Ciências">Ciências</option>
                 <option value="Geografia">Geografia</option>
+                <option value="Física">Física</option>
+                <option value="Química">Química</option>
+                <option value="Biologia">Biologia</option>
+                <option value="Outros">Outros</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label>Categoria:</label>
+              <label>Nível:</label>
               <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-                <option value="MATEMATICA">Matemática</option>
-                <option value="PORTUGUES">Português</option>
-                <option value="HISTORIA">História</option>
-                <option value="CIENCIAS">Ciências</option>
-                <option value="GEOGRAFIA">Geografia</option>
+                <option value="FUNDAMENTAL_1">Fundamental 1 (1º ao 5º ano)</option>
+                <option value="FUNDAMENTAL_2">Fundamental 2 (6º ao 9º ano)</option>
+                <option value="MEDIO_1">Ensino Médio - 1º ano</option>
+                <option value="MEDIO_2">Ensino Médio - 2º ano</option>
+                <option value="MEDIO_3">Ensino Médio - 3º ano</option>
+                <option value="OUTROS">Outros</option>
               </select>
             </div>
 
+           
+
             <div className="form-group">
-              <label>Duração (em horas):</label>
+              <label>Duração (em horas aproximadas):</label>
               <input
                 type="number"
                 value={cargaHoraria}
@@ -116,6 +135,42 @@ function PublishCourse() {
                 min="1"
               />
             </div>
+
+            <h3 style={{ marginTop: '1.5rem' }}>Links</h3>
+
+            {links.map((link, index) => (
+              <div key={index} className="form-group" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  style={{ flex: 1 }}
+                  type="text"
+                  placeholder="Nome da atividade"
+                  value={link.nome}
+                  onChange={(e) => setLinks(links.map((l, i) => i === index ? { ...l, nome: e.target.value } : l))}
+                />
+                <input
+                  style={{ flex: 2 }}
+                  type="url"
+                  placeholder="https://..."
+                  value={link.url}
+                  onChange={(e) => setLinks(links.map((l, i) => i === index ? { ...l, url: e.target.value } : l))}
+                />
+                <button
+                  type="button"
+                  onClick={() => setLinks(links.filter((_, i) => i !== index))}
+                  style={{ padding: '6px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setLinks([...links, { nome: '', url: '' }])}
+              style={{ padding: '8px 16px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '1rem' }}
+            >
+              + Adicionar Link
+            </button>
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
               📚 Publicar Curso

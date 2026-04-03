@@ -17,6 +17,7 @@ import SubjectDetails from './components/SubjectDetails';
 import TeacherTopicView from './components/TeacherTopicView';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePassword from './components/ChangePassword';
+import UpdateCourse from './components/UpdateCourse';
 import './App.css';
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/update-course/:id" element={<UpdateCourse />} />
           <Route path="/subject/:subjectKey/:levelKey" element={<SubjectDetails />} />
         </Routes>
       </div>
