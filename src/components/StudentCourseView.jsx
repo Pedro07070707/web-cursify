@@ -4,6 +4,7 @@ import axios from 'axios';
 import CourseContentListSection from './CourseContentListSection';
 import { CONTENT_TYPES, getCourseContentCourseId, normalizeCourseContentItem } from './courseContentConfig';
 import { getUserCourseEntry, saveUserCourseEntry } from '../utils/userCourseState';
+import { clearSessionData } from '../utils/authStorage';
 
 const NIVEIS = {
   FUNDAMENTAL_1: 'Fundamental 1 (1o ao 5o ano)',
@@ -121,7 +122,7 @@ function StudentCourseViewPage() {
   }, [currentUserId, id, userType]);
 
   const handleLogout = () => {
-    localStorage.clear();
+    clearSessionData();
     navigate('/');
   };
 

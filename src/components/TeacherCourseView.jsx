@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import CourseContentListSection from './CourseContentListSection';
 import { CONTENT_TYPES, getCourseContentCourseId, normalizeCourseContentItem } from './courseContentConfig';
+import { clearSessionData } from '../utils/authStorage';
 
 const NIVEIS = {
   FUNDAMENTAL_1: 'Fundamental 1 (1o ao 5o ano)',
@@ -127,7 +128,7 @@ function TeacherCourseViewPage() {
             Voltar
           </button>
           <button className="btn btn-primary" onClick={() => {
-            localStorage.clear();
+            clearSessionData();
             navigate('/');
           }}>
             Sair

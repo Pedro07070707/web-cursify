@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { clearPersistedUserData, clearSessionData } from '../utils/authStorage';
 
 function Profile() {
     const [users, setUsers] = useState([]);
@@ -35,7 +36,8 @@ function Profile() {
     try {
     await axios.delete(`http://localhost:8080/api/v1/usuario/${id}`);
         alert(`Usuário "${nome}" excluído com sucesso!`);
-        localStorage.clear();
+        clearPersistedUserData(id);
+        clearSessionData();
         navigate('/');
         } catch (error) {
         console.error('Erro ao excluir usuário:', error);

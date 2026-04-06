@@ -3,11 +3,17 @@ const buildThreadKey = (userA, userB) => {
   return `chatThread:${ids[0]}:${ids[1]}`;
 };
 
+const CHAT_THREAD_PREFIX = 'chatThread:';
+
+const sortMessagesByDate = (messages) => (
+  [...messages].sort((a, b) => new Date(a.dataChat) - new Date(b.dataChat))
+);
+
 export const getChatMessages = (userA, userB) => {
   if (!userA || !userB) return [];
 
   try {
-    return JSON.parse(localStorage.getItem(buildThreadKey(userA, userB)) || '[]');
+    return sortMessagesByDate(JSON.parse(localStorage.getItem(buildThreadKey(userA, userB)) || '[]'));
   } catch {
     return [];
   }
@@ -15,7 +21,39 @@ export const getChatMessages = (userA, userB) => {
 
 export const appendChatMessage = (userA, userB, message) => {
   const currentMessages = getChatMessages(userA, userB);
-  const nextMessages = [...currentMessages, message];
+  const nextMessages = sortMessagesByDate([...currentMessages, message]);
   localStorage.setItem(buildThreadKey(userA, userB), JSON.stringify(nextMessages));
   return nextMessages;
+};
+
+export const getUserConversationPartners = (currentUserId, users = []) => {
+  if (!currentUserId) return [];
+
+  const userMap = new Map(users.map((user) => [String(user.id), user]));
+  const conversationPartners = [];
+
+  Object.keys(localStorage).forEach((key) => {
+    if (!key.startsWith(CHAT_THREAD_PREFIX)) return;
+
+    const [, firstId, secondId] = key.split(':');
+    const currentId = String(currentUserId);
+
+    if (firstId !== currentId && secondId !== currentId) return;
+
+    const partnerId = firstId === currentId ? secondId : firstId;
+    const partner = userMap.get(String(partnerId));
+    const messages = getChatMessages(currentUserId, partnerId);
+    const lastMessage = messages[messages.length - 1];
+
+    if (!partner || !lastMessage) return;
+
+    conversationPartners.push({
+      ...partner,
+      lastMessage,
+    });
+  });
+
+  return conversationPartners.sort(
+    (a, b) => new Date(b.lastMessage.dataChat) - new Date(a.lastMessage.dataChat),
+  );
 };

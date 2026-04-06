@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { courses, teacherTasks } from '../data/courses';
 import { topicContent } from '../data/topicContent';
+import { clearSessionData } from '../utils/authStorage';
 
 function SubjectDetails() {
   const { subjectKey, levelKey } = useParams();
@@ -23,7 +24,7 @@ function SubjectDetails() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    clearSessionData();
     navigate('/');
   };
 

@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { courses, teacherTasks } from '../data/courses';
 import { topicContent } from '../data/topicContent';
+import { clearSessionData } from '../utils/authStorage';
 
 function TeacherTopicView() {
   const { subject, level, topic } = useParams();
@@ -10,7 +11,7 @@ function TeacherTopicView() {
   const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'teacher';
 
   const handleLogout = () => {
-    localStorage.clear();
+    clearSessionData();
     navigate('/');
   };
 

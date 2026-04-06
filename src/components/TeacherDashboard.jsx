@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { clearSessionData } from '../utils/authStorage';
 
 const NIVEIS = {
   FUNDAMENTAL_1: 'Fundamental 1 (1o ao 5o ano)',
@@ -44,7 +45,7 @@ function TeacherDashboardPage() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    clearSessionData();
     navigate('/');
   };
 
