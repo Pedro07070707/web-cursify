@@ -148,6 +148,14 @@ function UpdateCourse() {
             <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
               Salvar Alterações
             </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: '100%', marginTop: '1rem' }}
+              onClick={() => navigate(`/manage-course-content/${id}`)}
+            >
+              Gerenciar Conteudo do Curso
+            </button>
           </form>
         </div>
       </div>

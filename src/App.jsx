@@ -18,6 +18,7 @@ import TeacherTopicView from './components/TeacherTopicView';
 import AdminDashboard from './components/AdminDashboard';
 import ChangePassword from './components/ChangePassword';
 import UpdateCourse from './components/UpdateCourse';
+import ManageCourseContent from './components/ManageCourseContent';
 import './App.css';
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/update-course/:id" element={<UpdateCourse />} />
+          <Route path="/manage-course-content/:courseId" element={<ManageCourseContent />} />
           <Route path="/subject/:subjectKey/:levelKey" element={<SubjectDetails />} />
         </Routes>
       </div>

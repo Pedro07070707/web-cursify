@@ -1,44 +1,50 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getUserCourseState } from '../utils/userCourseState';
 
 const NIVEIS = {
-  FUNDAMENTAL_1: 'Fundamental 1 (1º ao 5º ano)',
-  FUNDAMENTAL_2: 'Fundamental 2 (6º ao 9º ano)',
-  MEDIO_1: 'Ensino Médio - 1º ano',
-  MEDIO_2: 'Ensino Médio - 2º ano',
-  MEDIO_3: 'Ensino Médio - 3º ano',
+  FUNDAMENTAL_1: 'Fundamental 1 (1o ao 5o ano)',
+  FUNDAMENTAL_2: 'Fundamental 2 (6o ao 9o ano)',
+  MEDIO_1: 'Ensino Medio - 1o ano',
+  MEDIO_2: 'Ensino Medio - 2o ano',
+  MEDIO_3: 'Ensino Medio - 3o ano',
   OUTROS: 'Outros',
 };
 
-function StudentDashboard() {
+const getCourseStatusLabel = (status) => {
+  if (status === true || status === 'Ativo') return 'Ativo';
+  if (status === false || status === 'Inativo') return 'Inativo';
+  if (status === 'Concluído') return 'Concluído';
+  return status || 'Nao informado';
+};
+
+function StudentDashboardPage() {
   const [courses, setCourses] = useState([]);
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName') || 'Aluno';
-  const [progress, setProgress] = useState({});
+  const currentUserId = Number(localStorage.getItem('userId'));
 
-  // Buscar cursos do aluno
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         const response = await axios.get('http://localhost:8080/api/v1/curso');
-        // Filtra apenas cursos ativos para estudantes
-        const activeCourses = response.data.filter(course => course.statusCurso === 'Ativo');
-        setCourses(activeCourses);
+        const userCourseState = getUserCourseState(currentUserId);
+        const enrolledCourseIds = Object.keys(userCourseState).filter((courseId) => userCourseState[courseId]?.enrolled);
+        const visibleCourses = response.data
+          .filter((course) => enrolledCourseIds.includes(String(course.id)))
+          .map((course) => ({
+            ...course,
+            userStatus: userCourseState[String(course.id)]?.status || 'Em progresso',
+          }));
+        setCourses(visibleCourses);
       } catch (error) {
         console.error('Erro ao carregar cursos:', error);
         alert('Erro ao carregar cursos. Verifique a API.');
       }
     };
-    fetchCourses();
-  }, []);
 
-  useEffect(() => {
-    // Carrega progresso do localStorage
-    const savedProgress = localStorage.getItem('studentProgress');
-    if (savedProgress) {
-      setProgress(JSON.parse(savedProgress));
-    }
+    fetchCourses();
   }, []);
 
   const handleLogout = () => {
@@ -46,19 +52,15 @@ function StudentDashboard() {
     navigate('/');
   };
 
-  const handleTopicClick = (subject, level, topic) => {
-    navigate(`/course/${subject}/${level}/${topic}`);
-  };
-
   return (
     <div>
       <header className="header">
-        <div className="logo" onClick={() => navigate("/")} style={{cursor: "pointer"}}>
+        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - Área do Aluno
+          Cursify - Area do Aluno
         </div>
         <div className="nav-buttons">
-          <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
+          <span style={{ color: 'white', marginRight: '1rem' }}>Ola, {userName}!</span>
           <button className="btn btn-primary" onClick={() => navigate('/profile')}>
             Perfil
           </button>
@@ -69,37 +71,44 @@ function StudentDashboard() {
       </header>
 
       <div className="container dashboard">
-        <h2 style={{color: 'white', textAlign: 'center', marginBottom: '2rem'}}>
+        <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '2rem' }}>
           Seus Cursos
         </h2>
 
-        <div style={{textAlign: 'center', marginBottom: '2rem'}}>
-          <button className="btn btn-primary" onClick={() => navigate('/search')} style={{marginRight: '1rem'}}>
-            🔍 Pesquisar Cursos
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <button className="btn btn-primary" onClick={() => navigate('/search')} style={{ marginRight: '1rem' }}>
+            Pesquisar Cursos
           </button>
           <button className="btn btn-secondary" onClick={() => navigate('/chat')}>
-            💬 Chat com Professores
+            Chat com Professores
           </button>
         </div>
 
         <div className="course-grid">
-          {courses.map(course => (
+          {courses.map((course) => (
             <div key={course.id} className="card course-card" style={{ position: 'relative' }}>
               <div onClick={() => navigate(`/course-view/${course.id}`)} style={{ cursor: 'pointer' }}>
                 <h3>{course.nome}</h3>
-                <p><strong>Nível:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
-                <p><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
+                <p><strong>Categoria:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
+                <p><strong>Carga horaria:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
+                <p><strong>Status:</strong> {course.userStatus || 'Em progresso'}</p>
                 <p>{course.descricao}</p>
               </div>
               <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-                👁️ Clique para ver detalhes
+                Clique para ver detalhes
               </div>
             </div>
           ))}
         </div>
+
+        {courses.length === 0 && (
+          <div className="card" style={{ textAlign: 'center' }}>
+            <p>Nenhum curso publicado ainda.</p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export default StudentDashboard;
+export default StudentDashboardPage;

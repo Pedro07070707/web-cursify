@@ -1,52 +1,97 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import CourseContentEditorSection from './CourseContentEditorSection';
+import { CONTENT_TYPES } from './courseContentConfig';
 
-function PublishCourse() {
+const CATEGORIAS = {
+  FUNDAMENTAL_1: 'Fundamental 1 (1o ao 5o ano)',
+  FUNDAMENTAL_2: 'Fundamental 2 (6o ao 9o ano)',
+  MEDIO_1: 'Ensino Medio - 1o ano',
+  MEDIO_2: 'Ensino Medio - 2o ano',
+  MEDIO_3: 'Ensino Medio - 3o ano',
+  OUTROS: 'Outros',
+};
+
+function PublishCoursePage() {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [categoria, setCategoria] = useState('FUNDAMENTAL_1');
-  const [materia, setMateria] = useState('Matemática');
   const [cargaHoraria, setCargaHoraria] = useState('');
-  const [links, setLinks] = useState([]);
-  const [nomeEditado, setNomeEditado] = useState(false);
+  const [sections, setSections] = useState({
+    material: [],
+    exercicios: [],
+    atividades: [],
+    avaliacoes: [],
+  });
 
-  const handleMateriaChange = (e) => {
-    setMateria(e.target.value);
-  };
   const navigate = useNavigate();
   const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const userId = Number(localStorage.getItem('userId'));
   const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'teacher';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const cargaHorariaNumerica = Number(cargaHoraria);
+
+    if (!nome.trim() || !descricao.trim() || Number.isNaN(cargaHorariaNumerica) || cargaHorariaNumerica <= 0) {
+      alert('Preencha os dados obrigatorios do curso corretamente.');
+      return;
+    }
+
+    if (!userId || Number.isNaN(userId)) {
+      alert('Nao foi possivel identificar o usuario logado. Entre novamente para publicar o curso.');
+      return;
+    }
+
     const novoCurso = {
-      nome: `${materia} - ${nome}`,
-      descricao,
+      nome: nome.trim(),
+      descricao: descricao.trim(),
       categoria,
-      materia,
-      cargaHoraria: parseInt(cargaHoraria),
-      linkLeitura: links[0]?.url || '',
-      nomeLinkLeitura: links[0]?.nome || '',
-      linkExercicios: links[1]?.url || '',
-      nomeLinkExercicios: links[1]?.nome || '',
-      linkFixacao: links[2]?.url || '',
-      nomeLinkFixacao: links[2]?.nome || '',
-      dataCriacao: new Date().toISOString().slice(0, 19),
+      cargaHoraria: cargaHorariaNumerica,
+      dataCriacao: new Date().toISOString(),
+      statusCurso: 'Em progresso',
     };
 
     try {
-      console.log('Dados enviados:', novoCurso);
-      const response = await axios.post('http://localhost:8080/api/v1/curso', novoCurso);
-      console.log('Curso criado:', response.data);
+      const usersResponse = await axios.get('http://localhost:8080/api/v1/usuario');
+      const relatedUser = (usersResponse.data || []).find((user) => Number(user.id) === userId);
 
-      navigate(userType === 'admin' ? '/admin' : '/teacher');
+      if (!relatedUser) {
+        alert('Nao foi possivel localizar o usuario logado na API. Entre novamente para publicar o curso.');
+        return;
+      }
+
+      const courseResponse = await axios.post('http://localhost:8080/api/v1/curso', novoCurso);
+      const createdCourseId = courseResponse.data?.id;
+      const relatedCourse = courseResponse.data;
+
+      if (createdCourseId) {
+        for (const config of CONTENT_TYPES) {
+          const validItems = sections[config.key].filter((item) => {
+            if (config.key === 'atividades' || config.key === 'avaliacoes') {
+              return item.enunciado.trim() && item.alternativa.trim();
+            }
+
+            return item.titulo.trim() && item.subtitulo.trim() && item.conteudo.trim();
+          });
+
+          await Promise.all(validItems.map((item, index) => (
+            axios.post(
+              `http://localhost:8080/api/v1/${config.endpoint}`,
+              config.buildPayload(item, createdCourseId, userId, index, {
+                user: relatedUser,
+                course: relatedCourse,
+              })
+            )
+          )));
+        }
+      }
+
+      alert('Curso publicado com sucesso!');
+      navigate(createdCourseId ? `/manage-course-content/${createdCourseId}` : (userType === 'admin' ? '/admin' : '/teacher'));
     } catch (error) {
-      console.error('Erro completo:', error);
-      console.error('Resposta do servidor:', error.response?.data);
-      console.error('Status:', error.response?.status);
-      
       const errorMsg = error.response?.data?.message || error.response?.data || error.message;
       alert(`Erro ao publicar curso: ${errorMsg}`);
     }
@@ -55,7 +100,7 @@ function PublishCourse() {
   return (
     <div>
       <header className="header">
-        <div className="logo" onClick={() => navigate("/")} style={{cursor: "pointer"}}>
+        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
           Cursify - Publicar Curso
         </div>
@@ -71,61 +116,44 @@ function PublishCourse() {
           <h2>Publicar Novo Curso</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Título do Curso:</label>
+              <label>Nome do Curso:</label>
               <input
                 type="text"
                 value={nome}
-                onChange={(e) => { setNome(e.target.value); setNomeEditado(true); }}
+                onChange={(e) => setNome(e.target.value)}
                 required
-                placeholder="Ex: Matemática Básica"
+                placeholder="Ex: Matematica Basica"
               />
-              <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                Título final: <strong>{materia} - {nome || '...'}</strong>
-              </small>
             </div>
 
             <div className="form-group">
-              <label>Descrição:</label>
+              <label>Descricao:</label>
               <textarea
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 required
-                placeholder="Descreva o conteúdo e objetivos do curso..."
+                placeholder="Descreva o conteudo e os objetivos do curso..."
                 style={{ minHeight: '100px', resize: 'vertical' }}
               />
             </div>
 
-           <div className="form-group">
-              <label>Matéria:</label>
-              <select value={materia} onChange={handleMateriaChange}>
-                <option value="Matemática">Matemática</option>
-                <option value="Português">Português</option>
-                <option value="História">História</option>
-                <option value="Ciências">Ciências</option>
-                <option value="Geografia">Geografia</option>
-                <option value="Física">Física</option>
-                <option value="Química">Química</option>
-                <option value="Biologia">Biologia</option>
-                <option value="Outros">Outros</option>
-              </select>
-            </div>
-
             <div className="form-group">
-              <label>Nível:</label>
+              <label>Categoria:</label>
               <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-                <option value="FUNDAMENTAL_1">Fundamental 1 (1º ao 5º ano)</option>
-                <option value="FUNDAMENTAL_2">Fundamental 2 (6º ao 9º ano)</option>
-                <option value="MEDIO_1">Ensino Médio - 1º ano</option>
-                <option value="MEDIO_2">Ensino Médio - 2º ano</option>
-                <option value="MEDIO_3">Ensino Médio - 3º ano</option>
+                <option value="FUNDAMENTAL_1">Fundamental 1 (1o ao 5o ano)</option>
+                <option value="FUNDAMENTAL_2">Fundamental 2 (6o ao 9o ano)</option>
+                <option value="MEDIO_1">Ensino Medio - 1o ano</option>
+                <option value="MEDIO_2">Ensino Medio - 2o ano</option>
+                <option value="MEDIO_3">Ensino Medio - 3o ano</option>
                 <option value="OUTROS">Outros</option>
               </select>
+              <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                Categoria selecionada: <strong>{CATEGORIAS[categoria]}</strong>
+              </small>
             </div>
 
-           
-
             <div className="form-group">
-              <label>Duração (em horas aproximadas):</label>
+              <label>Carga Horaria (em horas):</label>
               <input
                 type="number"
                 value={cargaHoraria}
@@ -136,44 +164,17 @@ function PublishCourse() {
               />
             </div>
 
-            <h3 style={{ marginTop: '1.5rem' }}>Links</h3>
-
-            {links.map((link, index) => (
-              <div key={index} className="form-group" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input
-                  style={{ flex: 1 }}
-                  type="text"
-                  placeholder="Nome da atividade"
-                  value={link.nome}
-                  onChange={(e) => setLinks(links.map((l, i) => i === index ? { ...l, nome: e.target.value } : l))}
-                />
-                <input
-                  style={{ flex: 2 }}
-                  type="url"
-                  placeholder="https://..."
-                  value={link.url}
-                  onChange={(e) => setLinks(links.map((l, i) => i === index ? { ...l, url: e.target.value } : l))}
-                />
-                <button
-                  type="button"
-                  onClick={() => setLinks(links.filter((_, i) => i !== index))}
-                  style={{ padding: '6px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  ✕
-                </button>
-              </div>
+            {CONTENT_TYPES.map((config) => (
+              <CourseContentEditorSection
+                key={config.key}
+                config={config}
+                items={sections[config.key]}
+                onChange={(items) => setSections((current) => ({ ...current, [config.key]: items }))}
+              />
             ))}
 
-            <button
-              type="button"
-              onClick={() => setLinks([...links, { nome: '', url: '' }])}
-              style={{ padding: '8px 16px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '1rem' }}
-            >
-              + Adicionar Link
-            </button>
-
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-              📚 Publicar Curso
+              Publicar Curso
             </button>
           </form>
 
@@ -182,18 +183,16 @@ function PublishCourse() {
               marginTop: '2rem',
               padding: '1rem',
               background: '#f0f8ff',
-              borderRadius: '5px'
+              borderRadius: '5px',
             }}
           >
-            <h4>💡 Dica:</h4>
-            <p>Após publicar o curso, você poderá adicionar vídeo aulas na área de gerenciamento.</p>
+            <h4>Status inicial</h4>
+            <p>O curso sera publicado com o status "Em progresso".</p>
           </div>
         </div>
       </div>
     </div>
-
-
   );
 }
 
-export default PublishCourse;
+export default PublishCoursePage;

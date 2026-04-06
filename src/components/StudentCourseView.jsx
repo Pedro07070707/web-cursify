@@ -1,48 +1,124 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import CourseContentListSection from './CourseContentListSection';
+import { CONTENT_TYPES, getCourseContentCourseId, normalizeCourseContentItem } from './courseContentConfig';
+import { getUserCourseEntry, saveUserCourseEntry } from '../utils/userCourseState';
 
 const NIVEIS = {
-  FUNDAMENTAL_1: 'Fundamental 1 (1º ao 5º ano)',
-  FUNDAMENTAL_2: 'Fundamental 2 (6º ao 9º ano)',
-  MEDIO_1: 'Ensino Médio - 1º ano',
-  MEDIO_2: 'Ensino Médio - 2º ano',
-  MEDIO_3: 'Ensino Médio - 3º ano',
+  FUNDAMENTAL_1: 'Fundamental 1 (1o ao 5o ano)',
+  FUNDAMENTAL_2: 'Fundamental 2 (6o ao 9o ano)',
+  MEDIO_1: 'Ensino Medio - 1o ano',
+  MEDIO_2: 'Ensino Medio - 2o ano',
+  MEDIO_3: 'Ensino Medio - 3o ano',
   OUTROS: 'Outros',
 };
 
-function StudentCourseView() {
+const getCourseStatusLabel = (status) => {
+  if (status === true || status === 'Ativo') return 'Ativo';
+  if (status === false || status === 'Inativo') return 'Inativo';
+  if (status === 'Concluído') return 'Concluído';
+  return status || 'Em progresso';
+};
+
+const getCourseStatusStyles = (status) => {
+  const normalizedStatus = getCourseStatusLabel(status);
+
+  if (normalizedStatus === 'Prazo esgotado' || normalizedStatus === 'Inativo') {
+    return { backgroundColor: '#ffebee', color: '#c62828' };
+  }
+
+  if (normalizedStatus === 'Concluído' || normalizedStatus === 'Ativo') {
+    return { backgroundColor: '#e8f5e8', color: '#2e7d32' };
+  }
+
+  return { backgroundColor: '#fff8e1', color: '#ef6c00' };
+};
+
+function StudentCourseViewPage() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
+  const [contents, setContents] = useState({
+    material: [],
+    exercicios: [],
+    atividades: [],
+    avaliacoes: [],
+  });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName') || 'Aluno';
   const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const currentUserId = Number(localStorage.getItem('userId'));
   const userType = nivelAcesso === 'PROFESSOR' ? 'teacher' : nivelAcesso === 'ADMIN' ? 'admin' : 'student';
+  const [studentStatus, setStudentStatus] = useState('Em progresso');
+
+  const handleCompleteCourse = async () => {
+    if (!course || studentStatus === 'Concluído') {
+      return;
+    }
+
+    try {
+      saveUserCourseEntry(currentUserId, id, {
+        enrolled: true,
+        status: 'Concluído',
+      });
+      setStudentStatus('Concluído');
+      alert('Curso concluido com sucesso!');
+    } catch (error) {
+      console.error('Erro ao concluir curso:', error);
+      alert('Erro ao concluir o curso. Tente novamente.');
+    }
+  };
 
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        console.log('Carregando curso com ID:', id);
         const response = await axios.get(`http://localhost:8080/api/v1/curso/${id}`);
-        console.log('Curso carregado:', response.data);
         setCourse(response.data);
+        if (userType === 'student') {
+          const existingEntry = getUserCourseEntry(currentUserId, id);
+          const nextEntry = existingEntry || saveUserCourseEntry(currentUserId, id, {
+            enrolled: true,
+            status: 'Em progresso',
+          });
+          setStudentStatus(nextEntry.status || 'Em progresso');
+        }
+
+        const responses = await Promise.allSettled(
+          CONTENT_TYPES.map((config) => axios.get(`http://localhost:8080/api/v1/${config.endpoint}`))
+        );
+
+        const nextContents = {
+          material: [],
+          exercicios: [],
+          atividades: [],
+          avaliacoes: [],
+        };
+
+        responses.forEach((contentResponse, index) => {
+          if (contentResponse.status !== 'fulfilled') return;
+          const config = CONTENT_TYPES[index];
+
+          nextContents[config.key] = (contentResponse.value.data || [])
+            .filter((item) => String(getCourseContentCourseId(item)) === String(id))
+            .map((item) => normalizeCourseContentItem(config.key, item));
+        });
+
+        setContents(nextContents);
       } catch (error) {
         console.error('Erro ao carregar curso:', error);
-        console.error('ID do curso:', id);
         alert('Erro ao carregar curso.');
       } finally {
         setLoading(false);
       }
     };
 
-    console.log('ID recebido:', id);
     if (id) {
       fetchCourse();
     } else {
       setLoading(false);
     }
-  }, [id]);
+  }, [currentUserId, id, userType]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -50,17 +126,19 @@ function StudentCourseView() {
   };
 
   if (loading) return <div>Carregando...</div>;
-  if (!course) return <div>Curso não encontrado</div>;
+  if (!course) return <div>Curso nao encontrado</div>;
+
+  const statusStyles = getCourseStatusStyles(course.statusCurso);
 
   return (
     <div>
       <header className="header">
-        <div className="logo" onClick={() => navigate("/")} style={{cursor: "pointer"}}>
+        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
           Cursify - {course.nome}
         </div>
         <div className="nav-buttons">
-          <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
+          <span style={{ color: 'white', marginRight: '1rem' }}>Ola, {userName}!</span>
           <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : userType === 'admin' ? '/admin' : '/student')}>
             Voltar
           </button>
@@ -73,56 +151,74 @@ function StudentCourseView() {
       <div className="container">
         <div className="card">
           <h2>{course.nome}</h2>
-          <p><strong>Nível:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
-          <p><strong>Duração:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
-          <p><strong>Professor:</strong> {course.instrutor}</p>
+          <p><strong>Categoria:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
+          <p><strong>Carga horaria:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
+          <p><strong>Data de criacao:</strong> {course.dataCriacao ? new Date(course.dataCriacao).toLocaleDateString('pt-BR') : '-'}</p>
           <div style={{ marginBottom: '10px' }}>
-            <span style={{
-              padding: '4px 8px',
-              borderRadius: '4px',
-              backgroundColor: course.statusCurso ? '#e8f5e8' : '#ffebee',
-              color: course.statusCurso ? '#2e7d32' : '#c62828',
-              fontSize: '12px'
-            }}>
-              {course.statusCurso ? 'Ativo' : 'Inativo'}
+            <span
+              style={{
+                padding: '4px 8px',
+                borderRadius: '4px',
+                backgroundColor: statusStyles.backgroundColor,
+                color: statusStyles.color,
+                fontSize: '12px',
+              }}
+            >
+              {getCourseStatusLabel(course.statusCurso)}
             </span>
           </div>
-          
-          <div style={{marginTop: '2rem'}}>
-            <h3>Descrição do Curso</h3>
+
+          <div style={{ marginTop: '2rem' }}>
+            <h3>Descricao do Curso</h3>
             <p>{course.descricao}</p>
           </div>
 
-          <div style={{marginTop: '2rem'}}>
-            <h3>Atividades</h3>
+          <div style={{ marginTop: '2rem' }}>
+            <h3>Resumo</h3>
             <div className="topic-list">
-              {course.linkLeitura
-                ? <a className="topic-item" href={course.linkLeitura} target="_blank" rel="noreferrer" style={{display:'block',textDecoration:'none',color:'inherit'}}>{course.nomeLinkLeitura || '📚 Leitura do material base'}</a>
-                : null
-              }
-              {course.linkExercicios
-                ? <a className="topic-item" href={course.linkExercicios} target="_blank" rel="noreferrer" style={{display:'block',textDecoration:'none',color:'inherit'}}>{course.nomeLinkExercicios || '✏️ Exercícios práticos'}</a>
-                : null
-              }
-              {course.linkFixacao
-                ? <a className="topic-item" href={course.linkFixacao} target="_blank" rel="noreferrer" style={{display:'block',textDecoration:'none',color:'inherit'}}>{course.nomeLinkFixacao || '🎯 Atividades de fixação'}</a>
-                : null
-              }
-              <div className="topic-item">📝 Avaliação do curso</div>
+              <div className="topic-item">Status atual: {userType === 'student' ? studentStatus : getCourseStatusLabel(course.statusCurso)}</div>
+              <div className="topic-item">Carga horaria prevista: {course.cargaHoraria} horas</div>
+              <div className="topic-item">Categoria: {NIVEIS[course.categoria] || course.categoria}</div>
             </div>
           </div>
 
-          <div style={{marginTop: '2rem'}}>
-            <button className="btn btn-primary" onClick={() => navigate('/chat')} style={{marginRight: '1rem'}}>
-              💬 Chat com Professor
+          <CourseContentListSection
+            title="Materiais"
+            items={contents.material}
+            typeKey="material"
+            emptyMessage="Nenhum material disponivel."
+          />
+          <CourseContentListSection
+            title="Exercicios"
+            items={contents.exercicios}
+            typeKey="exercicios"
+            emptyMessage="Nenhum exercicio disponivel."
+          />
+          <CourseContentListSection
+            title="Atividades"
+            items={contents.atividades}
+            typeKey="atividades"
+            emptyMessage="Nenhuma atividade disponivel."
+          />
+          <CourseContentListSection
+            title="Avaliacoes"
+            items={contents.avaliacoes}
+            typeKey="avaliacoes"
+            emptyMessage="Nenhuma avaliacao disponivel."
+          />
+
+          <div style={{ marginTop: '2rem' }}>
+            <button className="btn btn-primary" onClick={() => navigate('/chat')} style={{ marginRight: '1rem' }}>
+              Chat com Professor
             </button>
-            <button 
+            <button
               className="btn btn-secondary"
-              onClick={() => {
-                alert('Curso marcado como concluído!');
-              }}
+              onClick={handleCompleteCourse}
+              disabled={studentStatus === 'Concluído'}
             >
-              ✅ Marcar como Concluído
+              {studentStatus === 'Concluído'
+                ? 'Curso concluido'
+                : 'Marcar como concluido'}
             </button>
           </div>
         </div>
@@ -131,4 +227,4 @@ function StudentCourseView() {
   );
 }
 
-export default StudentCourseView;
+export default StudentCourseViewPage;
