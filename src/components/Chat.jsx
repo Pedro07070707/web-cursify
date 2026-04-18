@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { appendChatMessage, getChatMessages, getUserConversationPartners } from '../utils/chatStorage';
-
-const getUserRoleLabel = (nivelAcesso) => {
-  if (nivelAcesso === 'PROFESSOR') return 'Professor';
-  if (nivelAcesso === 'ADMIN') return 'Admin';
-  return 'Estudante';
-};
+import AppHeader from './AppHeader';
+import ChatWorkspace from './ChatWorkspace';
+import { getChatMessages, appendChatMessage, getUserConversationPartners } from '../utils/chatStorage';
+import { getDashboardPathByRole } from '../utils/ui';
+import { useTheme } from '../utils/theme';
 
 function Chat() {
+  const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const navigate = useNavigate();
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const userType = nivelAcesso === 'PROFESSOR' ? 'teacher' : nivelAcesso === 'ADMIN' ? 'admin' : 'student';
   const userName = localStorage.getItem('userName') || 'Usuario';
   const currentUserId = localStorage.getItem('userId');
+  const dashboardPath = getDashboardPathByRole(nivelAcesso);
 
   const refreshConversations = (availableUsers) => {
     if (!currentUserId) {
@@ -32,10 +32,10 @@ function Chat() {
   };
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/v1/usuario');
-        const allUsers = response.data;
+        const usersResponse = await axios.get('http://localhost:8080/api/v1/usuario');
+        const allUsers = usersResponse.data || [];
 
         let filteredUsers = [];
         if (userType === 'teacher') {
@@ -54,11 +54,11 @@ function Chat() {
         setUsers(filteredUsers);
         refreshConversations(filteredUsers);
       } catch (error) {
-        console.error('Erro ao carregar usuarios:', error);
+        console.error('Erro ao carregar dados do chat:', error);
       }
     };
 
-    fetchUsers();
+    fetchData();
   }, [userType, currentUserId]);
 
   useEffect(() => {
@@ -66,6 +66,9 @@ function Chat() {
 
     const syncConversations = () => {
       refreshConversations(users);
+      if (selectedChat) {
+        setMessages(getChatMessages(currentUserId, selectedChat.id));
+      }
     };
 
     syncConversations();
@@ -83,7 +86,7 @@ function Chat() {
       window.clearInterval(intervalId);
       window.removeEventListener('storage', handleStorage);
     };
-  }, [currentUserId, users]);
+  }, [currentUserId, users, selectedChat]);
 
   useEffect(() => {
     if (!selectedChat || !currentUserId) {
@@ -91,33 +94,8 @@ function Chat() {
       return;
     }
 
-    const storedMessages = getChatMessages(currentUserId, selectedChat.id);
-    setMessages(storedMessages);
+    setMessages(getChatMessages(currentUserId, selectedChat.id));
   }, [selectedChat, currentUserId]);
-
-  useEffect(() => {
-    if (!selectedChat || !currentUserId) return undefined;
-
-    const syncMessages = () => {
-      const storedMessages = getChatMessages(currentUserId, selectedChat.id);
-      setMessages(storedMessages);
-      refreshConversations(users);
-    };
-
-    syncMessages();
-
-    const handleStorage = (event) => {
-      if (!event.key || event.key.startsWith('chatThread:')) {
-        syncMessages();
-      }
-    };
-
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, [selectedChat, currentUserId, users]);
 
   const sendMessage = () => {
     if (!message.trim() || !selectedChat || !currentUserId) return;
@@ -133,199 +111,58 @@ function Chat() {
     };
 
     const nextMessages = appendChatMessage(currentUserId, selectedChat.id, newMessage);
-
     setMessages(nextMessages);
     refreshConversations(users);
     setMessage('');
   };
 
-  const searchedUsers = users.filter((user) => {
+  const searchedUsers = useMemo(() => {
     const normalizedTerm = searchTerm.trim().toLowerCase();
-    if (!normalizedTerm) return false;
+    if (!normalizedTerm) return [];
 
-    return (
-      user.nome?.toLowerCase().includes(normalizedTerm)
-      || user.email?.toLowerCase().includes(normalizedTerm)
-    );
-  });
-
-  const handleSelectChat = (user) => {
-    setSelectedChat(user);
-    setMessages(getChatMessages(currentUserId, user.id));
-  };
+    return users.filter((user) => (
+      `${user.nome || ''} ${user.email || ''}`.toLowerCase().includes(normalizedTerm)
+    ));
+  }, [searchTerm, users]);
 
   return (
-    <div>
-      <header className="header">
-        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - Chat {userType === 'teacher' ? 'com Alunos' : 'com Professores'}
-        </div>
-        <div className="nav-buttons">
-          <button
-            className="btn btn-secondary"
-            onClick={() => navigate(userType === 'teacher' ? '/teacher' : userType === 'admin' ? '/admin' : '/student')}
-          >
-            Voltar
-          </button>
-        </div>
-      </header>
+    <div className="page-shell">
+      <AppHeader
+        subtitle="Chat"
+        navItems={[
+          { label: 'Pagina inicial', onClick: () => navigate(dashboardPath) },
+          ...(nivelAcesso !== 'ADMIN'
+            ? [{ label: 'Meus cursos', onClick: () => navigate(dashboardPath, { state: { section: 'courses' } }) }]
+            : [{ label: 'Painel', onClick: () => navigate(dashboardPath, { state: { section: 'panel' } }) }]),
+          { label: 'Chat', onClick: () => navigate('/chat'), active: true },
+        ]}
+        onGoProfile={() => navigate('/profile')}
+        onLogout={() => {
+          localStorage.clear();
+          navigate('/');
+        }}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+      />
 
-      <div className="container">
-        <div style={{ display: 'flex', gap: '1rem', height: '70vh' }}>
-          <div className="card" style={{ flex: '0 0 300px', padding: '1rem' }}>
-            <h3>Pesquisar usuarios</h3>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Digite nome ou email..."
-              style={{
-                width: '100%',
-                marginTop: '1rem',
-                padding: '0.75rem',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-              }}
-            />
-
-            <div style={{ marginTop: '1rem' }}>
-              {searchTerm.trim() ? (
-                searchedUsers.length > 0 ? (
-                  searchedUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="topic-item"
-                      onClick={() => handleSelectChat(user)}
-                      style={{
-                        background: selectedChat?.id === user.id ? 'var(--verde-muco)' : 'rgba(255, 255, 255, 0.5)',
-                        color: selectedChat?.id === user.id ? 'white' : 'black',
-                        marginBottom: '0.5rem',
-                      }}
-                    >
-                      <div style={{ fontWeight: 'bold' }}>{user.nome}</div>
-                      <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-                        {getUserRoleLabel(user.nivelAcesso)}
-                      </div>
-                      <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>{user.email}</div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ padding: '1rem', textAlign: 'center', color: '#666' }}>
-                    Nenhum usuario encontrado.
-                  </div>
-                )
-              ) : (
-                <div style={{ padding: '0.5rem 0', color: '#666', fontSize: '0.9rem' }}>
-                  Pesquise para iniciar uma nova conversa.
-                </div>
-              )}
-            </div>
-
-            <h3 style={{ marginTop: '2rem' }}>Suas conversas</h3>
-            <div style={{ marginTop: '1rem', maxHeight: 'calc(70vh - 220px)', overflowY: 'auto' }}>
-              {conversations.length > 0 ? (
-                conversations.map((user) => (
-                  <div
-                    key={user.id}
-                    className="topic-item"
-                    onClick={() => handleSelectChat(user)}
-                    style={{
-                      background: selectedChat?.id === user.id ? 'var(--verde-muco)' : 'rgba(255, 255, 255, 0.5)',
-                      color: selectedChat?.id === user.id ? 'white' : 'black',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold' }}>{user.nome}</div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-                      {getUserRoleLabel(user.nivelAcesso)}
-                    </div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-                      {user.lastMessage?.mensagem || 'Sem mensagens'}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div style={{ padding: '1rem', textAlign: 'center', color: '#666' }}>
-                  Nenhuma conversa iniciada ainda.
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            {selectedChat ? (
-              <>
-                <div style={{ borderBottom: '1px solid #eee', padding: '1rem', background: '#f8f9fa' }}>
-                  <h4>{selectedChat.nome}</h4>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
-                    {getUserRoleLabel(selectedChat.nivelAcesso)}
-                  </p>
-                </div>
-
-                <div style={{ flex: 1, padding: '1rem', overflowY: 'auto', maxHeight: '400px' }}>
-                  {messages.length > 0 ? (
-                    messages.map((msg) => {
-                      const isCurrentUserMessage = Number(msg.remetenteId) === Number(currentUserId);
-
-                      return (
-                        <div
-                          key={msg.id}
-                          style={{
-                            marginBottom: '1rem',
-                            display: 'flex',
-                            justifyContent: isCurrentUserMessage ? 'flex-end' : 'flex-start',
-                          }}
-                        >
-                          <div
-                            style={{
-                              background: isCurrentUserMessage ? 'var(--verde-muco)' : '#e9ecef',
-                              color: isCurrentUserMessage ? 'white' : 'black',
-                              padding: '0.5rem 1rem',
-                              borderRadius: '15px',
-                              maxWidth: '70%',
-                            }}
-                          >
-                            <div>{msg.mensagem}</div>
-                            <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: '0.2rem' }}>
-                              {new Date(msg.dataChat).toLocaleTimeString('pt-BR', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div style={{ textAlign: 'center', color: '#666', marginTop: '2rem' }}>
-                      Nenhuma mensagem nesta conversa ainda.
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ padding: '1rem', borderTop: '1px solid #eee', display: 'flex', gap: '0.5rem' }}>
-                  <input
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Digite sua mensagem..."
-                    style={{ flex: 1, padding: '0.5rem', border: '1px solid #ddd', borderRadius: '20px' }}
-                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                  />
-                  <button className="btn btn-primary" onClick={sendMessage}>
-                    Enviar
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                <p>Selecione uma conversa para comecar</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <main className="container dashboard-layout">
+        <ChatWorkspace
+          selectedChat={selectedChat}
+          message={message}
+          onMessageChange={setMessage}
+          onSendMessage={sendMessage}
+          messages={messages}
+          conversations={conversations}
+          searchedUsers={searchedUsers}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onSelectChat={(user) => {
+            setSelectedChat(user);
+            setMessages(getChatMessages(currentUserId, user.id));
+          }}
+          currentUserId={currentUserId}
+        />
+      </main>
     </div>
   );
 }

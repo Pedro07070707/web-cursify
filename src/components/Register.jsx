@@ -1,13 +1,19 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppHeader from './AppHeader';
+import InlineAlert from './InlineAlert';
+import { useTheme } from '../utils/theme';
 
 function Register() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [nivelAcesso, setNivelAcesso] = useState('ALUNO');
+  const [feedback, setFeedback] = useState({ type: 'info', message: '' });
+  const [invalidFields, setInvalidFields] = useState({});
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const validatePassword = (password) => {
     const hasLetters = /[a-zA-Z]/.test(password);
@@ -18,9 +24,12 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFeedback({ type: 'info', message: '' });
+    setInvalidFields({});
 
     if (!validatePassword(senha)) {
-      alert('A senha deve ter entre 8 e 20 caracteres, incluindo letras e números.');
+      setFeedback({ type: 'error', message: 'A senha deve ter entre 8 e 20 caracteres, incluindo letras e numeros.' });
+      setInvalidFields({ senha: true });
       return;
     }
 
@@ -35,48 +44,44 @@ function Register() {
 
     try {
       const response = await axios.post('http://localhost:8080/api/v1/usuario', novoUsuario);
-      console.log('Resposta da API:', response.data);
 
-      // salva informações básicas no localStorage
       localStorage.setItem('userId', response.data.id);
       localStorage.setItem('userName', nome);
       localStorage.setItem('userEmail', email);
       localStorage.setItem('nivelAcesso', nivelAcesso);
 
-      // redireciona de acordo com o tipo de usuário
       if (nivelAcesso === 'PROFESSOR') {
         navigate('/teacher');
-      } else if (nivelAcesso === 'ADMIN') {
-        navigate('/admin');
       } else {
         navigate('/student');
       }
-
     } catch (error) {
-      console.error('Erro ao cadastrar usuário:', error);
+      console.error('Erro ao cadastrar usuario:', error);
       const msg = error.response?.data?.message || error.response?.data || error.message;
-      alert(`Erro ao cadastrar: ${JSON.stringify(msg)}`);
+      const serialized = JSON.stringify(msg);
+      setFeedback({ type: 'error', message: `Erro ao cadastrar: ${serialized}` });
+      setInvalidFields({
+        email: serialized.toLowerCase().includes('email'),
+        senha: serialized.toLowerCase().includes('senha'),
+      });
     }
   };
 
   return (
-    <div>
-      <header className="header">
-        <div className="logo" onClick={() => navigate("/")} style={{cursor: "pointer"}}>
-          <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - Cadastro
-        </div>
-        <div className="nav-buttons">
-          <button className="btn btn-secondary" onClick={() => navigate('/')}>
-            Voltar
-          </button>
-        </div>
-      </header>
+    <div className="page-shell">
+      <AppHeader
+        subtitle="Cadastro"
+        navItems={[{ label: 'Pagina inicial', onClick: () => navigate('/') }]}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+      />
 
-      <div className="container">
-        <div className="card" style={{ maxWidth: '400px', margin: '2rem auto' }}>
-          <h2>Criar Conta</h2>
+      <main className="container auth-layout">
+        <div className="card auth-card">
+          <h2>Criar conta</h2>
           <form onSubmit={handleSubmit}>
+            <InlineAlert type={feedback.type} message={feedback.message} />
+
             <div className="form-group">
               <label>Nome:</label>
               <input
@@ -93,9 +98,13 @@ function Register() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setInvalidFields((current) => ({ ...current, email: false }));
+                }}
                 required
                 placeholder="Digite seu email"
+                className={invalidFields.email ? 'input-error' : ''}
               />
             </div>
 
@@ -104,44 +113,49 @@ function Register() {
               <input
                 type="password"
                 value={senha}
-                onChange={(e) => setSenha(e.target.value)}
+                onChange={(e) => {
+                  setSenha(e.target.value);
+                  setInvalidFields((current) => ({ ...current, senha: false }));
+                }}
                 required
                 placeholder="Digite sua senha"
+                className={invalidFields.senha ? 'input-error' : ''}
               />
-              <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                A senha deve ter:
-                <br />
-                Entre 8 e 20 caracteres
-                <br />
-                Letras e números.
+              <small className="field-help">
+                A senha deve ter entre 8 e 20 caracteres com letras e numeros.
               </small>
             </div>
 
             <div className="form-group">
-              <label>Nível de Acesso:</label>
-              <select value={nivelAcesso} onChange={(e) => setNivelAcesso(e.target.value)}>
-                <option value="ALUNO">Aluno</option>
-                <option value="PROFESSOR">Professor</option>
-                <option value="ADMIN">Administrador</option>
-              </select>
+              <label>Nivel de acesso:</label>
+              <div className="choice-toggle">
+                <button
+                  type="button"
+                  className={`choice-toggle-button${nivelAcesso === 'ALUNO' ? ' is-active' : ''}`}
+                  onClick={() => setNivelAcesso('ALUNO')}
+                >
+                  Aluno
+                </button>
+                <button
+                  type="button"
+                  className={`choice-toggle-button${nivelAcesso === 'PROFESSOR' ? ' is-active' : ''}`}
+                  onClick={() => setNivelAcesso('PROFESSOR')}
+                >
+                  Professor
+                </button>
+              </div>
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-              Criar Conta
+            <button type="submit" className="btn btn-primary auth-submit">
+              Criar conta
             </button>
           </form>
 
-          <p style={{ textAlign: 'center', marginTop: '1rem' }}>
-            Já tem conta?{' '}
-            <span
-              style={{ color: 'var(--azul-marinho)', cursor: 'pointer' }}
-              onClick={() => navigate('/login')}
-            >
-              Entrar
-            </span>
+          <p className="auth-switch">
+            Ja tem conta? <span onClick={() => navigate('/login')}>Entrar</span>
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

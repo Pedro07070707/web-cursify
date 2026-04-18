@@ -1,29 +1,51 @@
-import { useState, useEffect } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppHeader from './AppHeader';
+import InlineAlert from './InlineAlert';
+import { clearSessionData } from '../utils/authStorage';
+import { getDashboardPathByRole } from '../utils/ui';
+import { useTheme } from '../utils/theme';
 
 function ChangePassword() {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [users, setUsers] = useState([]);
+  const [nome, setNome] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [tipoConta, setTipoConta] = useState(localStorage.getItem('nivelAcesso') || 'ALUNO');
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const userId = localStorage.getItem('userId');
-  const userName = localStorage.getItem('userName') || 'Usuário';
+  const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const dashboardPath = getDashboardPathByRole(nivelAcesso);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await axios.get('http://localhost:8080/api/v1/usuario');
-        setUsers(response.data);
+        const allUsers = response.data || [];
+        const currentUser = allUsers.find((item) => Number(item.id) === Number(userId));
+        setUsers(allUsers);
+        setNome(currentUser?.nome || '');
+        setTipoConta(currentUser?.nivelAcesso || 'ALUNO');
       } catch (error) {
-        console.error('Erro ao carregar usuários:', error);
+        console.error('Erro ao carregar usuarios:', error);
+        setFeedback({ type: 'error', message: 'Erro ao carregar os dados da conta.' });
       }
     };
+
     fetchUsers();
-  }, []);
+  }, [userId]);
+
+  const currentUser = useMemo(
+    () => users.find((item) => Number(item.id) === Number(userId)),
+    [users, userId]
+  );
 
   const validatePassword = (password) => {
+    if (!password) return true;
     const hasLetters = /[a-zA-Z]/.test(password);
     const hasNumbers = /\d/.test(password);
     const validLength = password.length >= 8 && password.length <= 20;
@@ -32,103 +54,159 @@ function ChangePassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFeedback({ type: 'info', message: '' });
 
-    if (!validatePassword(newPassword)) {
-      alert('A nova senha deve ter entre 8 e 20 caracteres, incluindo letras e números.');
+    if (!currentUser) {
+      setFeedback({ type: 'error', message: 'Nao foi possivel localizar os dados do usuario.' });
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      alert('A nova senha e a confirmação não coincidem.');
+    if (confirmEmail.trim().toLowerCase() !== String(currentUser.email || '').toLowerCase()) {
+      setFeedback({ type: 'error', message: 'Digite o email da conta para confirmar a atualizacao.' });
       return;
     }
+
+    if (!validatePassword(novaSenha)) {
+      setFeedback({ type: 'error', message: 'A nova senha deve ter entre 8 e 20 caracteres, incluindo letras e numeros.' });
+      return;
+    }
+
+    if (novaSenha && novaSenha !== confirmarSenha) {
+      setFeedback({ type: 'error', message: 'A nova senha e a confirmacao nao coincidem.' });
+      return;
+    }
+
+    const nextRole = currentUser.nivelAcesso === 'ADMIN' ? 'ADMIN' : tipoConta;
 
     try {
-      const user = users.find(u => u.id === parseInt(userId));
-      
-      if (user.senha !== currentPassword) {
-        alert('Senha atual incorreta.');
-        return;
-      }
+      const payload = {
+        ...currentUser,
+        nome,
+        nivelAcesso: nextRole,
+        senha: novaSenha || currentUser.senha,
+      };
 
-      await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, {
-        ...user,
-        senha: newPassword
-      });
+      await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, payload);
 
-      alert('Senha alterada com sucesso!');
-      navigate('/profile');
+      localStorage.setItem('userName', nome);
+      localStorage.setItem('nivelAcesso', nextRole);
+      setUsers((currentUsers) => currentUsers.map((item) => (
+        Number(item.id) === Number(userId) ? payload : item
+      )));
+      setNovaSenha('');
+      setConfirmarSenha('');
+      setConfirmEmail('');
+      setFeedback({ type: 'success', message: 'Perfil atualizado com sucesso.' });
     } catch (error) {
-      console.error('Erro ao alterar senha:', error);
-      alert('Erro ao alterar senha. Tente novamente.');
+      console.error('Erro ao atualizar perfil:', error);
+      setFeedback({ type: 'error', message: 'Erro ao atualizar perfil. Tente novamente.' });
     }
   };
 
   return (
-    <div>
-      <header className="header">
-        <div className="logo" onClick={() => navigate("/")} style={{cursor: "pointer"}}>
-          <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - Alterar Senha
-        </div>
-        <div className="nav-buttons">
-          <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
-          <button className="btn btn-secondary" onClick={() => navigate('/profile')}>
-            Voltar
-          </button>
-        </div>
-      </header>
+    <div className="page-shell">
+      <AppHeader
+        subtitle="Atualizar perfil"
+        navItems={[
+          { label: 'Pagina inicial', onClick: () => navigate(dashboardPath) },
+          ...(nivelAcesso !== 'ADMIN'
+            ? [{ label: 'Meus cursos', onClick: () => navigate(dashboardPath, { state: { section: 'courses' } }) }]
+            : [{ label: 'Painel', onClick: () => navigate(dashboardPath, { state: { section: 'panel' } }) }]),
+          { label: 'Chat', onClick: () => navigate(dashboardPath, { state: { section: 'chat' } }) },
+        ]}
+        onGoProfile={() => navigate('/profile')}
+        onLogout={() => {
+          clearSessionData();
+          navigate('/');
+        }}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+      />
 
-      <div className="container">
-        <div className="card" style={{ maxWidth: '400px', margin: '2rem auto' }}>
-          <h2>Alterar Senha</h2>
+      <main className="container auth-layout">
+        <div className="card auth-card">
+          <h2>Atualizar perfil</h2>
           <form onSubmit={handleSubmit}>
+            <InlineAlert type={feedback.type} message={feedback.message} />
+
             <div className="form-group">
-              <label>Senha Atual:</label>
+              <label>Nome:</label>
               <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
+                type="text"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
                 required
-                placeholder="Digite sua senha atual"
+                placeholder="Digite seu nome"
               />
             </div>
 
             <div className="form-group">
-              <label>Nova Senha:</label>
+              <label>Email da conta:</label>
+              <input type="email" value={currentUser?.email || ''} disabled />
+            </div>
+
+            {currentUser?.nivelAcesso !== 'ADMIN' ? (
+              <div className="form-group">
+                <label>Tipo da conta:</label>
+                <div className="choice-toggle">
+                  <button
+                    type="button"
+                    className={`choice-toggle-button${tipoConta === 'ALUNO' ? ' is-active' : ''}`}
+                    onClick={() => setTipoConta('ALUNO')}
+                  >
+                    Aluno
+                  </button>
+                  <button
+                    type="button"
+                    className={`choice-toggle-button${tipoConta === 'PROFESSOR' ? ' is-active' : ''}`}
+                    onClick={() => setTipoConta('PROFESSOR')}
+                  >
+                    Professor
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="form-group">
+              <label>Nova senha:</label>
               <input
                 type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
                 placeholder="Digite a nova senha"
               />
-              <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                A senha deve ter:
-                <br />
-                Entre 8 e 20 caracteres
-                <br />
-                Letras e números.
+              <small className="field-help">
+                Preencha somente se quiser alterar a senha.
               </small>
             </div>
 
             <div className="form-group">
-              <label>Confirmar Nova Senha:</label>
+              <label>Confirmar nova senha:</label>
               <input
                 type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
+                value={confirmarSenha}
+                onChange={(e) => setConfirmarSenha(e.target.value)}
                 placeholder="Confirme a nova senha"
               />
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-              Alterar Senha
+            <div className="form-group">
+              <label>Confirmar com o email:</label>
+              <input
+                type="email"
+                value={confirmEmail}
+                onChange={(e) => setConfirmEmail(e.target.value)}
+                required
+                placeholder="Digite seu email para confirmar"
+              />
+            </div>
+
+            <button type="submit" className="btn btn-primary auth-submit">
+              Salvar alteracoes
             </button>
           </form>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
