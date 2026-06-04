@@ -1,146 +1,107 @@
-import { useState, useEffect } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppHeader from './AppHeader';
+import DirectorySearchSection from './DirectorySearchSection';
 import { getUserCourseEntry, removeUserCourseEntry, saveUserCourseEntry } from '../utils/userCourseState';
-
-const NIVEIS = {
-  FUNDAMENTAL_1: 'Fundamental 1 (1o ao 5o ano)',
-  FUNDAMENTAL_2: 'Fundamental 2 (6o ao 9o ano)',
-  MEDIO_1: 'Ensino Medio - 1o ano',
-  MEDIO_2: 'Ensino Medio - 2o ano',
-  MEDIO_3: 'Ensino Medio - 3o ano',
-  OUTROS: 'Outros',
-};
-
-const getCourseStatusLabel = (status) => {
-  if (status === true || status === 'Ativo') return 'Ativo';
-  if (status === false || status === 'Inativo') return 'Inativo';
-  if (status === 'Concluído') return 'Concluído';
-  return status || 'Nao informado';
-};
+import { buildSearchResults, getDashboardPathByRole } from '../utils/ui';
+import { useTheme } from '../utils/theme';
 
 function SearchCoursePage() {
-  const [courses, setCourses] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+  const [courses, setCourses] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const currentUserId = Number(localStorage.getItem('userId'));
   const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'student';
+  const dashboardPath = getDashboardPathByRole(nivelAcesso);
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/v1/curso');
-        const visibleCourses = response.data.filter(
+        const [coursesResponse, usersResponse] = await Promise.all([
+          axios.get('http://localhost:8080/api/v1/curso'),
+          axios.get('http://localhost:8080/api/v1/usuario'),
+        ]);
+
+        const visibleCourses = (coursesResponse.data || []).filter(
           (course) => course.statusCurso !== false && course.statusCurso !== 'Inativo'
         );
+        const visibleUsers = (usersResponse.data || []).filter((user) => Number(user.id) !== currentUserId);
+
         setCourses(visibleCourses);
+        setUsers(visibleUsers);
       } catch (error) {
-        console.error('Erro ao carregar cursos:', error);
-        alert('Erro ao carregar os cursos. Verifique a API.');
+        console.error('Erro ao carregar dados da busca:', error);
+        alert('Erro ao carregar os dados da busca. Verifique a API.');
       }
     };
 
-    fetchCourses();
-  }, []);
+    fetchData();
+  }, [currentUserId]);
 
-  const filteredCourses = courses.filter((course) => (
-    (course.nome || course.titulo || '').toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (filterCategory === '' || course.categoria === filterCategory)
-  ));
+  const results = useMemo(
+    () => buildSearchResults(courses, users, searchTerm),
+    [courses, users, searchTerm]
+  );
 
-  const handleToggleCourse = (courseId) => {
-    const existingEntry = getUserCourseEntry(currentUserId, courseId);
+  const handleToggleCourse = (course) => {
+    const existingEntry = getUserCourseEntry(currentUserId, course.id);
 
     if (existingEntry?.enrolled) {
-      removeUserCourseEntry(currentUserId, courseId);
-      setCourses([...courses]);
+      removeUserCourseEntry(currentUserId, course.id);
+      setCourses((currentCourses) => [...currentCourses]);
       return;
     }
 
-    saveUserCourseEntry(currentUserId, courseId, {
+    saveUserCourseEntry(currentUserId, course.id, {
       enrolled: true,
       status: 'Em progresso',
     });
-    setCourses([...courses]);
+    setCourses((currentCourses) => [...currentCourses]);
   };
 
   return (
-    <div>
-      <header className="header">
-        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - Pesquisar Cursos
-        </div>
-        <div className="nav-buttons">
-          <button className="btn btn-secondary" onClick={() => navigate(userType === 'admin' ? '/admin' : '/student')}>
-            Voltar
-          </button>
-        </div>
-      </header>
+    <div className="page-shell">
+      <AppHeader
+        subtitle="Pesquisar"
+        navItems={[
+          { label: 'Pagina inicial', onClick: () => navigate(dashboardPath) },
+          ...(nivelAcesso !== 'ADMIN'
+            ? [{ label: 'Meus cursos', onClick: () => navigate(dashboardPath, { state: { section: 'courses' } }) }]
+            : [{ label: 'Painel', onClick: () => navigate(dashboardPath, { state: { section: 'panel' } }) }]),
+          { label: 'Chat', onClick: () => navigate(dashboardPath, { state: { section: 'chat' } }) },
+        ]}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchResults={results}
+        onSelectCourse={(course) => navigate(`/course-view/${course.id}`)}
+        onSelectUser={() => navigate('/profile')}
+        onGoProfile={() => navigate('/profile')}
+        onLogout={() => {
+          localStorage.clear();
+          navigate('/');
+        }}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+      />
 
-      <div className="container">
-        <div className="card">
-          <h2>Pesquisar Cursos</h2>
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-            <input
-              type="text"
-              placeholder="Digite o nome do curso..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ flex: 1, minWidth: '200px', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '5px' }}
-            />
-            <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} style={{ padding: '0.5rem' }}>
-              <option value="">Todas as categorias</option>
-              <option value="FUNDAMENTAL_1">Fundamental 1</option>
-              <option value="FUNDAMENTAL_2">Fundamental 2</option>
-              <option value="MEDIO_1">Ensino Medio - 1o ano</option>
-              <option value="MEDIO_2">Ensino Medio - 2o ano</option>
-              <option value="MEDIO_3">Ensino Medio - 3o ano</option>
-              <option value="OUTROS">Outros</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="course-grid">
-          {filteredCourses.map((course) => (
-            <div key={course.id} className="card course-card">
-              <div onClick={() => navigate(`/course-view/${course.id}`)} style={{ cursor: 'pointer' }}>
-                <h3>{course.nome || course.titulo}</h3>
-                <p><strong>Categoria:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
-                <p><strong>Carga horaria:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
-                {userType === 'student' ? (
-                  <p><strong>Status:</strong> {getUserCourseEntry(currentUserId, course.id)?.status || 'Nao adicionado'}</p>
-                ) : null}
-                <p>{course.descricao}</p>
-              </div>
-              {userType === 'student' ? (
-                <button
-                  className="btn btn-secondary"
-                  style={{ width: '100%', marginTop: '1rem' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleCourse(course.id);
-                  }}
-                >
-                  {getUserCourseEntry(currentUserId, course.id)?.enrolled ? 'Remover dos meus cursos' : 'Adicionar aos meus cursos'}
-                </button>
-              ) : null}
-              <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-                Clique para ver detalhes
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {filteredCourses.length === 0 && (
-          <div className="card" style={{ textAlign: 'center' }}>
-            <p>Nenhum curso encontrado com os filtros selecionados.</p>
-          </div>
-        )}
-      </div>
+      <main className="container dashboard-layout">
+        <DirectorySearchSection
+          title="Pesquisar cursos e usuarios"
+          description="Veja os resultados separados em Cursos e Usuarios, como solicitado para a barra de pesquisa."
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          results={results}
+          courseActionLabel={userType === 'student' ? 'Adicionar aos meus cursos' : undefined}
+          onCourseAction={userType === 'student' ? handleToggleCourse : undefined}
+          isCourseSelected={(course) => Boolean(getUserCourseEntry(currentUserId, course.id)?.enrolled)}
+          onOpenCourse={(course) => navigate(`/course-view/${course.id}`)}
+          onUserAction={() => navigate('/profile')}
+        />
+      </main>
     </div>
   );
 }

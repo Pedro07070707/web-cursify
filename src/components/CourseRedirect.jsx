@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 function CourseRedirect() {
@@ -14,7 +14,7 @@ function CourseRedirect() {
     }
   }, [id, nivelAcesso, navigate]);
 
-  return <div>Redirecionando...</div>;
+  return <div className="container"><div className="card">Redirecionando...</div></div>;
 }
 
 export default CourseRedirect;

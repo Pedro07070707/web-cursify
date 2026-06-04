@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppHeader from './AppHeader';
+import InlineAlert from './InlineAlert';
 import CourseContentListSection from './CourseContentListSection';
 import { CONTENT_TYPES, getCourseContentCourseId, normalizeCourseContentItem } from './courseContentConfig';
 import { getUserCourseEntry, saveUserCourseEntry } from '../utils/userCourseState';
 import { clearSessionData } from '../utils/authStorage';
+import { getDashboardPathByRole } from '../utils/ui';
 
 const NIVEIS = {
   FUNDAMENTAL_1: 'Fundamental 1 (1o ao 5o ano)',
@@ -18,57 +21,70 @@ const NIVEIS = {
 const getCourseStatusLabel = (status) => {
   if (status === true || status === 'Ativo') return 'Ativo';
   if (status === false || status === 'Inativo') return 'Inativo';
-  if (status === 'Concluído') return 'Concluído';
+  if (String(status || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim() === 'Concluido') return 'Concluido';
   return status || 'Em progresso';
-};
-
-const getCourseStatusStyles = (status) => {
-  const normalizedStatus = getCourseStatusLabel(status);
-
-  if (normalizedStatus === 'Prazo esgotado' || normalizedStatus === 'Inativo') {
-    return { backgroundColor: '#ffebee', color: '#c62828' };
-  }
-
-  if (normalizedStatus === 'Concluído' || normalizedStatus === 'Ativo') {
-    return { backgroundColor: '#e8f5e8', color: '#2e7d32' };
-  }
-
-  return { backgroundColor: '#fff8e1', color: '#ef6c00' };
 };
 
 function StudentCourseViewPage() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
-  const [contents, setContents] = useState({
-    material: [],
-    exercicios: [],
-    atividades: [],
-    avaliacoes: [],
-  });
+  const [contents, setContents] = useState({ material: [], exercicios: [], atividades: [], avaliacoes: [] });
   const [loading, setLoading] = useState(true);
+  const [studentStatus, setStudentStatus] = useState('Em progresso');
+  const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const navigate = useNavigate();
-  const userName = localStorage.getItem('userName') || 'Aluno';
+  const userName = localStorage.getItem('userName') || 'Visitante';
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const currentUserId = Number(localStorage.getItem('userId'));
+  const isLoggedIn = Boolean(localStorage.getItem('userId'));
   const userType = nivelAcesso === 'PROFESSOR' ? 'teacher' : nivelAcesso === 'ADMIN' ? 'admin' : 'student';
-  const [studentStatus, setStudentStatus] = useState('Em progresso');
+  const homePath = isLoggedIn ? getDashboardPathByRole(nivelAcesso) : '/';
 
-  const handleCompleteCourse = async () => {
-    if (!course || studentStatus === 'Concluído') {
+  const goBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
       return;
     }
+
+    navigate('/');
+  };
+
+  const requireAccount = () => {
+    setFeedback({ type: 'error', message: 'Entre em uma conta ou cadastre-se para salvar ou concluir este curso.' });
+  };
+
+  const handleCompleteCourse = () => {
+    if (!isLoggedIn) {
+      requireAccount();
+      return;
+    }
+
+    if (!course || studentStatus === 'Concluido') return;
 
     try {
       saveUserCourseEntry(currentUserId, id, {
         enrolled: true,
-        status: 'Concluído',
+        status: 'Concluido',
       });
-      setStudentStatus('Concluído');
-      alert('Curso concluido com sucesso!');
+      setStudentStatus('Concluido');
+      setFeedback({ type: 'success', message: 'Curso concluido com sucesso.' });
     } catch (error) {
       console.error('Erro ao concluir curso:', error);
-      alert('Erro ao concluir o curso. Tente novamente.');
+      setFeedback({ type: 'error', message: 'Erro ao concluir o curso.' });
     }
+  };
+
+  const handleSaveCourse = () => {
+    if (!isLoggedIn) {
+      requireAccount();
+      return;
+    }
+
+    saveUserCourseEntry(currentUserId, id, {
+      enrolled: true,
+      status: studentStatus || 'Em progresso',
+    });
+    setFeedback({ type: 'success', message: 'Curso salvo em Meus cursos.' });
   };
 
   useEffect(() => {
@@ -76,30 +92,21 @@ function StudentCourseViewPage() {
       try {
         const response = await axios.get(`http://localhost:8080/api/v1/curso/${id}`);
         setCourse(response.data);
-        if (userType === 'student') {
+
+        if (isLoggedIn && userType === 'student') {
           const existingEntry = getUserCourseEntry(currentUserId, id);
-          const nextEntry = existingEntry || saveUserCourseEntry(currentUserId, id, {
-            enrolled: true,
-            status: 'Em progresso',
-          });
-          setStudentStatus(nextEntry.status || 'Em progresso');
+          setStudentStatus(existingEntry?.status || 'Em progresso');
         }
 
         const responses = await Promise.allSettled(
           CONTENT_TYPES.map((config) => axios.get(`http://localhost:8080/api/v1/${config.endpoint}`))
         );
 
-        const nextContents = {
-          material: [],
-          exercicios: [],
-          atividades: [],
-          avaliacoes: [],
-        };
+        const nextContents = { material: [], exercicios: [], atividades: [], avaliacoes: [] };
 
         responses.forEach((contentResponse, index) => {
           if (contentResponse.status !== 'fulfilled') return;
           const config = CONTENT_TYPES[index];
-
           nextContents[config.key] = (contentResponse.value.data || [])
             .filter((item) => String(getCourseContentCourseId(item)) === String(id))
             .map((item) => normalizeCourseContentItem(config.key, item));
@@ -108,122 +115,69 @@ function StudentCourseViewPage() {
         setContents(nextContents);
       } catch (error) {
         console.error('Erro ao carregar curso:', error);
-        alert('Erro ao carregar curso.');
+        setFeedback({ type: 'error', message: 'Erro ao carregar curso.' });
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchCourse();
-    } else {
-      setLoading(false);
-    }
-  }, [currentUserId, id, userType]);
+    if (id) fetchCourse();
+    else setLoading(false);
+  }, [currentUserId, id, isLoggedIn, userType]);
 
-  const handleLogout = () => {
-    clearSessionData();
-    navigate('/');
-  };
-
-  if (loading) return <div>Carregando...</div>;
-  if (!course) return <div>Curso nao encontrado</div>;
-
-  const statusStyles = getCourseStatusStyles(course.statusCurso);
+  if (loading) return <div className="container"><div className="card">Carregando...</div></div>;
+  if (!course) return <div className="container"><div className="card">Curso nao encontrado</div></div>;
 
   return (
-    <div>
-      <header className="header">
-        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - {course.nome}
-        </div>
-        <div className="nav-buttons">
-          <span style={{ color: 'white', marginRight: '1rem' }}>Ola, {userName}!</span>
-          <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : userType === 'admin' ? '/admin' : '/student')}>
-            Voltar
-          </button>
-          <button className="btn btn-primary" onClick={handleLogout}>
-            Sair
-          </button>
-        </div>
-      </header>
+    <div className="page-shell">
+      <AppHeader
+        subtitle="Curso"
+        brandDetail={`${NIVEIS[course.categoria] || course.categoria} - ${course.nome}`}
+        onBack={goBack}
+        navItems={[{ label: 'Pagina inicial', onClick: () => navigate(homePath) }]}
+        onGoProfile={() => navigate('/profile')}
+        onLogout={() => {
+          clearSessionData();
+          navigate('/');
+        }}
+      />
 
-      <div className="container">
-        <div className="card">
+      <main className="container dashboard-layout">
+        <InlineAlert type={feedback.type} message={feedback.message} />
+
+        <div className="card section-stack">
           <h2>{course.nome}</h2>
           <p><strong>Categoria:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
           <p><strong>Carga horaria:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
           <p><strong>Data de criacao:</strong> {course.dataCriacao ? new Date(course.dataCriacao).toLocaleDateString('pt-BR') : '-'}</p>
-          <div style={{ marginBottom: '10px' }}>
-            <span
-              style={{
-                padding: '4px 8px',
-                borderRadius: '4px',
-                backgroundColor: statusStyles.backgroundColor,
-                color: statusStyles.color,
-                fontSize: '12px',
-              }}
-            >
-              {getCourseStatusLabel(course.statusCurso)}
-            </span>
-          </div>
 
-          <div style={{ marginTop: '2rem' }}>
+          <div>
             <h3>Descricao do Curso</h3>
             <p>{course.descricao}</p>
           </div>
 
-          <div style={{ marginTop: '2rem' }}>
+          <div>
             <h3>Resumo</h3>
-            <div className="topic-list">
-              <div className="topic-item">Status atual: {userType === 'student' ? studentStatus : getCourseStatusLabel(course.statusCurso)}</div>
+            <div className="feature-grid">
+              <div className="topic-item">Status atual: {isLoggedIn && userType === 'student' ? studentStatus : 'Disponivel para visualizacao'}</div>
               <div className="topic-item">Carga horaria prevista: {course.cargaHoraria} horas</div>
-              <div className="topic-item">Categoria: {NIVEIS[course.categoria] || course.categoria}</div>
             </div>
           </div>
 
-          <CourseContentListSection
-            title="Materiais"
-            items={contents.material}
-            typeKey="material"
-            emptyMessage="Nenhum material disponivel."
-          />
-          <CourseContentListSection
-            title="Exercicios"
-            items={contents.exercicios}
-            typeKey="exercicios"
-            emptyMessage="Nenhum exercicio disponivel."
-          />
-          <CourseContentListSection
-            title="Atividades"
-            items={contents.atividades}
-            typeKey="atividades"
-            emptyMessage="Nenhuma atividade disponivel."
-          />
-          <CourseContentListSection
-            title="Avaliacoes"
-            items={contents.avaliacoes}
-            typeKey="avaliacoes"
-            emptyMessage="Nenhuma avaliacao disponivel."
-          />
+          <CourseContentListSection title="Materiais" items={contents.material} typeKey="material" emptyMessage="Nenhum material disponivel." />
+          <CourseContentListSection title="Exercicios" items={contents.exercicios} typeKey="exercicios" emptyMessage="Nenhum exercicio disponivel." />
+          <CourseContentListSection title="Atividades" items={contents.atividades} typeKey="atividades" emptyMessage="Nenhuma atividade disponivel." />
+          <CourseContentListSection title="Avaliacoes" items={contents.avaliacoes} typeKey="avaliacoes" emptyMessage="Nenhuma avaliacao disponivel." />
 
-          <div style={{ marginTop: '2rem' }}>
-            <button className="btn btn-primary" onClick={() => navigate('/chat')} style={{ marginRight: '1rem' }}>
-              Chat com Professor
-            </button>
-            <button
-              className="btn btn-secondary"
-              onClick={handleCompleteCourse}
-              disabled={studentStatus === 'Concluído'}
-            >
-              {studentStatus === 'Concluído'
-                ? 'Curso concluido'
-                : 'Marcar como concluido'}
+          <div className="hero-actions">
+            <button className="btn btn-primary" onClick={() => navigate('/chat')}>Chat com Professor</button>
+            <button className="btn btn-secondary" onClick={handleSaveCourse}>Salvar curso</button>
+            <button className="btn btn-secondary" onClick={handleCompleteCourse} disabled={studentStatus === 'Concluido'}>
+              {studentStatus === 'Concluido' ? 'Curso concluido' : 'Marcar como concluido'}
             </button>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

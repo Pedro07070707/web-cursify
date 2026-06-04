@@ -1,115 +1,152 @@
-import { useState, useEffect } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppHeader from './AppHeader';
+import InlineAlert from './InlineAlert';
 import { clearPersistedUserData, clearSessionData } from '../utils/authStorage';
+import { getDashboardPathByRole, getUserRoleLabel } from '../utils/ui';
+import { useTheme } from '../utils/theme';
 
 function Profile() {
-    const [users, setUsers] = useState([]);
-    const nivelAcesso = localStorage.getItem('nivelAcesso');
-    const userType = nivelAcesso === 'PROFESSOR' ? 'teacher' : nivelAcesso === 'ADMIN' ? 'admin' : 'student';
-    const navigate = useNavigate();
-    const userName = localStorage.getItem('userName') || 'Aluno';
-    const userEmail = localStorage.getItem('userEmail') || 'Aluno';
-    const userId = localStorage.getItem('userId');
+  const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+  const [users, setUsers] = useState([]);
+  const [feedback, setFeedback] = useState({ type: 'info', message: '' });
+  const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const dashboardPath = getDashboardPathByRole(nivelAcesso);
+  const userId = Number(localStorage.getItem('userId'));
 
-    useEffect(() => {
-    const fetchUsers = async () => {
+  useEffect(() => {
+    const fetchData = async () => {
       try {
         const response = await axios.get('http://localhost:8080/api/v1/usuario');
-            setUsers(response.data);
-        } catch (error) {
-            console.error('Erro ao carregar usuários:', error);
-            alert('Erro ao carregar usuários. Verifique a API.');
-        }
-        };
-        fetchUsers();
-    }, []);
-
-    const handlePasswordChange = () => {
-        navigate('/change-password');
+        setUsers(response.data || []);
+      } catch (error) {
+        console.error('Erro ao carregar dados do perfil:', error);
+        setFeedback({ type: 'error', message: 'Erro ao carregar os dados do perfil.' });
+      }
     };
 
-    // Função para deletar usuário
-  const handleDelete = async (id, nome) => {
-    if (!window.confirm(`Tem certeza que deseja excluir o usuário "${nome}"?`)) return;
+    fetchData();
+  }, []);
+
+  const currentUser = useMemo(
+    () => users.find((user) => Number(user.id) === userId),
+    [users, userId]
+  );
+
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`http://localhost:8080/api/v1/usuario/${userId}`);
+      clearPersistedUserData(userId);
+      clearSessionData();
+      navigate('/');
+    } catch (error) {
+      console.error('Erro ao excluir usuario:', error);
+      setFeedback({ type: 'error', message: 'Erro ao excluir o usuario.' });
+    }
+  };
+
+  const handleToggleInactive = async () => {
+    if (!currentUser) return;
 
     try {
-    await axios.delete(`http://localhost:8080/api/v1/usuario/${id}`);
-        alert(`Usuário "${nome}" excluído com sucesso!`);
-        clearPersistedUserData(id);
-        clearSessionData();
-        navigate('/');
-        } catch (error) {
-        console.error('Erro ao excluir usuário:', error);
-        alert('Erro ao excluir o usuário. Tente novamente.');
-        }
-    };
+      const payload = { ...currentUser, statusUsuario: !currentUser.statusUsuario };
+      await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, payload);
+      setUsers((currentUsers) => currentUsers.map((user) => (
+        Number(user.id) === userId ? payload : user
+      )));
+      setFeedback({
+        type: 'success',
+        message: payload.statusUsuario ? 'Conta reativada com sucesso.' : 'Conta inativada com sucesso.',
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status da conta:', error);
+      setFeedback({ type: 'error', message: 'Erro ao atualizar o status da conta.' });
+    }
+  };
 
-    return (
-    <div>
-        <header className="header">
-        <div className="logo" onClick={() => navigate("/")} style={{cursor: "pointer"}}>
-          <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - Perfil do Aluno
-        </div>
-        <div className="nav-buttons">
-          <span style={{color: 'white', marginRight: '1rem'}}>Olá, {userName}!</span>
-          <button className="btn btn-secondary" onClick={() => navigate(userType === 'teacher' ? '/teacher' : userType === 'admin' ? '/admin' : '/student')}>
-            Voltar
-          </button>
-        </div>
-      </header>
+  const handleLogout = () => {
+    clearSessionData();
+    navigate('/');
+  };
 
-      <div className="container dashboard">
-        <div className="card">
-            <h2 style={{color: '', textAlign: 'center', marginBottom: '2rem'}}>
-            Seu Perfil
-            </h2>
+  return (
+    <div className="page-shell">
+      <AppHeader
+        subtitle="Perfil"
+        navItems={[
+          { label: 'Pagina inicial', onClick: () => navigate(dashboardPath) },
+          ...(nivelAcesso !== 'ADMIN'
+            ? [{ label: 'Meus cursos', onClick: () => navigate(dashboardPath, { state: { section: 'courses' } }) }]
+            : [{ label: 'Painel', onClick: () => navigate(dashboardPath, { state: { section: 'panel' } }) }]),
+          { label: 'Chat', onClick: () => navigate(dashboardPath, { state: { section: 'chat' } }) },
+        ]}
+        onGoProfile={() => navigate('/profile')}
+        onLogout={handleLogout}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+      />
+
+      <main className="container dashboard-layout">
+        <InlineAlert type={feedback.type} message={feedback.message} />
+
+        <section className="profile-shell panel-card">
+          <div className="profile-hero">
+            <div className="profile-avatar">{(currentUser?.nome || 'US').slice(0, 2).toUpperCase()}</div>
             <div>
-                <p><strong>Nome:</strong> {userName}</p><br></br>
-                <p><strong>Email:</strong> {userEmail}</p><br></br>
-                <p><strong>Tipo de usuário:</strong> {nivelAcesso === 'PROFESSOR' ? 'Professor' : nivelAcesso === 'ADMIN' ? 'Administrador' : 'Estudante'}</p>
+              <span className="section-kicker">Perfil</span>
+              <h1>{currentUser?.nome || 'Usuario'}</h1>
+              <p>{currentUser?.email || 'email@exemplo.com'}</p>
+              <div className="profile-tags">
+                <span>{getUserRoleLabel(currentUser?.nivelAcesso)}</span>
+                <span>{currentUser?.statusUsuario ? 'Conta ativa' : 'Conta inativa'}</span>
+              </div>
             </div>
-            <div style={{ textAlign: 'center', marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button 
-                onClick={handlePasswordChange}
-                style={{
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                🔑 Alterar Senha
+          </div>
+
+          <div className="profile-grid">
+            <article className="info-card profile-card">
+              <h3>Informacoes da conta</h3>
+              <p><strong>Nome:</strong> {currentUser?.nome || '-'}</p>
+              <p><strong>Email:</strong> {currentUser?.email || '-'}</p>
+              <p><strong>Tipo de usuario:</strong> {getUserRoleLabel(currentUser?.nivelAcesso)}</p>
+              <p>
+                <strong>Registrado em:</strong>{' '}
+                {currentUser?.dataCadastro
+                  ? new Date(currentUser.dataCadastro).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })
+                  : 'Nao informado'}
+              </p>
+            </article>
+
+            <article className="info-card profile-card">
+              <h3>Atualizacoes</h3>
+              <p>Atualize seus dados, senha e tipo de conta em um unico formulario.</p>
+              <button type="button" className="btn btn-primary" onClick={() => navigate('/change-password')}>
+                Atualizar perfil
               </button>
-              <button 
-                onClick={() => handleDelete(userId, userName)}
-                style={{
-                  backgroundColor: '#dc3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                🗑️ Excluir Conta
-              </button>
-            </div>
-        </div>
-      </div>
+            </article>
+
+            <article className="info-card profile-card">
+              <h3>Acoes da conta</h3>
+              <div className="card-button-column">
+                <button type="button" className="btn btn-secondary" onClick={handleToggleInactive}>
+                  {currentUser?.statusUsuario ? 'Inativar conta' : 'Reativar conta'}
+                </button>
+                <button type="button" className="btn btn-danger" onClick={handleDelete}>
+                  Excluir conta
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
     </div>
-    );
+  );
 }
 
 export default Profile;

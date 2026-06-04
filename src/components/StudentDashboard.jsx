@@ -1,52 +1,187 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { getUserCourseState } from '../utils/userCourseState';
+import AppHeader from './AppHeader';
+import ChatWorkspace from './ChatWorkspace';
+import DirectorySearchSection from './DirectorySearchSection';
+import InlineAlert from './InlineAlert';
+import { getUserCourseEntry, getUserCourseState, removeUserCourseEntry, saveUserCourseEntry } from '../utils/userCourseState';
 import { clearSessionData } from '../utils/authStorage';
-
-const NIVEIS = {
-  FUNDAMENTAL_1: 'Fundamental 1 (1o ao 5o ano)',
-  FUNDAMENTAL_2: 'Fundamental 2 (6o ao 9o ano)',
-  MEDIO_1: 'Ensino Medio - 1o ano',
-  MEDIO_2: 'Ensino Medio - 2o ano',
-  MEDIO_3: 'Ensino Medio - 3o ano',
-  OUTROS: 'Outros',
-};
-
-const getCourseStatusLabel = (status) => {
-  if (status === true || status === 'Ativo') return 'Ativo';
-  if (status === false || status === 'Inativo') return 'Inativo';
-  if (status === 'Concluído') return 'Concluído';
-  return status || 'Nao informado';
-};
+import { appendChatMessage, getChatMessages, getUserConversationPartners } from '../utils/chatStorage';
+import { formatCourseDuration, getCourseStatusLabel, NIVEIS } from '../utils/ui';
+import { useTheme } from '../utils/theme';
 
 function StudentDashboardPage() {
-  const [courses, setCourses] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
+  const [allCourses, setAllCourses] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [activeSection, setActiveSection] = useState(location.state?.section || 'home');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [chatSearchTerm, setChatSearchTerm] = useState('');
+  const [conversations, setConversations] = useState([]);
+  const [courseStateTick, setCourseStateTick] = useState(0);
+  const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const userName = localStorage.getItem('userName') || 'Aluno';
   const currentUserId = Number(localStorage.getItem('userId'));
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/v1/curso');
-        const userCourseState = getUserCourseState(currentUserId);
-        const enrolledCourseIds = Object.keys(userCourseState).filter((courseId) => userCourseState[courseId]?.enrolled);
-        const visibleCourses = response.data
-          .filter((course) => enrolledCourseIds.includes(String(course.id)))
-          .map((course) => ({
-            ...course,
-            userStatus: userCourseState[String(course.id)]?.status || 'Em progresso',
-          }));
-        setCourses(visibleCourses);
+        const [coursesResponse, usersResponse] = await Promise.all([
+          axios.get('http://localhost:8080/api/v1/curso'),
+          axios.get('http://localhost:8080/api/v1/usuario'),
+        ]);
+
+        const visibleCourses = (coursesResponse.data || []).filter(
+          (course) => course.statusCurso !== false && course.statusCurso !== 'Inativo'
+        );
+        const visibleUsers = (usersResponse.data || []).filter((user) => Number(user.id) !== currentUserId);
+
+        setAllCourses(visibleCourses);
+        setUsers(visibleUsers);
+        setConversations(getUserConversationPartners(currentUserId, visibleUsers));
       } catch (error) {
-        console.error('Erro ao carregar cursos:', error);
-        alert('Erro ao carregar cursos. Verifique a API.');
+        console.error('Erro ao carregar dados do aluno:', error);
+        setFeedback({ type: 'error', message: 'Erro ao carregar dados. Verifique a API.' });
       }
     };
 
-    fetchCourses();
+    fetchData();
+  }, [currentUserId]);
+
+  useEffect(() => {
+    const syncCourseState = () => setCourseStateTick((value) => value + 1);
+    const intervalId = window.setInterval(syncCourseState, 1500);
+    const handleStorage = (event) => {
+      if (!event.key || event.key.startsWith('userCourseState:')) {
+        syncCourseState();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!selectedChat || !currentUserId) {
+      setMessages([]);
+      return;
+    }
+
+    setMessages(getChatMessages(currentUserId, selectedChat.id));
+  }, [selectedChat, currentUserId]);
+
+  useEffect(() => {
+    if (!currentUserId || users.length === 0) return undefined;
+
+    const syncConversations = () => {
+      setConversations(getUserConversationPartners(currentUserId, users));
+      if (selectedChat) {
+        setMessages(getChatMessages(currentUserId, selectedChat.id));
+      }
+    };
+
+    syncConversations();
+
+    const intervalId = window.setInterval(syncConversations, 1000);
+    const handleStorage = (event) => {
+      if (!event.key || event.key.startsWith('chatThread:')) {
+        syncConversations();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [currentUserId, users, selectedChat]);
+
+  const searchResults = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().toLowerCase();
+    if (!normalizedTerm) return { courses: [], users: [] };
+
+    return {
+      courses: allCourses.filter((course) => (
+        `${course.nome || ''} ${course.descricao || ''}`.toLowerCase().includes(normalizedTerm)
+      )),
+      users: users.filter((user) => (
+        `${user.nome || ''} ${user.email || ''}`.toLowerCase().includes(normalizedTerm)
+      )),
+    };
+  }, [allCourses, users, searchTerm]);
+
+  const enrolledCourses = useMemo(() => {
+    const userCourseState = getUserCourseState(currentUserId);
+
+    return allCourses
+      .filter((course) => userCourseState[String(course.id)]?.enrolled)
+      .map((course) => ({
+        ...course,
+        userStatus: userCourseState[String(course.id)]?.status || 'Em progresso',
+      }));
+  }, [allCourses, currentUserId, courseStateTick]);
+
+  const completedCount = useMemo(
+    () => enrolledCourses.filter((course) => getCourseStatusLabel(course.userStatus) === 'Concluido').length,
+    [enrolledCourses]
+  );
+
+  const searchedUsers = useMemo(() => {
+    const normalizedTerm = chatSearchTerm.trim().toLowerCase();
+    if (!normalizedTerm) return [];
+
+    return users.filter((user) => (
+      `${user.nome || ''} ${user.email || ''}`.toLowerCase().includes(normalizedTerm)
+    ));
+  }, [chatSearchTerm, users]);
+
+  const sendMessage = () => {
+    if (!message.trim() || !selectedChat || !currentUserId) return;
+
+    const newMessage = {
+      id: `${currentUserId}-${selectedChat.id}-${Date.now()}`,
+      mensagem: message.trim(),
+      dataChat: new Date().toISOString(),
+      statusChat: 'Enviado',
+      remetenteId: Number(currentUserId),
+      destinatarioId: Number(selectedChat.id),
+      remetenteNome: userName,
+    };
+
+    const nextMessages = appendChatMessage(currentUserId, selectedChat.id, newMessage);
+    setMessages(nextMessages);
+    setConversations(getUserConversationPartners(currentUserId, users));
+    setMessage('');
+  };
+
+  const handleToggleCourse = (course) => {
+    const existingEntry = getUserCourseEntry(currentUserId, course.id);
+
+    if (existingEntry?.enrolled) {
+      removeUserCourseEntry(currentUserId, course.id);
+      setCourseStateTick((value) => value + 1);
+      setFeedback({ type: 'success', message: `Curso removido: ${course.nome}.` });
+      return;
+    }
+
+    saveUserCourseEntry(currentUserId, course.id, {
+      enrolled: true,
+      status: 'Em progresso',
+    });
+    setCourseStateTick((value) => value + 1);
+    setFeedback({ type: 'success', message: `Curso adicionado: ${course.nome}.` });
+  };
 
   const handleLogout = () => {
     clearSessionData();
@@ -54,60 +189,136 @@ function StudentDashboardPage() {
   };
 
   return (
-    <div>
-      <header className="header">
-        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - Area do Aluno
-        </div>
-        <div className="nav-buttons">
-          <span style={{ color: 'white', marginRight: '1rem' }}>Ola, {userName}!</span>
-          <button className="btn btn-primary" onClick={() => navigate('/profile')}>
-            Perfil
-          </button>
-          <button className="btn btn-secondary" onClick={handleLogout}>
-            Sair
-          </button>
-        </div>
-      </header>
+    <div className="page-shell">
+      <AppHeader
+        subtitle="Area do aluno"
+        navItems={[
+          { label: 'Pagina inicial', onClick: () => setActiveSection('home'), active: activeSection === 'home' },
+          { label: 'Meus cursos', onClick: () => setActiveSection('courses'), active: activeSection === 'courses' },
+          { label: 'Chat', onClick: () => setActiveSection('chat'), active: activeSection === 'chat' },
+        ]}
+        onGoProfile={() => navigate('/profile')}
+        onLogout={handleLogout}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+      />
 
-      <div className="container dashboard">
-        <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '2rem' }}>
-          Seus Cursos
-        </h2>
+      <main className="container dashboard-layout">
+        <DirectorySearchSection
+          minimal
+          searchTerm={searchTerm}
+          onSearchChange={(value) => {
+            setSearchTerm(value);
+            setActiveSection('home');
+          }}
+          results={searchResults}
+          courseActionLabel="Adicionar aos meus cursos"
+          onCourseAction={handleToggleCourse}
+          isCourseSelected={(course) => Boolean(getUserCourseEntry(currentUserId, course.id)?.enrolled)}
+          onOpenCourse={(course) => navigate(`/course-view/${course.id}`)}
+          onUserAction={() => navigate('/profile')}
+        />
 
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <button className="btn btn-primary" onClick={() => navigate('/search')} style={{ marginRight: '1rem' }}>
-            Pesquisar Cursos
-          </button>
-          <button className="btn btn-secondary" onClick={() => navigate('/chat')}>
-            Chat com Professores
-          </button>
-        </div>
+        <InlineAlert type={feedback.type} message={feedback.message} />
 
-        <div className="course-grid">
-          {courses.map((course) => (
-            <div key={course.id} className="card course-card" style={{ position: 'relative' }}>
-              <div onClick={() => navigate(`/course-view/${course.id}`)} style={{ cursor: 'pointer' }}>
-                <h3>{course.nome}</h3>
-                <p><strong>Categoria:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
-                <p><strong>Carga horaria:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
-                <p><strong>Status:</strong> {course.userStatus || 'Em progresso'}</p>
-                <p>{course.descricao}</p>
+        {activeSection === 'home' ? (
+          <>
+            <section className="dashboard-hero panel-card">
+              <div>
+                <span className="section-kicker">Pagina inicial</span>
+                <h1>Bem-vindo, {userName}</h1>
+                <p>
+                  Aqui voce acompanha seus estudos, encontra novos cursos e conversa com professores em um unico lugar.
+                </p>
               </div>
-              <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-                Clique para ver detalhes
+              <div className="dashboard-hero-stats">
+                <article>
+                  <strong>{enrolledCourses.length}</strong>
+                  <span>cursos ativos</span>
+                </article>
+                <article>
+                  <strong>{users.filter((user) => user.nivelAcesso === 'PROFESSOR').length}</strong>
+                  <span>professores disponiveis</span>
+                </article>
+                <article>
+                  <strong>{allCourses.length}</strong>
+                  <span>cursos na plataforma</span>
+                </article>
               </div>
+            </section>
+
+            <section className="summary-grid">
+              <article className="panel-card info-card">
+                <h3>Seu foco agora</h3>
+                <p>{enrolledCourses[0]?.nome || 'Escolha um curso para iniciar seu plano de estudos.'}</p>
+              </article>
+              <article className="panel-card info-card">
+                <h3>Progresso atual</h3>
+                <p>
+                  {enrolledCourses.length
+                    ? `${completedCount} cursos concluidos ou avancados.`
+                    : 'Nenhum curso adicionado ainda.'}
+                </p>
+              </article>
+              <article className="panel-card info-card">
+                <h3>Suporte rapido</h3>
+                <p>Use o chat para tirar duvidas com professores e manter o ritmo da aprendizagem.</p>
+              </article>
+            </section>
+          </>
+        ) : null}
+
+        {activeSection === 'courses' ? (
+          <section className="panel-card section-stack">
+            <div className="section-heading">
+              <span className="section-kicker">Meus cursos</span>
+              <h3>Todos os cursos do aluno</h3>
             </div>
-          ))}
-        </div>
 
-        {courses.length === 0 && (
-          <div className="card" style={{ textAlign: 'center' }}>
-            <p>Nenhum curso publicado ainda.</p>
-          </div>
-        )}
-      </div>
+            {enrolledCourses.length ? (
+              <div className="course-grid modern-grid">
+                {enrolledCourses.map((course) => (
+                  <article key={course.id} className="course-card modern-card">
+                    <div className="course-card-body" onClick={() => navigate(`/course-view/${course.id}`)}>
+                      <span className="course-tag">{NIVEIS[course.categoria] || course.categoria}</span>
+                      <h3>{course.nome}</h3>
+                      <p>{course.descricao}</p>
+                      <small>{formatCourseDuration(course)} • {getCourseStatusLabel(course.userStatus)}</small>
+                    </div>
+                    <button type="button" className="btn btn-ghost" onClick={() => handleToggleCourse(course)}>
+                      Remover
+                    </button>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state-card">
+                <h4>Nenhum curso adicionado</h4>
+                <p>Use a busca acima para encontrar cursos e montar sua trilha.</p>
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        {activeSection === 'chat' ? (
+          <ChatWorkspace
+            selectedChat={selectedChat}
+            message={message}
+            onMessageChange={setMessage}
+            onSendMessage={sendMessage}
+            messages={messages}
+            conversations={conversations}
+            searchedUsers={searchedUsers}
+            searchTerm={chatSearchTerm}
+            onSearchChange={setChatSearchTerm}
+            onSelectChat={(user) => {
+              setSelectedChat(user);
+              setMessages(getChatMessages(currentUserId, user.id));
+            }}
+            currentUserId={currentUserId}
+          />
+        ) : null}
+      </main>
     </div>
   );
 }
