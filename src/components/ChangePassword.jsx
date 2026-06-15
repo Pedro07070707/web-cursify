@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AppHeader from './AppHeader';
 import InlineAlert from './InlineAlert';
-import { clearSessionData } from '../utils/authStorage';
+import { clearSessionData, getStoredUserRole } from '../utils/authStorage';
 import { getDashboardPathByRole } from '../utils/ui';
 import { useTheme } from '../utils/theme';
 
@@ -12,13 +12,13 @@ function ChangePassword() {
   const [nome, setNome] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [tipoConta, setTipoConta] = useState(localStorage.getItem('nivelAcesso') || 'ALUNO');
+  const [tipoConta, setTipoConta] = useState(getStoredUserRole() || 'ALUNO');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const userId = localStorage.getItem('userId');
-  const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const nivelAcesso = getStoredUserRole();
   const dashboardPath = getDashboardPathByRole(nivelAcesso);
 
   useEffect(() => {

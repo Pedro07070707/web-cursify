@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function AppHeader({
   variant = 'default',
@@ -15,6 +16,7 @@ function AppHeader({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  const navigate = useNavigate();
   const isLoggedIn = Boolean(localStorage.getItem('userId'));
 
   useEffect(() => {
@@ -28,10 +30,18 @@ function AppHeader({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
+  const handleBrandClick = () => {
+    if (navItems[0]?.onClick) {
+      navItems[0].onClick();
+      return;
+    }
+    navigate('/');
+  };
+
   return (
     <header className={`app-header${variant === 'home' ? ' app-header-home' : ''}`}>
       <div className="app-header__brand">
-        <button type="button" className="logo logo-button" onClick={navItems[0]?.onClick}>
+        <button type="button" className="logo logo-button" onClick={handleBrandClick}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
           <span>
             <strong>CursiFy</strong>

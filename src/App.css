@@ -476,3 +476,208 @@ img { max-width: 100%; }
 .track-node small {
   display: block;
 }
+
+/* Clean layout pass */
+.app-header,
+.header {
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+}
+
+.app-header {
+  padding: 14px 20px;
+}
+
+.app-header__brand small {
+  opacity: 0.72;
+}
+
+.logo-button {
+  gap: 12px;
+}
+
+.nav-cluster {
+  gap: 8px;
+}
+
+.nav-link-button,
+.menu-item,
+.menu-toggle,
+.header-back-button {
+  border-radius: 999px;
+}
+
+.nav-link-button {
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+}
+
+.nav-link-button.is-active,
+.nav-link-button.is-emphasis {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.menu-dropdown {
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.menu-item {
+  padding: 12px 14px;
+}
+
+.menu-item-theme strong {
+  font-size: 0.95rem;
+}
+
+.page-shell {
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.72), transparent 34%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
+}
+
+.container {
+  width: min(1120px, calc(100% - 24px));
+}
+
+.section-stack,
+.auth-card,
+.profile-shell,
+.chat-sidebar,
+.chat-panel,
+.dashboard-hero,
+.home-feature-board,
+.search-section {
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.section-stack {
+  padding: 18px;
+}
+
+.modern-card,
+.course-card,
+.result-card,
+.feature-card,
+.info-card,
+.profile-card,
+.topic-item,
+.dashboard-hero-stats article {
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+.course-grid,
+.modern-grid,
+.dashboard-hero,
+.chat-workspace {
+  gap: 16px;
+}
+
+.dashboard-hero {
+  padding: 20px;
+}
+
+.dashboard-hero h1,
+.home-feature-main h2,
+.section-heading h3,
+.profile-hero h1,
+.auth-card h2 {
+  letter-spacing: -0.03em;
+}
+
+.btn {
+  border-radius: 999px;
+  min-height: 44px;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-ghost {
+  box-shadow: none;
+}
+
+.course-card {
+  padding: 14px;
+}
+
+.course-card h3,
+.modern-card strong,
+.result-card strong,
+.feature-card strong {
+  font-size: 1.02rem;
+}
+
+.course-card p,
+.modern-card p,
+.result-card p,
+.feature-card p {
+  line-height: 1.55;
+}
+
+.result-list {
+  gap: 10px;
+}
+
+.result-card {
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+
+.result-card small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.result-card span {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary-strong);
+}
+
+.project-review-card {
+  padding: 16px;
+  gap: 10px;
+}
+
+.chat-list-item,
+.profile-tags span,
+.pill-list span,
+.course-tag,
+.section-badge {
+  border-radius: 999px;
+}
+
+.landing-hero,
+.dashboard-hero,
+.home-feature-board {
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .container {
+    width: min(100% - 16px, 1120px);
+  }
+
+  .section-stack,
+  .dashboard-hero,
+  .chat-sidebar,
+  .chat-panel,
+  .auth-card,
+  .profile-shell,
+  .home-feature-board {
+    padding: 16px;
+  }
+
+  .page-shell {
+    padding-bottom: 24px;
+  }
+}

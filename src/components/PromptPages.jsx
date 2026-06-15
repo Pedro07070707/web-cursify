@@ -62,7 +62,7 @@ const roleActionItems = (role, navigate) => {
 const Shell = ({ subtitle, children, extraNav = [] }) => {
   const navigate = useNavigate();
   const { authUser, theme, toggleTheme, logout, unreadChat } = useCursiFy();
-  const role = authUser?.role || 'USUARIO';
+  const role = authUser?.role || authUser?.nivelAcesso || 'USUARIO';
   const navItems = navForRole(role, navigate, extraNav).map((item) => (
     item.label === 'Mensagens'
       ? { ...item, label: unreadChat > 0 ? `Mensagens (${unreadChat})` : 'Mensagens' }
@@ -198,6 +198,27 @@ export function LandingPage() {
             <p>
               Cursos, trilhas gamificadas, materiais, chat e acompanhamento de progresso em um unico lugar.
             </p>
+            {nodeQuestions.length > 0 ? (
+              <div className="section-stack" style={{ padding: 0 }}>
+                {nodeQuestions.map((question) => (
+                  <article key={question.id} className="modern-card">
+                    <strong>{question.enunciado}</strong>
+                    <div className="pill-list" style={{ marginTop: 12 }}>
+                      {question.alternativas.map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          className={`btn ${nodeAnswers[question.id] === option.id ? 'btn-primary' : 'btn-secondary'}`}
+                          onClick={() => setNodeAnswers((current) => ({ ...current, [question.id]: option.id }))}
+                        >
+                          {option.texto}
+                        </button>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
             <div className="hero-actions">
               <button type="button" className="btn btn-primary" onClick={() => navigate('/cadastro')}>Criar conta</button>
               <button type="button" className="btn btn-secondary" onClick={() => navigate('/cursos')}>Explorar cursos</button>
@@ -311,7 +332,7 @@ export function AuthPage({ mode }) {
       try {
         if (mode === 'login') {
           const response = await apiClient.post('/api/auth/login', {
-            email: form.email,
+            email: form.email.trim(),
             senha: form.senha,
           });
           const authData = response.data?.data;
@@ -320,7 +341,7 @@ export function AuthPage({ mode }) {
             accessToken: authData.accessToken,
             refreshToken: authData.refreshToken,
           });
-          navigate(getDashboardPathByRole(authData?.usuario?.nivelAcesso));
+          navigate(getDashboardPathByRole(authData?.usuario?.role || authData?.usuario?.nivelAcesso));
           return;
         }
 
@@ -330,10 +351,10 @@ export function AuthPage({ mode }) {
         }
 
         const response = await apiClient.post('/api/auth/cadastro', {
-          nome: form.nome,
-          email: form.email,
+          nome: form.nome.trim(),
+          email: form.email.trim().toLowerCase(),
           senha: form.senha,
-          role: form.role,
+          role: form.role?.trim().toUpperCase() || 'USUARIO',
         });
 
         const authData = response.data?.data;
@@ -342,9 +363,13 @@ export function AuthPage({ mode }) {
           accessToken: authData.accessToken,
           refreshToken: authData.refreshToken,
         });
-        navigate(getDashboardPathByRole(authData?.usuario?.nivelAcesso));
+        navigate(getDashboardPathByRole(authData?.usuario?.role || authData?.usuario?.nivelAcesso));
       } catch (error) {
-        const backendMessage = error?.response?.data?.message || error?.response?.data?.error;
+        const backendMessage =
+          error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.response?.data?.data?.message ||
+          error?.message;
         setFeedback(backendMessage || 'Nao foi possivel concluir a operacao.');
       }
     };
@@ -407,7 +432,7 @@ export function AuthPage({ mode }) {
 export function DashboardPage() {
   const navigate = useNavigate();
   const { authUser } = useCursiFy();
-  const role = authUser?.role || 'USUARIO';
+  const role = authUser?.role || authUser?.nivelAcesso || 'USUARIO';
 
   const panels = role === 'ADMIN'
     ? [
@@ -476,7 +501,11 @@ export function CoursesPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [catalogCourses, setCatalogCourses] = useState(promptCourses);
+  const [courseDetail, setCourseDetail] = useState(null);
+  const [courseLoading, setCourseLoading] = useState(false);
+  const [certificateFeedback, setCertificateFeedback] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const { authUser } = useCursiFy();
 
   useEffect(() => {
     let active = true;
@@ -519,7 +548,31 @@ export function CoursesPage() {
     };
   }, []);
 
-  const course = id ? catalogCourses.find((item) => String(item.id) === String(id)) : null;
+  const course = id ? courseDetail || catalogCourses.find((item) => String(item.id) === String(id)) : null;
+  useEffect(() => {
+    let active = true;
+    if (!id) {
+      setCourseDetail(null);
+      return undefined;
+    }
+
+    const loadDetail = async () => {
+      setCourseLoading(true);
+      try {
+        const response = await apiClient.get(`/api/v1/curso/${id}/detalhe`, {
+          params: authUser?.id ? { usuarioId: Number(authUser.id) } : undefined,
+        });
+        if (active) setCourseDetail(response.data || null);
+      } catch (error) {
+        if (active) setCourseDetail(null);
+      } finally {
+        if (active) setCourseLoading(false);
+      }
+    };
+
+    loadDetail();
+    return () => { active = false; };
+  }, [id, authUser?.id]);
   const visibleCourses = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return catalogCourses;
@@ -542,39 +595,79 @@ export function CoursesPage() {
             <h1>{course.titulo}</h1>
             <p>{course.descricao}</p>
             <div className="pill-list">
-              <span>{course.professor}</span>
-              <span>{levelLabels[course.nivel]}</span>
-              <span>{course.gratuito ? 'Gratuito' : 'Pago'}</span>
+              <span>{course.categoria}</span>
+              <span>{course.statusCurso}</span>
+              <span>{course.matriculado ? 'Matriculado' : 'Nao matriculado'}</span>
             </div>
-            <button type="button" className="btn btn-primary">Matricular</button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={async () => {
+                try {
+                  await apiClient.post(`/api/v1/curso/${course.id}/matricular`, {
+                    usuarioId: Number(authUser?.id || authUser?.user_id || 1),
+                  });
+                  setCourseDetail((current) => current ? { ...current, matriculado: true } : current);
+                } catch (error) {
+                  console.error('Erro ao matricular:', error);
+                }
+              }}
+            >
+              Matricular
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={async () => {
+                try {
+                  const response = await apiClient.post(`/api/certificados/curso/${course.id}`, {
+                    usuarioId: Number(authUser?.id || authUser?.user_id || 1),
+                  });
+                  const data = response.data || {};
+                  setCertificateFeedback(data.codigoValidacao ? `Certificado emitido: ${data.codigoValidacao}` : 'Certificado emitido.');
+                } catch (error) {
+                  console.error('Erro ao emitir certificado:', error);
+                  setCertificateFeedback('Nao foi possivel emitir o certificado.');
+                }
+              }}
+            >
+              Emitir certificado
+            </button>
           </div>
+          {certificateFeedback ? <InlineAlert type="success" message={certificateFeedback} /> : null}
           <div className="dashboard-hero-stats">
-            <article><strong>{course.avaliacao}</strong><span>Avaliacao</span></article>
-            <article><strong>{course.matriculados}</strong><span>Matriculados</span></article>
-            <article><strong>{course.cargaHorariaMinutos}</strong><span>Minutos</span></article>
+            <article><strong>{course.cargaHoraria}</strong><span>Carga horaria</span></article>
+            <article><strong>{course.matriculado ? 'Sim' : 'Nao'}</strong><span>Matricula</span></article>
+            <article><strong>{course.modulos?.length || 0}</strong><span>Modulos</span></article>
           </div>
         </section>
 
         <section className="section-stack">
           <h2>Modulos</h2>
           <div className="course-grid">
-            {course.modulos.map((module) => (
+            {(course.modulos || []).map((module) => (
               <article key={module.id} className="modern-card">
                 <strong>{module.titulo}</strong>
                 <div className="section-stack" style={{ padding: 0, gap: 10 }}>
-                  {module.aulas.map((lesson) => (
+                  {(module.aulas || []).map((lesson) => (
                     <button key={lesson.id} type="button" className="result-card" onClick={() => navigate(`/curso/${course.id}/aula/${lesson.id}`)}>
                       <div>
                         <strong>{lesson.titulo}</strong>
-                        <p>{lesson.tipo}</p>
+                        <p>{lesson.subtitulo || lesson.tipo}</p>
                       </div>
-                      <span>{lesson.duracao} min</span>
+                      <span>{lesson.status || lesson.tipo}</span>
                     </button>
                   ))}
                 </div>
               </article>
             ))}
           </div>
+          {!courseLoading && (course.modulos || []).length === 0 ? (
+            <div className="empty-state-card">
+              <h4>Nenhum modulo encontrado</h4>
+              <p>Este curso ainda nao tem conteudos mapeados no backend legado.</p>
+            </div>
+          ) : null}
         </section>
       </Shell>
     );
@@ -614,24 +707,68 @@ export function CoursesPage() {
 export function CourseLessonPage() {
   const { id, aulaId } = useParams();
   const navigate = useNavigate();
-  const course = promptCourses.find((item) => String(item.id) === String(id));
-  const lesson = course?.modulos.flatMap((module) => module.aulas).find((item) => String(item.id) === String(aulaId));
+  const [courseDetail, setCourseDetail] = useState(null);
+  const [lessonFeedback, setLessonFeedback] = useState('');
+  const { authUser } = useCursiFy();
+
+  useEffect(() => {
+    let active = true;
+    if (!id) return undefined;
+
+    const loadDetail = async () => {
+      try {
+        const response = await apiClient.get(`/api/v1/curso/${id}/detalhe`, {
+          params: authUser?.id ? { usuarioId: Number(authUser.id) } : undefined,
+        });
+        if (active) setCourseDetail(response.data || null);
+      } catch (error) {
+        if (active) setCourseDetail(null);
+      }
+    };
+
+    loadDetail();
+    return () => { active = false; };
+  }, [id, authUser?.id]);
+
+  const course = courseDetail || promptCourses.find((item) => String(item.id) === String(id));
+  const lesson = course?.modulos?.flatMap((module) => module.aulas || []).find((item) => String(item.id) === String(aulaId));
 
   return (
     <Shell subtitle="Aula">
-      <section className="dashboard-hero">
-        <div className="section-stack" style={{ padding: 0 }}>
-          <span className="section-badge">{course?.titulo}</span>
-          <h1>{lesson?.titulo || 'Aula'}</h1>
-          <p>{lesson ? `Tipo ${lesson.tipo} - ${lesson.duracao} minutos` : 'Aula nao encontrada.'}</p>
-          <div className="hero-actions">
-            <button type="button" className="btn btn-primary">Concluir aula</button>
+        <section className="dashboard-hero">
+          <div className="section-stack" style={{ padding: 0 }}>
+            <span className="section-badge">{course?.titulo}</span>
+            <h1>{lesson?.titulo || 'Aula'}</h1>
+            <p>{lesson ? `Tipo ${lesson.tipo}` : 'Aula nao encontrada.'}</p>
+            {lessonFeedback ? <InlineAlert type="success" message={lessonFeedback} /> : null}
+            <div className="hero-actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={async () => {
+                try {
+                  const response = await apiClient.post(`/api/aulas/${lesson.id}/concluir`, {
+                    usuarioId: Number(authUser?.id || authUser?.user_id || 1),
+                    cursoId: Number(course?.id || id),
+                  });
+                  const payload = response.data || {};
+                  setLessonFeedback('Aula concluida com sucesso.');
+                  if (payload.certificadoLiberado && payload.certificado?.codigoValidacao) {
+                    setCertificateFeedback(`Certificado liberado: ${payload.certificado.codigoValidacao}`);
+                  }
+                } catch (error) {
+                  console.error('Erro ao concluir aula:', error);
+                }
+              }}
+            >
+              Concluir aula
+            </button>
             <button type="button" className="btn btn-secondary" onClick={() => navigate(`/cursos/${course?.id || ''}`)}>Voltar ao curso</button>
           </div>
         </div>
         <div className="dashboard-hero-stats">
           <article><strong>+50</strong><span>XP</span></article>
-          <article><strong>1/4</strong><span>Progresso</span></article>
+          <article><strong>{course?.matriculado ? 'Sim' : 'Nao'}</strong><span>Matricula</span></article>
         </div>
       </section>
     </Shell>
@@ -642,18 +779,23 @@ export function TracksPage() {
   const navigate = useNavigate();
   const { id, noId } = useParams();
   const [catalogTracks, setCatalogTracks] = useState(promptTracks);
+  const [nodeFeedback, setNodeFeedback] = useState('');
+  const [nodeResult, setNodeResult] = useState(null);
+  const [nodeQuestions, setNodeQuestions] = useState([]);
+  const [nodeAnswers, setNodeAnswers] = useState({});
+  const [projectDraft, setProjectDraft] = useState({ respostaTexto: '', arquivoUrl: '' });
+  const { authUser } = useCursiFy();
 
   useEffect(() => {
     let active = true;
 
     const loadTracks = async () => {
       try {
-        const response = await apiClient.get('/api/public/trilhas');
+        const response = await apiClient.get('/api/trilhas', {
+          params: authUser?.id || authUser?.user_id ? { userId: Number(authUser?.id || authUser?.user_id) } : undefined,
+        });
         const payload = Array.isArray(response.data) ? response.data : [];
-
-        if (active && payload.length > 0) {
-          setCatalogTracks(payload);
-        }
+        if (active && payload.length > 0) setCatalogTracks(payload);
       } catch (error) {
         if (active) {
           setCatalogTracks(promptTracks);
@@ -667,21 +809,152 @@ export function TracksPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [authUser?.id, authUser?.user_id]);
 
   const track = id ? catalogTracks.find((item) => String(item.id) === String(id)) : null;
   const node = track?.nos?.find((item) => String(item.id) === String(noId));
+
+  useEffect(() => {
+    let active = true;
+
+    const loadQuestions = async () => {
+      if (!node) {
+        setNodeQuestions([]);
+        setNodeAnswers({});
+        setProjectDraft({ respostaTexto: '', arquivoUrl: '' });
+        setNodeResult(null);
+        return;
+      }
+
+      try {
+        const response = await apiClient.get(`/api/nos/${node.id}/questoes`);
+        if (!active) return;
+        setNodeQuestions(Array.isArray(response.data) ? response.data : []);
+        setNodeAnswers({});
+        setProjectDraft({ respostaTexto: '', arquivoUrl: '' });
+      } catch (error) {
+        if (active) {
+          setNodeQuestions([]);
+          setNodeAnswers({});
+          setProjectDraft({ respostaTexto: '', arquivoUrl: '' });
+          setNodeResult(null);
+        }
+      }
+    };
+
+    loadQuestions();
+
+    return () => {
+      active = false;
+    };
+  }, [node?.id]);
 
   if (track && node) {
     return (
       <Shell subtitle="No da trilha">
         <section className="dashboard-hero">
           <div className="section-stack" style={{ padding: 0 }}>
+            {nodeFeedback ? <InlineAlert type="success" message={nodeFeedback} /> : null}
             <span className="section-badge">{track.titulo}</span>
             <h1>{node.titulo}</h1>
             <p>Execucao do nodo {node.tipo}. Fluxo simplificado para lição, exercicio, quiz, checkpoint e projeto.</p>
+            {node.tipo === 'PROJETO' ? (
+              <div className="section-stack" style={{ padding: 0 }}>
+                <div className="form-group">
+                  <label>Resposta do projeto</label>
+                  <textarea
+                    rows={5}
+                    value={projectDraft.respostaTexto}
+                    onChange={(event) => setProjectDraft((current) => ({ ...current, respostaTexto: event.target.value }))}
+                    placeholder="Descreva sua solução, raciocínio ou entrega"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>URL do arquivo opcional</label>
+                  <input
+                    value={projectDraft.arquivoUrl}
+                    onChange={(event) => setProjectDraft((current) => ({ ...current, arquivoUrl: event.target.value }))}
+                    placeholder="Link do arquivo, imagem ou documento"
+                  />
+                </div>
+              </div>
+            ) : null}
+            {nodeResult ? (
+              <article className="modern-card">
+                <strong>{nodeResult.mensagem || 'Resultado do nodo'}</strong>
+                {node.tipo === 'PROJETO' ? (
+                  <div className="section-stack" style={{ padding: 0, marginTop: 12 }}>
+                    <p>
+                      Projeto #{nodeResult.projetoId ?? '-'} | Status {nodeResult.status || 'PENDENTE'} | {nodeResult.xpGanho || 0} XP
+                    </p>
+                    {nodeResult.feedbackProfessor ? <p>{nodeResult.feedbackProfessor}</p> : <p>Projeto enviado para avaliacao.</p>}
+                    <div className="pill-list">
+                      <span>{nodeResult.status || 'PENDENTE'}</span>
+                      {nodeResult.avaliadoPor ? <span>Avaliador {nodeResult.avaliadoPor}</span> : null}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p>
+                      Nota {nodeResult.nota?.toFixed?.(1) ?? nodeResult.nota}/{nodeResult.notaMinima ?? '0'} | {nodeResult.acertos}/{nodeResult.total} acertos | {nodeResult.xpGanho} XP
+                    </p>
+                    <div className="pill-list">
+                      <span>{nodeResult.aprovado ? 'Aprovado' : 'Nao aprovado'}</span>
+                      <span>{nodeResult.tipoNo}</span>
+                      {nodeResult.tentativas ? <span>{nodeResult.tentativas} tentativa(s)</span> : null}
+                    </div>
+                    {Array.isArray(nodeResult.detalhes) && nodeResult.detalhes.length > 0 ? (
+                      <div className="section-stack result-list" style={{ padding: 0, marginTop: 12 }}>
+                        {nodeResult.detalhes.map((item) => (
+                          <div key={item.questaoId} className="result-card">
+                            <div>
+                              <strong>{item.enunciado || `Questao ${item.questaoId}`}</strong>
+                              <p>{item.feedback}</p>
+                              <small>
+                                Sua resposta: {item.alternativaId ?? 'Nenhuma'} | Correta: {item.alternativaCorretaId ?? 'N/D'}
+                              </small>
+                            </div>
+                            <span>{item.correta ? 'Correta' : 'Incorreta'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </article>
+            ) : null}
             <div className="hero-actions">
-              <button type="button" className="btn btn-primary">Executar nodo</button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={async () => {
+                  try {
+                    const usuarioId = Number(authUser?.id || authUser?.user_id || 1);
+                    const response = node.tipo === 'PROJETO'
+                      ? await apiClient.post(`/api/projetos/nos/${node.id}/enviar`, {
+                          usuarioId,
+                          respostaTexto: projectDraft.respostaTexto,
+                          arquivoUrl: projectDraft.arquivoUrl,
+                        })
+                      : nodeQuestions.length > 0 && (node.tipo === 'CHECKPOINT' || node.tipo === 'QUIZ')
+                      ? await apiClient.post(`/api/progresso/nos/${node.id}/responder`, {
+                          usuarioId,
+                          respostas: nodeQuestions.map((question) => ({
+                            questaoId: question.id,
+                            alternativaId: nodeAnswers[question.id] || null,
+                          })),
+                        })
+                      : await apiClient.post(`/api/progresso/nos/${node.id}/concluir`, { usuarioId });
+                    const data = response.data || {};
+                    setNodeResult(data);
+                    setNodeFeedback(`+${data.xpGanho || 0} XP | Total: ${data.xpTotal || 0} XP`);
+                  } catch (error) {
+                    console.error('Erro ao concluir nodo:', error);
+                  }
+                }}
+              >
+                Executar nodo
+              </button>
               <button type="button" className="btn btn-secondary" onClick={() => navigate(`/trilhas/${track.id}`)}>Voltar ao mapa</button>
             </div>
           </div>
@@ -768,7 +1041,7 @@ export function ProfilePage() {
             <h1>{authUser?.nome || 'Usuario'}</h1>
             <p>{authUser?.email}</p>
             <div className="profile-tags">
-              <span>{roleLabels[authUser?.role] || 'Aluno'}</span>
+              <span>{roleLabels[authUser?.role || authUser?.nivelAcesso] || 'Aluno'}</span>
               <span>{promptStats.xpTotal} XP</span>
               <span>Streak {promptStats.streak}</span>
             </div>
@@ -791,6 +1064,69 @@ export function MessagesPage() {
   const [composer, setComposer] = useState('');
 
   const selectedConversation = conversations.find((item) => item.id === selectedId);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadConversations = async () => {
+      try {
+        const response = await apiClient.get('/api/chat/conversas');
+        const payload = Array.isArray(response.data) ? response.data : [];
+        if (!active || payload.length === 0) return;
+        setConversations(
+          payload.map((item) => ({
+            id: Number(item.id),
+            nome: item.nome || `Conversa ${item.id}`,
+            tipo: item.tipo || 'DIRETO',
+            preview: 'Clique para carregar mensagens',
+            time: 'Agora',
+            unread: 0,
+            status: item.trilhaId ? `Trilha ${item.trilhaId}` : 'Privada',
+            messages: [],
+          })),
+        );
+        if (!conversaId && payload[0]?.id) setSelectedId(Number(payload[0].id));
+      } catch (error) {
+        console.error('Erro ao carregar conversas:', error);
+      }
+    };
+
+    loadConversations();
+
+    return () => {
+      active = false;
+    };
+  }, [conversaId]);
+
+  useEffect(() => {
+    let active = true;
+    const loadMessages = async () => {
+      if (!selectedId) return;
+      try {
+        const response = await apiClient.get(`/api/chat/conversas/${selectedId}/mensagens`);
+        const payload = Array.isArray(response.data) ? response.data : [];
+        if (!active) return;
+        setConversations((current) => current.map((conversation) => {
+          if (conversation.id !== selectedId) return conversation;
+          return {
+            ...conversation,
+            messages: payload.map((item) => ({
+              id: item.id,
+              authorId: item.remetenteId,
+              author: `Usuario ${item.remetenteId}`,
+              text: item.conteudo,
+              time: new Date(item.enviadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+              own: false,
+            })),
+          };
+        }));
+      } catch (error) {
+        console.error('Erro ao carregar mensagens:', error);
+      }
+    };
+    loadMessages();
+    return () => { active = false; };
+  }, [selectedId]);
 
   const sendMessage = () => {
     if (!composer.trim() || !selectedConversation) return;
@@ -816,6 +1152,11 @@ export function MessagesPage() {
 
     setConversations(next);
     setComposer('');
+    apiClient.post(`/api/chat/conversas/${selectedConversation.id}/mensagens`, {
+      remetenteId: 1,
+      conteudo: composer.trim(),
+      tipo: 'TEXTO',
+    }).catch(() => undefined);
   };
 
   return (
@@ -884,6 +1225,45 @@ export function NotificationsPage() {
 
 export function ManagementPage({ title, subtitle }) {
   const navigate = useNavigate();
+  const isProfessor = subtitle === 'Professor';
+  const [pendingProjects, setPendingProjects] = useState([]);
+  const [projectFeedback, setProjectFeedback] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    if (!isProfessor) return undefined;
+
+    const loadProjects = async () => {
+      try {
+        const response = await apiClient.get('/api/projetos/pendentes');
+        if (!active) return;
+        setPendingProjects(Array.isArray(response.data) ? response.data : []);
+      } catch (error) {
+        if (active) setPendingProjects([]);
+      }
+    };
+
+    loadProjects();
+    return () => {
+      active = false;
+    };
+  }, [isProfessor]);
+
+  const reviewProject = async (projectId, aprovado) => {
+    try {
+      const response = await apiClient.post(`/api/projetos/${projectId}/avaliar`, {
+        avaliadorId: 1,
+        aprovado,
+        feedbackProfessor: projectFeedback,
+      });
+      setPendingProjects((current) => current.filter((item) => item.id !== projectId));
+      setProjectFeedback('');
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao avaliar projeto:', error);
+      return null;
+    }
+  };
 
   return (
     <Shell subtitle={subtitle}>
@@ -900,6 +1280,46 @@ export function ManagementPage({ title, subtitle }) {
             </article>
           ))}
         </div>
+        {isProfessor ? (
+          <section className="section-stack">
+            <div className="section-heading-inline">
+              <h2>Projetos pendentes</h2>
+              <span className="section-badge">{pendingProjects.length} aguardando</span>
+            </div>
+            <div className="form-group">
+              <label>Feedback padrão do professor</label>
+              <textarea
+                rows={3}
+                value={projectFeedback}
+                onChange={(event) => setProjectFeedback(event.target.value)}
+                placeholder="Deixe um feedback que será aplicado na avaliação"
+              />
+            </div>
+            <div className="section-stack" style={{ padding: 0 }}>
+              {pendingProjects.length > 0 ? pendingProjects.map((project) => (
+                <article key={project.id} className="modern-card project-review-card">
+                  <div className="section-heading-inline">
+                    <span className="section-kicker">Pendente</span>
+                    <span className="section-badge">No {project.noId}</span>
+                  </div>
+                  <strong>Projeto {project.id}</strong>
+                  <p>Aluno {project.usuarioId}</p>
+                  <p>{project.respostaTexto || 'Sem resposta textual.'}</p>
+                  {project.arquivoUrl ? <small>{project.arquivoUrl}</small> : null}
+                  <div className="hero-actions">
+                    <button type="button" className="btn btn-primary" onClick={() => reviewProject(project.id, true)}>Aprovar</button>
+                    <button type="button" className="btn btn-danger" onClick={() => reviewProject(project.id, false)}>Reprovar</button>
+                  </div>
+                </article>
+              )) : (
+                <article className="modern-card">
+                  <strong>Nenhum projeto pendente</strong>
+                  <p>Os envios aparecem aqui quando o aluno conclui um nodo de projeto.</p>
+                </article>
+              )}
+            </div>
+          </section>
+        ) : null}
       </section>
     </Shell>
   );

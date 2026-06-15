@@ -8,9 +8,22 @@ import {
 
 const CursiFyContext = createContext(null);
 
+const normalizeSession = (session) => {
+  if (!session?.user) return session;
+  const role = session.user.role || session.user.nivelAcesso || 'USUARIO';
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      role,
+      nivelAcesso: session.user.nivelAcesso || role,
+    },
+  };
+};
+
 export function CursiFyProvider({ children }) {
   const [theme, setTheme] = useState(getStoredTheme);
-  const [authSession, setAuthSession] = useState(() => getStoredAuthSession());
+  const [authSession, setAuthSession] = useState(() => normalizeSession(getStoredAuthSession()));
   const [unreadChat, setUnreadChat] = useState(3);
   const [notifications, setNotifications] = useState([]);
 
@@ -20,7 +33,7 @@ export function CursiFyProvider({ children }) {
 
   useEffect(() => {
     if (authSession) {
-      saveAuthSession(authSession);
+      saveAuthSession(normalizeSession(authSession));
     }
   }, [authSession]);
 
@@ -34,7 +47,7 @@ export function CursiFyProvider({ children }) {
       setAuthSession(null);
       clearAuthSession();
     },
-    login: (session) => setAuthSession(session),
+    login: (session) => setAuthSession(normalizeSession(session)),
     unreadChat,
     setUnreadChat,
     notifications,

@@ -1,10 +1,11 @@
-﻿import { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { getStoredUserRole } from '../utils/authStorage';
 
 function CourseRedirect() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const nivelAcesso = localStorage.getItem('nivelAcesso');
+  const nivelAcesso = getStoredUserRole();
 
   useEffect(() => {
     if (nivelAcesso === 'PROFESSOR' || nivelAcesso === 'ADMIN') {

@@ -1,4 +1,4 @@
-const SESSION_KEYS = ['userId', 'userName', 'userEmail', 'nivelAcesso', 'accessToken', 'refreshToken', 'cursify-auth-session'];
+const SESSION_KEYS = ['userId', 'userName', 'userEmail', 'nivelAcesso', 'role', 'accessToken', 'refreshToken', 'cursify-auth-session'];
 const AUTH_SESSION_KEY = 'cursify-auth-session';
 
 const isChatThreadForUser = (key, userId) => {
@@ -28,13 +28,25 @@ export const getStoredAuthSession = () => {
 export const saveAuthSession = (session) => {
   if (typeof window === 'undefined') return;
 
-  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
-  window.localStorage.setItem('userId', String(session?.user?.id ?? ''));
-  window.localStorage.setItem('userName', session?.user?.nome || '');
-  window.localStorage.setItem('userEmail', session?.user?.email || '');
-  window.localStorage.setItem('nivelAcesso', session?.user?.nivelAcesso || session?.user?.role || '');
-  window.localStorage.setItem('accessToken', session?.accessToken || '');
-  window.localStorage.setItem('refreshToken', session?.refreshToken || '');
+  const normalizedSession = session?.user
+    ? {
+        ...session,
+        user: {
+          ...session.user,
+          role: session.user.role || session.user.nivelAcesso || 'USUARIO',
+          nivelAcesso: session.user.nivelAcesso || session.user.role || 'USUARIO',
+        },
+      }
+    : session;
+
+  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(normalizedSession));
+  window.localStorage.setItem('userId', String(normalizedSession?.user?.id ?? ''));
+  window.localStorage.setItem('userName', normalizedSession?.user?.nome || '');
+  window.localStorage.setItem('userEmail', normalizedSession?.user?.email || '');
+  window.localStorage.setItem('nivelAcesso', normalizedSession?.user?.nivelAcesso || normalizedSession?.user?.role || '');
+  window.localStorage.setItem('role', normalizedSession?.user?.role || normalizedSession?.user?.nivelAcesso || '');
+  window.localStorage.setItem('accessToken', normalizedSession?.accessToken || '');
+  window.localStorage.setItem('refreshToken', normalizedSession?.refreshToken || '');
 };
 
 export const clearAuthSession = () => {
@@ -44,6 +56,18 @@ export const clearAuthSession = () => {
 export const getAccessToken = () => (typeof window === 'undefined' ? null : window.localStorage.getItem('accessToken'));
 
 export const getRefreshToken = () => (typeof window === 'undefined' ? null : window.localStorage.getItem('refreshToken'));
+
+export const getStoredUserRole = () => {
+  if (typeof window === 'undefined') return null;
+  const session = getStoredAuthSession();
+  return (
+    session?.user?.role ||
+    session?.user?.nivelAcesso ||
+    window.localStorage.getItem('role') ||
+    window.localStorage.getItem('nivelAcesso') ||
+    null
+  );
+};
 
 export const clearPersistedUserData = (userId) => {
   if (!userId) return;
