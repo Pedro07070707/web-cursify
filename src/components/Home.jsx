@@ -43,13 +43,9 @@ function Home() {
       <AppHeader
         variant="home"
         subtitle="Plataforma de cursos online"
-        navItems={[
-          { label: 'Pagina inicial', onClick: () => navigate('/') },
-        ]}
-        actionItems={[
-          { label: 'Entrar', onClick: () => navigate('/login') },
-          { label: 'Cadastrar', onClick: () => navigate('/register'), emphasis: true },
-        ]}
+        onHome={() => navigate('/')}
+        onLogin={() => navigate('/login')}
+        onRegister={() => navigate('/register')}
         onGoProfile={() => navigate('/profile')}
         onLogout={() => {
           localStorage.clear();
@@ -69,102 +65,104 @@ function Home() {
           onUserAction={() => navigate(localStorage.getItem('userId') ? '/profile' : '/login')}
         />
 
-        <section className="home-hero">
-          <div className="welcome-section">
-            <h1>
-              <img src="/logoCursiFy.png" alt="Web Cursify" />
-              CursiFy
+        {/* HERO */}
+        <section className="home-hero-modern">
+          <div className="hero-modern-content">
+            <span className="section-badge">Plataforma educacional</span>
+            <h1 className="hero-modern-title">
+              Aprenda no seu ritmo,<br />
+              <span className="hero-highlight">evolua de verdade</span>
             </h1>
-            <p>Plataforma de cursos online</p>
-          </div>
-
-          <div className="options home-carousel">
-            <div
-              className={`option${activeIndex === 0 ? ' active' : ''}`}
-              onMouseEnter={() => setActiveIndex(0)}
-              onMouseLeave={() => setActiveIndex(null)}
-            >
-              <div className="option-bg" style={{ backgroundImage: 'url(/carousel-1.jpg)' }} />
-              <div className="option-bg option-bg-hover" style={{ backgroundImage: 'url(/carousel-1-hover.jpg)' }} />
-            </div>
-
-            <div
-              className={`option${activeIndex === 1 ? ' active' : ''}`}
-              onMouseEnter={() => setActiveIndex(1)}
-              onMouseLeave={() => setActiveIndex(null)}
-            >
-              <div className="option-bg" style={{ backgroundImage: 'url(/carousel-2.jpg)' }} />
-              <div className="option-bg option-bg-hover" style={{ backgroundImage: 'url(/carousel-2-hover.jpg)' }} />
-            </div>
-
-            <div
-              className={`option${activeIndex === 2 ? ' active' : ''}`}
-              onMouseEnter={() => setActiveIndex(2)}
-              onMouseLeave={() => setActiveIndex(null)}
-            >
-              <div className="option-bg" style={{ backgroundImage: 'url(/carousel-3.jpg)' }} />
-              <div className="option-bg option-bg-hover" style={{ backgroundImage: 'url(/carousel-3-hover.jpg)' }} />
-            </div>
-
-            <div
-              className={`option${activeIndex === 3 ? ' active' : ''}`}
-              onMouseEnter={() => setActiveIndex(3)}
-              onMouseLeave={() => setActiveIndex(null)}
-            >
-              <div className="option-bg" style={{ backgroundImage: 'url(/carousel-4.jpg)' }} />
-              <div className="option-bg option-bg-hover" style={{ backgroundImage: 'url(/carousel-4-hover.jpg)' }} />
-            </div>
-          </div>
-        </section>
-
-        <section className="home-feature-board">
-          <div className="home-feature-main">
-            <span className="section-badge">Sobre a plataforma</span>
-            <h2>Aprenda de forma simples, organizada e com acompanhamento real</h2>
-            <p>
-              O Cursify oferece cursos completos para estudantes do ensino fundamental ao ensino medio,
-              com conteudo estruturado e metodologia eficiente.
+            <p className="hero-modern-desc">
+              Cursos completos de Matemática e Português do Ensino Fundamental ao Médio,
+              com conteúdo estruturado, acompanhamento de progresso e ambiente dedicado
+              para alunos e professores.
             </p>
-
             <div className="hero-actions">
               <button
                 type="button"
-                className="btn btn-primary"
+                className="btn btn-primary btn-hero"
                 onClick={() => navigate(localStorage.getItem('userId') ? getDashboardPathByRole(nivelAcesso) : '/login')}
               >
-                Comecar agora
+                Começar agora
               </button>
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-ghost btn-hero"
                 onClick={() => navigate('/register')}
               >
                 Criar conta gratuita
               </button>
             </div>
-
-            <div className="home-quality-pill">
-              <strong>Educacao de qualidade</strong>
-              <span>para transformar futuros</span>
+            <div className="hero-stats">
+              <div className="hero-stat">
+                <strong>{courses.length || '+'}</strong>
+                <span>Cursos disponíveis</span>
+              </div>
+              <div className="hero-stat-divider" />
+              <div className="hero-stat">
+                <strong>{users.length || '+'}</strong>
+                <span>Usuários cadastrados</span>
+              </div>
+              <div className="hero-stat-divider" />
+              <div className="hero-stat">
+                <strong>2</strong>
+                <span>Disciplinas</span>
+              </div>
             </div>
           </div>
 
-          <div className="feature-grid">
-            <article className="feature-card">
+          <div className="hero-modern-visual">
+            <div className="options home-carousel">
+              {[1, 2, 3, 4].map((n, i) => (
+                <div
+                  key={n}
+                  className={`option${activeIndex === i ? ' active' : ''}`}
+                  onMouseEnter={() => setActiveIndex(i)}
+                  onMouseLeave={() => setActiveIndex(null)}
+                >
+                  <div className="option-bg" style={{ backgroundImage: `url(/carousel-${n}.jpg)` }} />
+                  <div className="option-bg option-bg-hover" style={{ backgroundImage: `url(/carousel-${n}-hover.jpg)` }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FEATURES */}
+        <section className="home-features-section">
+          <div className="features-header">
+            <span className="section-badge">Por que o CursiFy?</span>
+            <h2 className="features-title">Tudo que você precisa para aprender</h2>
+          </div>
+          <div className="features-cards-grid">
+            <article className="feature-card-modern">
+              <div className="feature-icon-wrap feature-icon-blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              </div>
               <h3>Cursos completos</h3>
-              <p>Matematica e Portugues organizados por nivel.</p>
+              <p>Matemática e Português organizados por nível, do fundamental ao médio.</p>
             </article>
-            <article className="feature-card">
-              <h3>Do fundamental ao medio</h3>
-              <p>Todo o conteudo necessario em um so lugar.</p>
-            </article>
-            <article className="feature-card">
-              <h3>Area para professores e alunos</h3>
-              <p>Ambiente dedicado para ensino e aprendizagem.</p>
-            </article>
-            <article className="feature-card">
+            <article className="feature-card-modern">
+              <div className="feature-icon-wrap feature-icon-green">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
               <h3>Acompanhamento de progresso</h3>
-              <p>Veja sua evolucao de forma clara e personalizada.</p>
+              <p>Veja sua evolução de forma clara e personalize seu percurso de aprendizado.</p>
+            </article>
+            <article className="feature-card-modern">
+              <div className="feature-icon-wrap feature-icon-blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <h3>Área para professores e alunos</h3>
+              <p>Ambiente dedicado para ensino e aprendizagem com funcionalidades específicas para cada perfil.</p>
+            </article>
+            <article className="feature-card-modern">
+              <div className="feature-icon-wrap feature-icon-green">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <h3>Conteúdo de qualidade</h3>
+              <p>Material estruturado e metodologia eficiente para transformar futuros.</p>
             </article>
           </div>
         </section>

@@ -184,8 +184,8 @@ function AdminDashboardPage() {
     <div className="page-shell">
       <AppHeader
         subtitle="Area do administrador"
+        onHome={() => navigate('/')}
         navItems={[
-          { label: 'Pagina inicial', onClick: () => setActiveSection('home'), active: activeSection === 'home' },
           { label: 'Chat', onClick: () => setActiveSection('chat'), active: activeSection === 'chat' },
           { label: 'Painel', onClick: () => setActiveSection('panel'), active: activeSection === 'panel' },
         ]}
@@ -212,42 +212,75 @@ function AdminDashboardPage() {
 
         {activeSection === 'home' ? (
           <>
-            <section className="dashboard-hero panel-card">
-              <div>
-                <span className="section-kicker">Pagina inicial</span>
-                <h1>Painel geral da plataforma</h1>
-                <p>
-                  Acompanhe usuarios, cursos, buscas e conversas em uma visao unica inspirada na experiencia do aluno.
+            <section className="dash-hero panel-card">
+              <div className="dash-hero-text">
+                <span className="section-badge">Área administrativa</span>
+                <h1 className="dash-hero-title">Painel da plataforma 🛡️</h1>
+                <p className="dash-hero-desc">
+                  Gerencie usuários, cursos e conversas em uma visão única e centralizada.
                 </p>
+                <div className="hero-actions">
+                  <button type="button" className="btn btn-primary btn-hero" onClick={() => setActiveSection('panel')}>
+                    Abrir painel
+                  </button>
+                  <button type="button" className="btn btn-ghost btn-hero" onClick={() => setActiveSection('chat')}>
+                    Chat
+                  </button>
+                </div>
               </div>
-              <div className="dashboard-hero-stats">
-                <article>
+              <div className="dash-hero-stats">
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon dash-stat-icon-blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
                   <strong>{users.length}</strong>
-                  <span>usuarios totais</span>
-                </article>
-                <article>
+                  <span>usuários totais</span>
+                </div>
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon dash-stat-icon-green">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <strong>{users.filter((u) => u.statusUsuario).length}</strong>
+                  <span>contas ativas</span>
+                </div>
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon dash-stat-icon-blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                  </div>
                   <strong>{courses.length}</strong>
                   <span>cursos publicados</span>
-                </article>
-                <article>
-                  <strong>{users.filter((user) => user.statusUsuario).length}</strong>
-                  <span>contas ativas</span>
-                </article>
+                </div>
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon dash-stat-icon-green">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  </div>
+                  <strong>{users.filter((u) => u.nivelAcesso === 'PROFESSOR').length}</strong>
+                  <span>professores</span>
+                </div>
               </div>
             </section>
 
-            <section className="summary-grid">
-              <article className="panel-card info-card">
+            <section className="dash-summary-grid">
+              <article className="dash-summary-card">
+                <div className="feature-icon-wrap feature-icon-blue">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                </div>
                 <h3>Fluxo principal</h3>
-                <p>A pagina inicial concentra visao geral, busca e atalhos para moderacao da plataforma.</p>
+                <p>Acesse o painel para moderar usuários e cursos com ações rápidas de ativar, inativar e excluir.</p>
               </article>
-              <article className="panel-card info-card">
+              <article className="dash-summary-card">
+                <div className="feature-icon-wrap feature-icon-green">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
                 <h3>Busca unificada</h3>
-                <p>Pesquise cursos e usuarios na caixa acima com resultados separados.</p>
+                <p>Pesquise cursos e usuários na caixa acima com resultados separados por tópico.</p>
               </article>
-              <article className="panel-card info-card">
+              <article className="dash-summary-card">
+                <div className="feature-icon-wrap feature-icon-blue">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
                 <h3>Chat administrativo</h3>
-                <p>Converse com qualquer perfil da plataforma quando precisar acompanhar casos especificos.</p>
+                <p>Converse com qualquer perfil da plataforma para acompanhar casos específicos.</p>
               </article>
             </section>
           </>

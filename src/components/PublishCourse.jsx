@@ -98,99 +98,132 @@ function PublishCoursePage() {
   };
 
   return (
-    <div>
-      <header className="header">
-        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - Publicar Curso
+    <div className="page-shell">
+      <header className="app-header">
+        <div className="app-header__brand">
+          <button type="button" className="logo logo-button" onClick={() => navigate('/')}>
+            <img src="/logoCursiFy.png" alt="CursiFy" />
+            <span>
+              <strong>CursiFy</strong>
+              <small>Publicar curso</small>
+            </span>
+          </button>
         </div>
-        <div className="nav-buttons">
-          <button className="btn btn-secondary" onClick={() => navigate(userType === 'admin' ? '/admin' : '/teacher')}>
+        <div className="app-header__nav">
+          <button
+            type="button"
+            className="header-back-button"
+            onClick={() => navigate(userType === 'admin' ? '/admin' : '/teacher')}
+          >
             Voltar
           </button>
         </div>
       </header>
 
-      <div className="container">
-        <div className="card" style={{ maxWidth: '600px', margin: '2rem auto' }}>
-          <h2>Publicar Novo Curso</h2>
-          <form onSubmit={handleSubmit}>
+      <main className="container publish-layout">
+        <div className="publish-sidebar">
+          <div className="panel-card publish-info-card">
+            <div className="feature-icon-wrap feature-icon-blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <h3>Novo curso</h3>
+            <p>Preencha as informações básicas e adicione conteúdo para publicar seu curso na plataforma.</p>
+          </div>
+          <div className="panel-card publish-info-card">
+            <div className="feature-icon-wrap feature-icon-green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h3>Status inicial</h3>
+            <p>O curso será publicado com o status <strong>Em progresso</strong> e ficará visível para os alunos.</p>
+          </div>
+          <div className="panel-card publish-info-card">
+            <div className="feature-icon-wrap feature-icon-blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <h3>Conteúdo rico</h3>
+            <p>Adicione materiais, exercícios, atividades e avaliações para enriquecer a experiência dos alunos.</p>
+          </div>
+        </div>
+
+        <div className="panel-card publish-form-card">
+          <div className="publish-form-header">
+            <span className="section-badge">Professor</span>
+            <h2>Publicar novo curso</h2>
+            <p>Categoria selecionada: <strong>{CATEGORIAS[categoria]}</strong></p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="publish-form">
             <div className="form-group">
-              <label>Nome do Curso:</label>
-              <input
-                type="text"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                required
-                placeholder="Ex: Matematica Basica"
-              />
+              <label>Nome do curso</label>
+              <div className="input-icon-wrap">
+                <svg className="input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  required
+                  placeholder="Ex: Matemática Básica"
+                />
+              </div>
             </div>
 
             <div className="form-group">
-              <label>Descricao:</label>
+              <label>Descrição</label>
               <textarea
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 required
-                placeholder="Descreva o conteudo e os objetivos do curso..."
-                style={{ minHeight: '100px', resize: 'vertical' }}
+                placeholder="Descreva o conteúdo e os objetivos do curso..."
+                className="publish-textarea"
               />
             </div>
 
-            <div className="form-group">
-              <label>Categoria:</label>
-              <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-                <option value="FUNDAMENTAL_1">Fundamental 1 (1o ao 5o ano)</option>
-                <option value="FUNDAMENTAL_2">Fundamental 2 (6o ao 9o ano)</option>
-                <option value="MEDIO_1">Ensino Medio - 1o ano</option>
-                <option value="MEDIO_2">Ensino Medio - 2o ano</option>
-                <option value="MEDIO_3">Ensino Medio - 3o ano</option>
-                <option value="OUTROS">Outros</option>
-              </select>
-              <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                Categoria selecionada: <strong>{CATEGORIAS[categoria]}</strong>
-              </small>
+            <div className="publish-form-row">
+              <div className="form-group">
+                <label>Categoria</label>
+                <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+                  <option value="FUNDAMENTAL_1">Fundamental 1 (1º ao 5º ano)</option>
+                  <option value="FUNDAMENTAL_2">Fundamental 2 (6º ao 9º ano)</option>
+                  <option value="MEDIO_1">Ensino Médio - 1º ano</option>
+                  <option value="MEDIO_2">Ensino Médio - 2º ano</option>
+                  <option value="MEDIO_3">Ensino Médio - 3º ano</option>
+                  <option value="OUTROS">Outros</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Carga horária (horas)</label>
+                <div className="input-icon-wrap">
+                  <svg className="input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <input
+                    type="number"
+                    value={cargaHoraria}
+                    onChange={(e) => setCargaHoraria(e.target.value)}
+                    required
+                    placeholder="Ex: 40"
+                    min="1"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="form-group">
-              <label>Carga Horaria (em horas):</label>
-              <input
-                type="number"
-                value={cargaHoraria}
-                onChange={(e) => setCargaHoraria(e.target.value)}
-                required
-                placeholder="Ex: 40"
-                min="1"
-              />
+            <div className="publish-content-sections">
+              {CONTENT_TYPES.map((config) => (
+                <CourseContentEditorSection
+                  key={config.key}
+                  config={config}
+                  items={sections[config.key]}
+                  onChange={(items) => setSections((current) => ({ ...current, [config.key]: items }))}
+                />
+              ))}
             </div>
 
-            {CONTENT_TYPES.map((config) => (
-              <CourseContentEditorSection
-                key={config.key}
-                config={config}
-                items={sections[config.key]}
-                onChange={(items) => setSections((current) => ({ ...current, [config.key]: items }))}
-              />
-            ))}
-
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-              Publicar Curso
+            <button type="submit" className="btn btn-primary auth-submit-full">
+              Publicar curso
             </button>
           </form>
-
-          <div
-            style={{
-              marginTop: '2rem',
-              padding: '1rem',
-              background: '#f0f8ff',
-              borderRadius: '5px',
-            }}
-          >
-            <h4>Status inicial</h4>
-            <p>O curso sera publicado com o status "Em progresso".</p>
-          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

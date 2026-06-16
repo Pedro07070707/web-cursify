@@ -9,6 +9,9 @@ function AppHeader({
   backLabel = 'Voltar',
   onGoProfile,
   onLogout,
+  onLogin,
+  onRegister,
+  onHome,
   onToggleTheme,
   theme = 'light',
   subtitle,
@@ -31,7 +34,7 @@ function AppHeader({
   return (
     <header className={`app-header${variant === 'home' ? ' app-header-home' : ''}`}>
       <div className="app-header__brand">
-        <button type="button" className="logo logo-button" onClick={navItems[0]?.onClick}>
+        <button type="button" className="logo logo-button" onClick={onHome}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
           <span>
             <strong>CursiFy</strong>
@@ -89,6 +92,22 @@ function AppHeader({
 
           {menuOpen ? (
             <div className="menu-dropdown">
+              {!isLoggedIn && onLogin ? (
+                <button type="button" className="menu-item" onClick={() => {
+                  setMenuOpen(false);
+                  onLogin();
+                }}>
+                  Entrar
+                </button>
+              ) : null}
+              {!isLoggedIn && onRegister ? (
+                <button type="button" className="menu-item" onClick={() => {
+                  setMenuOpen(false);
+                  onRegister();
+                }}>
+                  Cadastrar
+                </button>
+              ) : null}
               {isLoggedIn && onGoProfile ? (
                 <button type="button" className="menu-item" onClick={() => {
                   setMenuOpen(false);

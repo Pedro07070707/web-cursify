@@ -133,8 +133,8 @@ function StudentCourseViewPage() {
       <AppHeader
         subtitle="Curso"
         brandDetail={`${NIVEIS[course.categoria] || course.categoria} - ${course.nome}`}
+        onHome={() => navigate('/')}
         onBack={goBack}
-        navItems={[{ label: 'Pagina inicial', onClick: () => navigate(homePath) }]}
         onGoProfile={() => navigate('/profile')}
         onLogout={() => {
           clearSessionData();

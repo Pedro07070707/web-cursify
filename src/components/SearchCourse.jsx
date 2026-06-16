@@ -67,8 +67,8 @@ function SearchCoursePage() {
     <div className="page-shell">
       <AppHeader
         subtitle="Pesquisar"
+        onHome={() => navigate('/')}
         navItems={[
-          { label: 'Pagina inicial', onClick: () => navigate(dashboardPath) },
           ...(nivelAcesso !== 'ADMIN'
             ? [{ label: 'Meus cursos', onClick: () => navigate(dashboardPath, { state: { section: 'courses' } }) }]
             : [{ label: 'Painel', onClick: () => navigate(dashboardPath, { state: { section: 'panel' } }) }]),

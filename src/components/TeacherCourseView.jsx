@@ -92,8 +92,8 @@ function TeacherCourseViewPage() {
       <AppHeader
         subtitle="Curso"
         brandDetail={`${NIVEIS[course.categoria] || course.categoria} - ${course.nome}`}
+        onHome={() => navigate('/')}
         onBack={goBack}
-        navItems={[{ label: 'Pagina inicial', onClick: () => navigate(userType === 'admin' ? '/admin' : '/teacher') }]}
         onGoProfile={() => navigate('/profile')}
         onLogout={() => {
           clearSessionData();

@@ -159,8 +159,8 @@ function TeacherDashboardPage() {
     <div className="page-shell">
       <AppHeader
         subtitle="Area do professor"
+        onHome={() => navigate('/')}
         navItems={[
-          { label: 'Pagina inicial', onClick: () => setActiveSection('home'), active: activeSection === 'home' },
           { label: 'Meus cursos', onClick: () => setActiveSection('courses'), active: activeSection === 'courses' },
           { label: 'Chat', onClick: () => setActiveSection('chat'), active: activeSection === 'chat' },
         ]}
@@ -187,42 +187,75 @@ function TeacherDashboardPage() {
 
         {activeSection === 'home' ? (
           <>
-            <section className="dashboard-hero panel-card">
-              <div>
-                <span className="section-kicker">Pagina inicial</span>
-                <h1>Ola, {userName}</h1>
-                <p>
-                  Aqui voce acompanha a sua area docente, organiza publicacoes e conversa com os alunos da plataforma.
+            <section className="dash-hero panel-card">
+              <div className="dash-hero-text">
+                <span className="section-badge">Área do professor</span>
+                <h1 className="dash-hero-title">Olá, {userName} ✍️</h1>
+                <p className="dash-hero-desc">
+                  Gerencie seus cursos, acompanhe as interações e converse com seus alunos em um único lugar.
                 </p>
+                <div className="hero-actions">
+                  <button type="button" className="btn btn-primary btn-hero" onClick={() => setActiveSection('courses')}>
+                    Meus cursos
+                  </button>
+                  <button type="button" className="btn btn-ghost btn-hero" onClick={() => navigate('/publish-course')}>
+                    Publicar curso
+                  </button>
+                </div>
               </div>
-              <div className="dashboard-hero-stats">
-                <article>
+              <div className="dash-hero-stats">
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon dash-stat-icon-blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                  </div>
                   <strong>{teacherCourses.length}</strong>
                   <span>cursos publicados</span>
-                </article>
-                <article>
+                </div>
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon dash-stat-icon-green">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  </div>
                   <strong>{chatUsers.length}</strong>
                   <span>alunos no chat</span>
-                </article>
-                <article>
-                  <strong>{users.filter((user) => user.nivelAcesso === 'PROFESSOR').length + 1}</strong>
-                  <span>professores na plataforma</span>
-                </article>
+                </div>
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon dash-stat-icon-blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <strong>{users.filter((u) => u.nivelAcesso === 'PROFESSOR').length + 1}</strong>
+                  <span>professores</span>
+                </div>
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon dash-stat-icon-green">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  </div>
+                  <strong>{courses.length}</strong>
+                  <span>total de cursos</span>
+                </div>
               </div>
             </section>
 
-            <section className="summary-grid">
-              <article className="panel-card info-card">
-                <h3>Visao geral</h3>
-                <p>Gerencie seus cursos, acompanhe as interacoes e mantenha a area do professor organizada.</p>
+            <section className="dash-summary-grid">
+              <article className="dash-summary-card">
+                <div className="feature-icon-wrap feature-icon-blue">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                </div>
+                <h3>Visão geral</h3>
+                <p>Gerencie seus cursos e acompanhe as interações com alunos de forma centralizada.</p>
               </article>
-              <article className="panel-card info-card">
-                <h3>Publicacao centralizada</h3>
-                <p>O botao para publicar curso agora fica em Meus cursos, junto da sua lista principal.</p>
+              <article className="dash-summary-card">
+                <div className="feature-icon-wrap feature-icon-green">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <h3>Publicação centralizada</h3>
+                <p>Publique e edite cursos diretamente pela seção Meus cursos ou pelo botão acima.</p>
               </article>
-              <article className="panel-card info-card">
+              <article className="dash-summary-card">
+                <div className="feature-icon-wrap feature-icon-blue">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
                 <h3>Busca unificada</h3>
-                <p>Pesquise cursos e usuarios na caixa acima, com resultados separados por topico.</p>
+                <p>Pesquise cursos e usuários na caixa acima, com resultados separados por tópico.</p>
               </article>
             </section>
           </>
