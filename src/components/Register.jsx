@@ -52,6 +52,8 @@ function Register() {
 
       if (nivelAcesso === 'PROFESSOR') {
         navigate('/teacher');
+      } else if (nivelAcesso === 'ADMIN') {
+        navigate('/admin');
       } else {
         navigate('/student');
       }
@@ -142,6 +144,13 @@ function Register() {
                   onClick={() => setNivelAcesso('PROFESSOR')}
                 >
                   Professor
+                </button>
+                <button
+                  type="button"
+                  className={`choice-toggle-button${nivelAcesso === 'ADMIN' ? ' is-active' : ''}`}
+                  onClick={() => setNivelAcesso('ADMIN')}
+                >
+                  Admin
                 </button>
               </div>
             </div>

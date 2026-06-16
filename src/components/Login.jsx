@@ -19,36 +19,31 @@ function Login() {
     setInvalidFields({});
 
     try {
-      const response = await axios.get('http://localhost:8080/api/v1/usuario');
-      const usuarios = response.data;
-      const usuario = usuarios.find((u) => u.email === email && u.senha === senha);
+      const response = await axios.post('http://localhost:8080/api/v1/usuario/login', { email, senha });
+      const usuario = response.data;
 
-      if (usuario) {
-        if (!usuario.statusUsuario) {
-          setFeedback({ type: 'error', message: 'Sua conta foi desativada. Entre em contato com o administrador.' });
-          setInvalidFields({ email: true, senha: true });
-          return;
-        }
+      localStorage.setItem('userId', usuario.id);
+      localStorage.setItem('userName', usuario.nome);
+      localStorage.setItem('userEmail', usuario.email);
+      localStorage.setItem('nivelAcesso', usuario.nivelAcesso);
 
-        localStorage.setItem('userId', usuario.id);
-        localStorage.setItem('userName', usuario.nome);
-        localStorage.setItem('userEmail', usuario.email);
-        localStorage.setItem('nivelAcesso', usuario.nivelAcesso);
-
-        if (usuario.nivelAcesso === 'PROFESSOR') {
-          navigate('/teacher');
-        } else if (usuario.nivelAcesso === 'ADMIN') {
-          navigate('/admin');
-        } else {
-          navigate('/student');
-        }
+      if (usuario.nivelAcesso === 'PROFESSOR') {
+        navigate('/teacher');
+      } else if (usuario.nivelAcesso === 'ADMIN') {
+        navigate('/admin');
       } else {
-        setFeedback({ type: 'error', message: 'Email ou senha incorretos.' });
-        setInvalidFields({ email: true, senha: true });
+        navigate('/student');
       }
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
-      setFeedback({ type: 'error', message: 'Erro no login. Tente novamente.' });
+      const msg = error.response?.data?.message;
+      if (error.response?.status === 403) {
+        setFeedback({ type: 'error', message: msg });
+      } else if (error.response?.status === 401) {
+        setFeedback({ type: 'error', message: msg || 'Email ou senha incorretos.' });
+        setInvalidFields({ email: true, senha: true });
+      } else {
+        setFeedback({ type: 'error', message: 'Erro no login. Tente novamente.' });
+      }
     }
   };
 
