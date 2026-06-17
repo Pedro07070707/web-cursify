@@ -15,6 +15,13 @@ function Profile() {
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const dashboardPath = getDashboardPathByRole(nivelAcesso);
   const userId = Number(localStorage.getItem('userId'));
+  const isStatusActive = (statusUsuario) => statusUsuario === true || statusUsuario === 'Ativo';
+
+  const formatCpf = (value) => {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (digits.length !== 11) return value || '-';
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,14 +58,14 @@ function Profile() {
     if (!currentUser) return;
 
     try {
-      const payload = { ...currentUser, statusUsuario: !currentUser.statusUsuario };
+      const payload = { ...currentUser, statusUsuario: isStatusActive(currentUser.statusUsuario) ? 'Inativo' : 'Ativo' };
       await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, payload);
       setUsers((currentUsers) => currentUsers.map((user) => (
         Number(user.id) === userId ? payload : user
       )));
       setFeedback({
         type: 'success',
-        message: payload.statusUsuario ? 'Conta reativada com sucesso.' : 'Conta inativada com sucesso.',
+        message: isStatusActive(payload.statusUsuario) ? 'Conta reativada com sucesso.' : 'Conta inativada com sucesso.',
       });
     } catch (error) {
       console.error('Erro ao atualizar status da conta:', error);
@@ -99,9 +106,9 @@ function Profile() {
           <div className="profile-hero-info">
             <div className="profile-hero-badges">
               <span className="section-badge">{getUserRoleLabel(currentUser?.nivelAcesso)}</span>
-              <span className={`profile-status-badge${currentUser?.statusUsuario ? ' is-active' : ' is-inactive'}`}>
+              <span className={`profile-status-badge${isStatusActive(currentUser?.statusUsuario) ? ' is-active' : ' is-inactive'}`}>
                 <span className="profile-status-dot" />
-                {currentUser?.statusUsuario ? 'Conta ativa' : 'Conta inativa'}
+                {isStatusActive(currentUser?.statusUsuario) ? 'Conta ativa' : 'Conta inativa'}
               </span>
             </div>
             <h1 className="profile-hero-name">{currentUser?.nome || 'Usuário'}</h1>
@@ -131,6 +138,10 @@ function Profile() {
               <div className="profile-info-row">
                 <span>Email</span>
                 <strong>{currentUser?.email || '-'}</strong>
+              </div>
+              <div className="profile-info-row">
+                <span>CPF</span>
+                <strong>{formatCpf(currentUser?.cpf)}</strong>
               </div>
               <div className="profile-info-row">
                 <span>Tipo</span>
@@ -166,7 +177,7 @@ function Profile() {
             <p>Gerencie o status ou exclua sua conta permanentemente.</p>
             <div className="card-button-column" style={{ marginTop: '8px' }}>
               <button type="button" className="btn btn-ghost" onClick={handleToggleInactive}>
-                {currentUser?.statusUsuario ? 'Inativar conta' : 'Reativar conta'}
+                {isStatusActive(currentUser?.statusUsuario) ? 'Inativar conta' : 'Reativar conta'}
               </button>
               <button type="button" className="btn btn-danger" onClick={handleDelete}>
                 Excluir conta

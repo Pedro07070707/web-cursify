@@ -19,6 +19,9 @@ function AppHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const isLoggedIn = Boolean(localStorage.getItem('userId'));
+  const isAdmin = localStorage.getItem('nivelAcesso') === 'ADMIN';
+  const isStudent = localStorage.getItem('nivelAcesso') === 'ALUNO' || localStorage.getItem('nivelAcesso') === 'STUDENT';
+  const isTeacher = localStorage.getItem('nivelAcesso') === 'PROFESSOR' || localStorage.getItem('nivelAcesso') === 'TEACHER';
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -50,19 +53,6 @@ function AppHeader({
           </button>
         ) : null}
 
-        <nav className="nav-cluster" aria-label="Navegacao principal">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              className={`nav-link-button${item.active ? ' is-active' : ''}`}
-              onClick={item.onClick}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
         {actionItems.length ? (
           <div className="nav-cluster nav-cluster-actions">
             {actionItems.map((item) => (
@@ -92,6 +82,42 @@ function AppHeader({
 
           {menuOpen ? (
             <div className="menu-dropdown">
+              {navItems.length ? (
+                <div className="menu-section">
+                  {navItems.map((item) => (
+                    <button
+                      key={`menu-${item.label}`}
+                      type="button"
+                      className="menu-item"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        item.onClick();
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {actionItems.length ? (
+                <div className="menu-section">
+                  {actionItems.map((item) => (
+                    <button
+                      key={`menu-action-${item.label}`}
+                      type="button"
+                      className="menu-item"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        item.onClick();
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
               {!isLoggedIn && onLogin ? (
                 <button type="button" className="menu-item" onClick={() => {
                   setMenuOpen(false);
@@ -114,6 +140,30 @@ function AppHeader({
                   onGoProfile();
                 }}>
                   Perfil
+                </button>
+              ) : null}
+              {isAdmin ? (
+                <button type="button" className="menu-item" onClick={() => {
+                  setMenuOpen(false);
+                  window.location.href = '/admin';
+                }}>
+                  Painel Admin
+                </button>
+              ) : null}
+              {isStudent ? (
+                <button type="button" className="menu-item" onClick={() => {
+                  setMenuOpen(false);
+                  window.location.href = '/student';
+                }}>
+                  Painel do Estudante
+                </button>
+              ) : null}
+              {isTeacher ? (
+                <button type="button" className="menu-item" onClick={() => {
+                  setMenuOpen(false);
+                  window.location.href = '/teacher';
+                }}>
+                  Painel do Professor
                 </button>
               ) : null}
               <button type="button" className="menu-item menu-item-theme" onClick={() => {

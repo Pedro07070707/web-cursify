@@ -159,14 +159,12 @@ function StudentCourseViewPage() {
           <div>
             <h3>Resumo</h3>
             <div className="feature-grid">
-              <div className="topic-item">Status atual: {isLoggedIn && userType === 'student' ? studentStatus : 'Disponivel para visualizacao'}</div>
               <div className="topic-item">Carga horaria prevista: {course.cargaHoraria} horas</div>
             </div>
           </div>
 
           <CourseContentListSection title="Materiais" items={contents.material} typeKey="material" emptyMessage="Nenhum material disponivel." />
           <CourseContentListSection title="Exercicios" items={contents.exercicios} typeKey="exercicios" emptyMessage="Nenhum exercicio disponivel." />
-          <CourseContentListSection title="Atividades" items={contents.atividades} typeKey="atividades" emptyMessage="Nenhuma atividade disponivel." />
           <CourseContentListSection title="Avaliacoes" items={contents.avaliacoes} typeKey="avaliacoes" emptyMessage="Nenhuma avaliacao disponivel." />
 
           <div className="hero-actions">

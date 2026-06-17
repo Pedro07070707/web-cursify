@@ -10,7 +10,6 @@ function Home() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [courses, setCourses] = useState([]);
-  const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeIndex, setActiveIndex] = useState(null);
   const nivelAcesso = localStorage.getItem('nivelAcesso');
@@ -18,13 +17,9 @@ function Home() {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [coursesResponse, usersResponse] = await Promise.all([
-          axios.get('http://localhost:8080/api/v1/curso'),
-          axios.get('http://localhost:8080/api/v1/usuario'),
-        ]);
+        const coursesResponse = await axios.get('http://localhost:8080/api/v1/curso');
 
         setCourses(coursesResponse.data || []);
-        setUsers(usersResponse.data || []);
       } catch (error) {
         console.error('Erro ao carregar dados da home:', error);
       }
@@ -33,9 +28,14 @@ function Home() {
     fetchHomeData();
   }, []);
 
+  const availableCourses = useMemo(
+    () => courses.filter((course) => course.statusCurso !== false && course.statusCurso !== 'Inativo'),
+    [courses]
+  );
+
   const searchResults = useMemo(
-    () => buildSearchResults(courses, users, searchTerm),
-    [courses, users, searchTerm]
+    () => buildSearchResults(availableCourses, searchTerm),
+    [availableCourses, searchTerm]
   );
 
   return (
@@ -62,7 +62,6 @@ function Home() {
           onSearchChange={setSearchTerm}
           results={searchResults}
           onOpenCourse={(course) => navigate(`/course-view/${course.id}`)}
-          onUserAction={() => navigate(localStorage.getItem('userId') ? '/profile' : '/login')}
         />
 
         {/* HERO */}
@@ -96,45 +95,20 @@ function Home() {
             </div>
             <div className="hero-stats">
               <div className="hero-stat">
-                <strong>{courses.length || '+'}</strong>
+                <strong>{availableCourses.length || '+'}</strong>
                 <span>Cursos disponíveis</span>
               </div>
-              <div className="hero-stat-divider" />
+            
               <div className="hero-stat">
-                <strong>{users.length || '+'}</strong>
-                <span>Usuários cadastrados</span>
-              </div>
-              <div className="hero-stat-divider" />
-              <div className="hero-stat">
-                <strong>2</strong>
-                <span>Disciplinas</span>
               </div>
             </div>
           </div>
 
-          <div className="hero-modern-visual">
-            <div className="options home-carousel">
-              {[1, 2, 3, 4].map((n, i) => (
-                <div
-                  key={n}
-                  className={`option${activeIndex === i ? ' active' : ''}`}
-                  onMouseEnter={() => setActiveIndex(i)}
-                  onMouseLeave={() => setActiveIndex(null)}
-                >
-                  <div className="option-bg" style={{ backgroundImage: `url(/carousel-${n}.jpg)` }} />
-                  <div className="option-bg option-bg-hover" style={{ backgroundImage: `url(/carousel-${n}-hover.jpg)` }} />
-                </div>
-              ))}
-            </div>
-          </div>
         </section>
 
         {/* FEATURES */}
         <section className="home-features-section">
-          <div className="features-header">
-            <span className="section-badge">Por que o CursiFy?</span>
-            <h2 className="features-title">Tudo que você precisa para aprender</h2>
-          </div>
+          
           <div className="features-cards-grid">
             <article className="feature-card-modern">
               <div className="feature-icon-wrap feature-icon-blue">
@@ -164,6 +138,23 @@ function Home() {
               <h3>Conteúdo de qualidade</h3>
               <p>Material estruturado e metodologia eficiente para transformar futuros.</p>
             </article>
+          </div>
+        </section>
+
+        <section className="home-carousel-section">
+          
+          <div className="options home-carousel">
+            {[1, 2, 3, 4].map((n, i) => (
+              <div
+                key={n}
+                className={`option${activeIndex === i ? ' active' : ''}`}
+                onMouseEnter={() => setActiveIndex(i)}
+                onMouseLeave={() => setActiveIndex(null)}
+              >
+                <div className="option-bg" style={{ backgroundImage: `url(/carousel-${n}.jpg)` }} />
+                <div className="option-bg option-bg-hover" style={{ backgroundImage: `url(/carousel-${n}-hover.jpg)` }} />
+              </div>
+            ))}
           </div>
         </section>
       </main>

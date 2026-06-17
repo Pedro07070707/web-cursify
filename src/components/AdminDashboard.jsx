@@ -26,6 +26,7 @@ function AdminDashboardPage() {
   const [conversations, setConversations] = useState([]);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const currentUserId = Number(localStorage.getItem('userId'));
+  const isUserActive = (statusUsuario) => statusUsuario === true || statusUsuario === 'Ativo';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -135,7 +136,7 @@ function AdminDashboardPage() {
 
   const handleUpdateStatus = async (userId, userDisplayName) => {
     const user = users.find((item) => item.id === userId);
-    const newStatus = !user.statusUsuario;
+    const newStatus = isUserActive(user.statusUsuario) ? 'Inativo' : 'Ativo';
 
     try {
       await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, {
@@ -240,7 +241,7 @@ function AdminDashboardPage() {
                   <div className="dash-stat-icon dash-stat-icon-green">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
-                  <strong>{users.filter((u) => u.statusUsuario).length}</strong>
+                  <strong>{users.filter((u) => isUserActive(u.statusUsuario)).length}</strong>
                   <span>contas ativas</span>
                 </div>
                 <div className="dash-stat-card">
@@ -337,6 +338,7 @@ function AdminDashboardPage() {
                     <tr>
                       <th>Nome</th>
                       <th>Email</th>
+                      <th>CPF</th>
                       <th>Tipo</th>
                       <th>Status</th>
                       <th>Registro</th>
@@ -348,8 +350,9 @@ function AdminDashboardPage() {
                       <tr key={user.id}>
                         <td>{user.nome}</td>
                         <td>{user.email}</td>
+                        <td>{user.cpf || '-'}</td>
                         <td>{getUserRoleLabel(user.nivelAcesso)}</td>
-                        <td>{user.statusUsuario ? 'Ativo' : 'Inativo'}</td>
+                        <td>{isUserActive(user.statusUsuario) ? 'Ativo' : 'Inativo'}</td>
                         <td>
                           {user.dataCadastro
                             ? new Date(user.dataCadastro).toLocaleDateString('pt-BR', {
@@ -362,7 +365,7 @@ function AdminDashboardPage() {
                         <td>
                           <div className="table-actions">
                             <button type="button" className="btn btn-ghost" onClick={() => handleUpdateStatus(user.id, user.nome)}>
-                              {user.statusUsuario ? 'Inativar' : 'Ativar'}
+                              {isUserActive(user.statusUsuario) ? 'Inativar' : 'Ativar'}
                             </button>
                             <button type="button" className="btn btn-danger" onClick={() => handleDeleteUser(user.id, user.nome)}>
                               Excluir

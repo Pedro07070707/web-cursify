@@ -92,24 +92,25 @@ function TeacherDashboardPage() {
   }, [currentUserId, chatUsers, selectedChat]);
 
   const teacherCourses = useMemo(() => {
-    const ownedCourses = courses.filter((course) => (
-      Number(course.usuarioId) === currentUserId
-      || Number(course.idUsuario) === currentUserId
-      || Number(course.usuario?.id) === currentUserId
-    ));
+    return courses.filter((course) => {
+      const statusValue = String(course.statusCurso ?? '').trim();
+      const isInactive = statusValue === 'Inativo'
+        || statusValue === 'Desativado'
+        || course.statusCurso === false;
 
-    return ownedCourses.length ? ownedCourses : courses;
-  }, [courses, currentUserId]);
+      return !isInactive;
+    });
+  }, [courses]);
 
   const searchResults = useMemo(() => {
     const normalizedTerm = searchTerm.trim().toLowerCase();
     if (!normalizedTerm) return { courses: [], users: [] };
 
     return {
-      courses: courses.filter((course) => (`${course.nome || ''} ${course.descricao || ''}`).toLowerCase().includes(normalizedTerm)),
+      courses: teacherCourses.filter((course) => (`${course.nome || ''} ${course.descricao || ''}`).toLowerCase().includes(normalizedTerm)),
       users: users.filter((user) => (`${user.nome || ''} ${user.email || ''}`).toLowerCase().includes(normalizedTerm)),
     };
-  }, [courses, users, searchTerm]);
+  }, [teacherCourses, users, searchTerm]);
 
   const searchedUsers = useMemo(() => {
     const normalizedTerm = chatSearchTerm.trim().toLowerCase();
@@ -229,7 +230,7 @@ function TeacherDashboardPage() {
                   <div className="dash-stat-icon dash-stat-icon-green">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                   </div>
-                  <strong>{courses.length}</strong>
+                  <strong>{teacherCourses.length}</strong>
                   <span>total de cursos</span>
                 </div>
               </div>

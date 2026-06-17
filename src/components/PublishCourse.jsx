@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppHeader from './AppHeader';
 import CourseContentEditorSection from './CourseContentEditorSection';
 import { CONTENT_TYPES } from './courseContentConfig';
+import { useTheme } from '../utils/theme';
 
 const CATEGORIAS = {
   FUNDAMENTAL_1: 'Fundamental 1 (1o ao 5o ano)',
@@ -26,6 +28,7 @@ function PublishCoursePage() {
   });
 
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const userId = Number(localStorage.getItem('userId'));
   const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'teacher';
@@ -52,6 +55,12 @@ function PublishCoursePage() {
       cargaHoraria: cargaHorariaNumerica,
       dataCriacao: new Date().toISOString(),
       statusCurso: 'Em progresso',
+      usuarioId: userId,
+      idUsuario: userId,
+      usuario_id: userId,
+      usuario: { id: userId },
+      professorId: userId,
+      idProfessor: userId,
     };
 
     try {
@@ -99,26 +108,12 @@ function PublishCoursePage() {
 
   return (
     <div className="page-shell">
-      <header className="app-header">
-        <div className="app-header__brand">
-          <button type="button" className="logo logo-button" onClick={() => navigate('/')}>
-            <img src="/logoCursiFy.png" alt="CursiFy" />
-            <span>
-              <strong>CursiFy</strong>
-              <small>Publicar curso</small>
-            </span>
-          </button>
-        </div>
-        <div className="app-header__nav">
-          <button
-            type="button"
-            className="header-back-button"
-            onClick={() => navigate(userType === 'admin' ? '/admin' : '/teacher')}
-          >
-            Voltar
-          </button>
-        </div>
-      </header>
+      <AppHeader
+        subtitle="Publicar curso"
+        onHome={() => navigate('/')}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+      />
 
       <main className="container publish-layout">
         <div className="publish-sidebar">

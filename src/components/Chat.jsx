@@ -4,7 +4,7 @@ import axios from 'axios';
 import AppHeader from './AppHeader';
 import ChatWorkspace from './ChatWorkspace';
 import { getChatMessages, appendChatMessage, getUserConversationPartners } from '../utils/chatStorage';
-import { getDashboardPathByRole } from '../utils/ui';
+import { getDashboardPathByRole, isAdminRole, isStudentRole, isTeacherRole, normalizeRole } from '../utils/ui';
 import { useTheme } from '../utils/theme';
 
 function Chat() {
@@ -17,9 +17,11 @@ function Chat() {
   const [conversations, setConversations] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const nivelAcesso = localStorage.getItem('nivelAcesso');
-  const userType = nivelAcesso === 'PROFESSOR' ? 'teacher' : nivelAcesso === 'ADMIN' ? 'admin' : 'student';
+  const normalizedRole = normalizeRole(nivelAcesso);
+  const userType = isAdminRole(normalizedRole) ? 'admin' : isTeacherRole(normalizedRole) ? 'teacher' : 'student';
   const userName = localStorage.getItem('userName') || 'Usuario';
-  const currentUserId = localStorage.getItem('userId');
+  const rawUserId = localStorage.getItem('userId');
+  const currentUserId = rawUserId ? Number(rawUserId) : null;
   const dashboardPath = getDashboardPathByRole(nivelAcesso);
 
   const refreshConversations = (availableUsers) => {
@@ -40,15 +42,16 @@ function Chat() {
         let filteredUsers = [];
         if (userType === 'teacher') {
           filteredUsers = allUsers.filter((user) => (
-            (user.nivelAcesso === 'ESTUDANTE' || user.nivelAcesso === 'ALUNO')
-            && user.id !== parseInt(currentUserId, 10)
+            isStudentRole(user.nivelAcesso)
+            && Number(user.id) !== currentUserId
           ));
         } else if (userType === 'student') {
           filteredUsers = allUsers.filter((user) => (
-            user.nivelAcesso === 'PROFESSOR' && user.id !== parseInt(currentUserId, 10)
+            isTeacherRole(user.nivelAcesso)
+            && Number(user.id) !== currentUserId
           ));
         } else {
-          filteredUsers = allUsers.filter((user) => user.id !== parseInt(currentUserId, 10));
+          filteredUsers = allUsers.filter((user) => Number(user.id) !== currentUserId);
         }
 
         setUsers(filteredUsers);
@@ -100,17 +103,20 @@ function Chat() {
   const sendMessage = () => {
     if (!message.trim() || !selectedChat || !currentUserId) return;
 
+    const senderId = Number(currentUserId);
+    const recipientId = Number(selectedChat.id);
+
     const newMessage = {
-      id: `${currentUserId}-${selectedChat.id}-${Date.now()}`,
+      id: `${senderId}-${recipientId}-${Date.now()}`,
       mensagem: message.trim(),
       dataChat: new Date().toISOString(),
       statusChat: 'Enviado',
-      remetenteId: Number(currentUserId),
-      destinatarioId: Number(selectedChat.id),
+      remetenteId: senderId,
+      destinatarioId: recipientId,
       remetenteNome: userName,
     };
 
-    const nextMessages = appendChatMessage(currentUserId, selectedChat.id, newMessage);
+    const nextMessages = appendChatMessage(senderId, recipientId, newMessage);
     setMessages(nextMessages);
     refreshConversations(users);
     setMessage('');

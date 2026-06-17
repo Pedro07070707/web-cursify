@@ -11,7 +11,6 @@ function SearchCoursePage() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [courses, setCourses] = useState([]);
-  const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const currentUserId = Number(localStorage.getItem('userId'));
@@ -21,18 +20,13 @@ function SearchCoursePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [coursesResponse, usersResponse] = await Promise.all([
-          axios.get('http://localhost:8080/api/v1/curso'),
-          axios.get('http://localhost:8080/api/v1/usuario'),
-        ]);
+        const coursesResponse = await axios.get('http://localhost:8080/api/v1/curso');
 
         const visibleCourses = (coursesResponse.data || []).filter(
           (course) => course.statusCurso !== false && course.statusCurso !== 'Inativo'
         );
-        const visibleUsers = (usersResponse.data || []).filter((user) => Number(user.id) !== currentUserId);
 
         setCourses(visibleCourses);
-        setUsers(visibleUsers);
       } catch (error) {
         console.error('Erro ao carregar dados da busca:', error);
         alert('Erro ao carregar os dados da busca. Verifique a API.');
@@ -43,8 +37,8 @@ function SearchCoursePage() {
   }, [currentUserId]);
 
   const results = useMemo(
-    () => buildSearchResults(courses, users, searchTerm),
-    [courses, users, searchTerm]
+    () => buildSearchResults(courses, searchTerm),
+    [courses, searchTerm]
   );
 
   const handleToggleCourse = (course) => {
@@ -78,7 +72,6 @@ function SearchCoursePage() {
         onSearchChange={setSearchTerm}
         searchResults={results}
         onSelectCourse={(course) => navigate(`/course-view/${course.id}`)}
-        onSelectUser={() => navigate('/profile')}
         onGoProfile={() => navigate('/profile')}
         onLogout={() => {
           localStorage.clear();
@@ -90,8 +83,6 @@ function SearchCoursePage() {
 
       <main className="container dashboard-layout">
         <DirectorySearchSection
-          title="Pesquisar cursos e usuarios"
-          description="Veja os resultados separados em Cursos e Usuarios, como solicitado para a barra de pesquisa."
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           results={results}
@@ -99,7 +90,6 @@ function SearchCoursePage() {
           onCourseAction={userType === 'student' ? handleToggleCourse : undefined}
           isCourseSelected={(course) => Boolean(getUserCourseEntry(currentUserId, course.id)?.enrolled)}
           onOpenCourse={(course) => navigate(`/course-view/${course.id}`)}
-          onUserAction={() => navigate('/profile')}
         />
       </main>
     </div>
