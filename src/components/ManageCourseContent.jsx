@@ -10,7 +10,6 @@ const buildInitialState = () => ({
   material: [],
   exercicios: [],
   atividades: [],
-  avaliacoes: [],
 });
 
 function ManageCourseContent() {
@@ -73,7 +72,7 @@ function ManageCourseContent() {
   const saveSection = async (config) => {
     const items = sections[config.key];
     const validItems = items.filter((item) => {
-      if (config.key === 'atividades' || config.key === 'avaliacoes') {
+      if (config.key === 'atividades') {
         return item.enunciado.trim() && item.alternativa.trim();
       }
 

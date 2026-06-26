@@ -47,36 +47,10 @@ export const CONTENT_TYPES = [
     }),
     getSummary: (item) => item.subtitulo || item.conteudo,
   },
-  {
-    key: 'avaliacoes',
-    title: 'Avaliacoes',
-    endpoint: 'avaliacao',
-    statusField: 'statusAvaliacao',
-    defaultStatus: 0,
-    buildPayload: (item, courseId, userId, index, refs = {}) => ({
-      numeroAvaliacao: index + 1,
-      numero_avaliacao: index + 1,
-      enunciadoAvaliacao: item.enunciado.trim(),
-      enunciado_avaliacao: item.enunciado.trim(),
-      alternativaAvaliacao: item.alternativa.trim(),
-      alternativa_avaliacao: item.alternativa.trim(),
-      usuarioId: userId,
-      idUsuario: userId,
-      usuario_id: userId,
-      usuario: refs.user || { id: userId },
-      cursoId: courseId,
-      idCurso: courseId,
-      curso_id: courseId,
-      curso: refs.course || { id: courseId },
-      statusAvaliacao: Number(item.status) || 0,
-      status_avaliacao: Number(item.status) || 0,
-    }),
-    getSummary: (item) => item.alternativa,
-  },
 ];
 
 export const createEmptyEntry = (typeKey) => {
-  if (typeKey === 'atividades' || typeKey === 'avaliacoes') {
+  if (typeKey === 'atividades') {
     return {
       enunciado: '',
       alternativa: '',

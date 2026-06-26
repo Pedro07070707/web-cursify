@@ -28,7 +28,7 @@ const getCourseStatusLabel = (status) => {
 function StudentCourseViewPage() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
-  const [contents, setContents] = useState({ material: [], exercicios: [], atividades: [], avaliacoes: [] });
+  const [contents, setContents] = useState({ material: [], exercicios: [], atividades: [] });
   const [loading, setLoading] = useState(true);
   const [studentStatus, setStudentStatus] = useState('Em progresso');
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
@@ -102,7 +102,7 @@ function StudentCourseViewPage() {
           CONTENT_TYPES.map((config) => axios.get(`http://localhost:8080/api/v1/${config.endpoint}`))
         );
 
-        const nextContents = { material: [], exercicios: [], atividades: [], avaliacoes: [] };
+        const nextContents = { material: [], exercicios: [], atividades: [] };
 
         responses.forEach((contentResponse, index) => {
           if (contentResponse.status !== 'fulfilled') return;
@@ -164,7 +164,6 @@ function StudentCourseViewPage() {
 
           <CourseContentListSection title="Materiais" items={contents.material} typeKey="material" emptyMessage="Nenhum material disponivel." />
           <CourseContentListSection title="Exercicios" items={contents.exercicios} typeKey="exercicios" emptyMessage="Nenhum exercicio disponivel." />
-          <CourseContentListSection title="Avaliacoes" items={contents.avaliacoes} typeKey="avaliacoes" emptyMessage="Nenhuma avaliacao disponivel." />
 
           <div className="hero-actions">
             <button className="btn btn-primary" onClick={() => navigate('/chat')}>Chat com Professor</button>

@@ -19,7 +19,7 @@ const NIVEIS = {
 function TeacherCourseViewPage() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
-  const [contents, setContents] = useState({ material: [], exercicios: [], atividades: [], avaliacoes: [] });
+  const [contents, setContents] = useState({ material: [], exercicios: [], atividades: [] });
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ function TeacherCourseViewPage() {
           CONTENT_TYPES.map((config) => axios.get(`http://localhost:8080/api/v1/${config.endpoint}`))
         );
 
-        const nextContents = { material: [], exercicios: [], atividades: [], avaliacoes: [] };
+        const nextContents = { material: [], exercicios: [], atividades: [] };
 
         responses.forEach((contentResponse, index) => {
           if (contentResponse.status !== 'fulfilled') return;
@@ -117,7 +117,6 @@ function TeacherCourseViewPage() {
           <CourseContentListSection title="Materiais" items={contents.material} typeKey="material" emptyMessage="Nenhum material cadastrado." />
           <CourseContentListSection title="Exercicios" items={contents.exercicios} typeKey="exercicios" emptyMessage="Nenhum exercicio cadastrado." />
           <CourseContentListSection title="Atividades" items={contents.atividades} typeKey="atividades" emptyMessage="Nenhuma atividade cadastrada." />
-          <CourseContentListSection title="Avaliacoes" items={contents.avaliacoes} typeKey="avaliacoes" emptyMessage="Nenhuma avaliacao cadastrada." />
 
           <div className="hero-actions">
             <button className="btn btn-primary" onClick={() => navigate('/chat')}>Chat com Alunos</button>

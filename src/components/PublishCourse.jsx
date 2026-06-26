@@ -24,7 +24,6 @@ function PublishCoursePage() {
     material: [],
     exercicios: [],
     atividades: [],
-    avaliacoes: [],
   });
 
   const navigate = useNavigate();
@@ -79,7 +78,7 @@ function PublishCoursePage() {
       if (createdCourseId) {
         for (const config of CONTENT_TYPES) {
           const validItems = sections[config.key].filter((item) => {
-            if (config.key === 'atividades' || config.key === 'avaliacoes') {
+            if (config.key === 'atividades') {
               return item.enunciado.trim() && item.alternativa.trim();
             }
 
