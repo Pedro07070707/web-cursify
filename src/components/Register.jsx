@@ -148,18 +148,30 @@ function Register() {
             <form onSubmit={handleSubmit}>
               <InlineAlert type={feedback.type} message={feedback.message} />
 
-              <div className="form-group">
-                <label>Nome</label>
-                <div className="input-icon-wrap">
-                  <svg className="input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  <input
-                    type="text"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    required
-                    placeholder="Seu nome completo"
-                  />
-                </div>
+            <div className="form-group">
+              <label>Nivel de acesso:</label>
+              <div className="choice-toggle">
+                <button
+                  type="button"
+                  className={`choice-toggle-button${nivelAcesso === 'ALUNO' ? ' is-active' : ''}`}
+                  onClick={() => setNivelAcesso('ALUNO')}
+                >
+                  Aluno
+                </button>
+                <button
+                  type="button"
+                  className={`choice-toggle-button${nivelAcesso === 'PROFESSOR' ? ' is-active' : ''}`}
+                  onClick={() => setNivelAcesso('PROFESSOR')}
+                >
+                  Professor
+                </button>
+                <button
+                  type="button"
+                  className={`choice-toggle-button${nivelAcesso === 'ADMIN' ? ' is-active' : ''}`}
+                  onClick={() => setNivelAcesso('ADMIN')}
+                >
+                  Admin
+                </button>
               </div>
 
               <div className="form-group">

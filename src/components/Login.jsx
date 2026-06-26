@@ -25,7 +25,6 @@ function Login() {
       localStorage.setItem('userId', usuario.id);
       localStorage.setItem('userName', usuario.nome);
       localStorage.setItem('userEmail', usuario.email);
-      localStorage.setItem('userCpf', usuario.cpf || '');
       localStorage.setItem('nivelAcesso', usuario.nivelAcesso);
 
       if (usuario.nivelAcesso === 'PROFESSOR') {
@@ -38,8 +37,7 @@ function Login() {
     } catch (error) {
       const msg = error.response?.data?.message;
       if (error.response?.status === 403) {
-        setFeedback({ type: 'error', message: msg || 'Sua conta foi desativada. Entre em contato com o administrador.' });
-        setInvalidFields({ email: true, senha: true });
+        setFeedback({ type: 'error', message: msg });
       } else if (error.response?.status === 401) {
         setFeedback({ type: 'error', message: msg || 'Email ou senha incorretos.' });
         setInvalidFields({ email: true, senha: true });
