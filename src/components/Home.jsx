@@ -92,6 +92,13 @@ function Home() {
               >
                 Criar conta gratuita
               </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-hero"
+                onClick={() => navigate('/catalog')}
+              >
+                Ver cursos disponíveis
+              </button>
             </div>
             <div className="hero-stats">
               <div className="hero-stat">

@@ -19,6 +19,7 @@ import AdminDashboard from './components/AdminDashboard';
 import ChangePassword from './components/ChangePassword';
 import UpdateCourse from './components/UpdateCourse';
 import ManageCourseContent from './components/ManageCourseContent';
+import CourseCatalog from './components/CourseCatalog';
 import './App.css';
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
           <Route path="/update-course/:id" element={<UpdateCourse />} />
           <Route path="/manage-course-content/:courseId" element={<ManageCourseContent />} />
           <Route path="/subject/:subjectKey/:levelKey" element={<SubjectDetails />} />
+          <Route path="/catalog" element={<CourseCatalog />} />
         </Routes>
       </div>
     </Router>
