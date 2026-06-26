@@ -107,8 +107,8 @@ function ChangePassword() {
     <div className="page-shell">
       <AppHeader
         subtitle="Atualizar perfil"
+        onHome={() => navigate('/')}
         navItems={[
-          { label: 'Pagina inicial', onClick: () => navigate(dashboardPath) },
           ...(nivelAcesso !== 'ADMIN'
             ? [{ label: 'Meus cursos', onClick: () => navigate(dashboardPath, { state: { section: 'courses' } }) }]
             : [{ label: 'Painel', onClick: () => navigate(dashboardPath, { state: { section: 'panel' } }) }]),

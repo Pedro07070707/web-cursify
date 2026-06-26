@@ -7,15 +7,27 @@ export const NIVEIS = {
   OUTROS: 'Outros',
 };
 
+export const normalizeRole = (nivelAcesso) => String(nivelAcesso || '').toUpperCase();
+
+export const isAdminRole = (nivelAcesso) => normalizeRole(nivelAcesso) === 'ADMIN';
+export const isTeacherRole = (nivelAcesso) => {
+  const role = normalizeRole(nivelAcesso);
+  return role === 'PROFESSOR' || role === 'TEACHER';
+};
+export const isStudentRole = (nivelAcesso) => {
+  const role = normalizeRole(nivelAcesso);
+  return role === 'ALUNO' || role === 'ESTUDANTE' || role === 'STUDENT';
+};
+
 export const getUserRoleLabel = (nivelAcesso) => {
-  if (nivelAcesso === 'PROFESSOR') return 'Professor';
-  if (nivelAcesso === 'ADMIN') return 'Administrador';
+  if (isTeacherRole(nivelAcesso)) return 'Professor';
+  if (isAdminRole(nivelAcesso)) return 'Administrador';
   return 'Aluno';
 };
 
 export const getDashboardPathByRole = (nivelAcesso) => {
-  if (nivelAcesso === 'PROFESSOR') return '/teacher';
-  if (nivelAcesso === 'ADMIN') return '/admin';
+  if (isTeacherRole(nivelAcesso)) return '/teacher';
+  if (isAdminRole(nivelAcesso)) return '/admin';
   return '/student';
 };
 
@@ -30,13 +42,12 @@ export const getCourseStatusLabel = (status) => {
 
 export const formatCourseDuration = (course) => course.duracao || `${course.cargaHoraria} horas`;
 
-export const buildSearchResults = (courses, users, term) => {
+export const buildSearchResults = (courses, term) => {
   const normalizedTerm = term.trim().toLowerCase();
 
   if (!normalizedTerm) {
     return {
       courses: [],
-      users: [],
     };
   }
 
@@ -44,12 +55,7 @@ export const buildSearchResults = (courses, users, term) => {
     `${course.nome || course.titulo || ''} ${course.descricao || ''}`.toLowerCase().includes(normalizedTerm)
   ));
 
-  const filteredUsers = users.filter((user) => (
-    `${user.nome || ''} ${user.email || ''} ${getUserRoleLabel(user.nivelAcesso)}`.toLowerCase().includes(normalizedTerm)
-  ));
-
   return {
     courses: filteredCourses,
-    users: filteredUsers,
   };
 };

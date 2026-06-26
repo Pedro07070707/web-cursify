@@ -12,7 +12,9 @@ function CourseContentListSection({ title, items, typeKey, emptyMessage }) {
                 <>
                   <strong>{index + 1}. {item.enunciado}</strong>
                   <div style={{ marginTop: '0.5rem' }}>Alternativa / resposta: {item.alternativa}</div>
-                  <div style={{ marginTop: '0.25rem' }}>Status: {item.status}%</div>
+                  {typeKey !== 'avaliacoes' ? (
+                    <div style={{ marginTop: '0.25rem' }}>Status: {item.status}%</div>
+                  ) : null}
                 </>
               ) : (
                 <>

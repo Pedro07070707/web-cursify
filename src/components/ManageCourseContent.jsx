@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import AppHeader from './AppHeader';
 import CourseContentEditorSection from './CourseContentEditorSection';
+import { useTheme } from '../utils/theme';
 import { CONTENT_TYPES, getCourseContentCourseId, normalizeCourseContentItem } from './courseContentConfig';
 
 const buildInitialState = () => ({
@@ -14,9 +16,8 @@ const buildInitialState = () => ({
 function ManageCourseContent() {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const userId = Number(localStorage.getItem('userId'));
-  const nivelAcesso = localStorage.getItem('nivelAcesso');
-  const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'teacher';
   const [course, setCourse] = useState(null);
   const [relatedUser, setRelatedUser] = useState(null);
   const [sections, setSections] = useState(buildInitialState);
@@ -134,50 +135,86 @@ function ManageCourseContent() {
     }
   };
 
-  if (loading) return <div>Carregando...</div>;
+  if (loading) {
+    return (
+      <div className="page-shell">
+        <AppHeader
+          subtitle="Gerenciar conteúdo"
+          onHome={() => navigate('/')}
+          onGoProfile={() => navigate('/profile')}
+          onLogout={() => {
+            localStorage.clear();
+            navigate('/');
+          }}
+          onToggleTheme={toggleTheme}
+          theme={theme}
+        />
+        <main className="container" style={{ padding: '3rem 0' }}>
+          <div className="empty-state-card">
+            <h4>Carregando conteúdo...</h4>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <header className="header">
-        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <img src="/logoCursiFy.png" alt="Web Cursify" />
-          Cursify - Conteudo do Curso
-        </div>
-        <div className="nav-buttons">
-          <button className="btn btn-secondary" onClick={() => navigate(`/teacher-course/${courseId}`)}>
-            Voltar
-          </button>
-          <button className="btn btn-primary" onClick={() => navigate(userType === 'admin' ? '/admin' : '/teacher')}>
-            Painel
-          </button>
-        </div>
-      </header>
+    <div className="page-shell">
+      <AppHeader
+        subtitle="Gerenciar conteúdo"
+        onBack={() => navigate(`/teacher-course/${courseId}`)}
+        onHome={() => navigate('/')}
+        onGoProfile={() => navigate('/profile')}
+        onLogout={() => {
+          localStorage.clear();
+          navigate('/');
+        }}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+      />
 
-      <div className="container">
-        <div className="card" style={{ maxWidth: '900px', margin: '2rem auto' }}>
-          <h2>Gerenciar Conteudo</h2>
-          <p><strong>Curso:</strong> {course?.nome}</p>
-          <p>Adicione materiais, exercicios, atividades e avaliacoes deste curso.</p>
-
-          {validConfigs.map((config) => (
-            <CourseContentEditorSection
-              key={config.key}
-              config={config}
-              items={sections[config.key]}
-              onChange={(items) => setSectionItems(config.key, items)}
-            />
-          ))}
-
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-            <button className="btn btn-primary" onClick={handleSaveAll} disabled={saving}>
-              {saving ? 'Salvando...' : 'Salvar Conteudo'}
-            </button>
-            <button className="btn btn-secondary" onClick={() => navigate(`/teacher-course/${courseId}`)} disabled={saving}>
-              Cancelar
+      <main className="container" style={{ padding: '2rem 0 4rem' }}>
+        <section className="panel-card" style={{ maxWidth: '980px', margin: '0 auto', padding: '28px' }}>
+          <div className="section-heading section-heading-inline">
+            <div>
+              <span className="section-kicker">Conteúdo</span>
+              <h3>Gerenciar conteúdo</h3>
+            </div>
+            <button type="button" className="btn btn-ghost" onClick={() => navigate(`/teacher-course/${courseId}`)}>
+              Voltar ao curso
             </button>
           </div>
-        </div>
-      </div>
+
+          <div style={{ display: 'grid', gap: '8px', marginBottom: '18px' }}>
+            <p style={{ margin: 0, color: 'var(--muted)' }}>
+              <strong style={{ color: 'var(--text)' }}>Curso:</strong> {course?.nome}
+            </p>
+            <p style={{ margin: 0, color: 'var(--muted)' }}>
+              Adicione materiais, exercícios, atividades e avaliações deste curso.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gap: '16px' }}>
+            {validConfigs.map((config) => (
+              <CourseContentEditorSection
+                key={config.key}
+                config={config}
+                items={sections[config.key]}
+                onChange={(items) => setSectionItems(config.key, items)}
+              />
+            ))}
+          </div>
+
+          <div className="form-actions-row" style={{ marginTop: '18px' }}>
+            <button type="button" className="btn btn-ghost" onClick={() => navigate(`/teacher-course/${courseId}`)} disabled={saving}>
+              Cancelar
+            </button>
+            <button type="button" className="btn btn-primary" onClick={handleSaveAll} disabled={saving}>
+              {saving ? 'Salvando...' : 'Salvar conteúdo'}
+            </button>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
