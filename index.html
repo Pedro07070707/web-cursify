@@ -7,6 +7,12 @@
     <title>Cursify - Cursos Online</title>
   </head>
   <body>
+    <script>
+      (function() {
+        var theme = localStorage.getItem('cursify-theme');
+        if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

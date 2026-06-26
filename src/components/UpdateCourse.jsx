@@ -77,7 +77,6 @@ function UpdateCourse() {
     <div className="page-shell">
       <AppHeader
         subtitle="Atualizar curso"
-        onBack={() => navigate(`/teacher-course/${id}`)}
         onHome={() => navigate('/')}
         onGoProfile={() => navigate('/profile')}
         onLogout={() => {

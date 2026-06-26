@@ -4,7 +4,7 @@ import axios from 'axios';
 import AppHeader from './AppHeader';
 import ChatWorkspace from './ChatWorkspace';
 import { getChatMessages, appendChatMessage, getUserConversationPartners } from '../utils/chatStorage';
-import { getDashboardPathByRole, isAdminRole, isStudentRole, isTeacherRole, normalizeRole } from '../utils/ui';
+import { getDashboardPathByRole, isAdminRole, isTeacherRole, normalizeRole } from '../utils/ui';
 import { useTheme } from '../utils/theme';
 
 function Chat() {
@@ -39,20 +39,7 @@ function Chat() {
         const usersResponse = await axios.get('http://localhost:8080/api/v1/usuario');
         const allUsers = usersResponse.data || [];
 
-        let filteredUsers = [];
-        if (userType === 'teacher') {
-          filteredUsers = allUsers.filter((user) => (
-            isStudentRole(user.nivelAcesso)
-            && Number(user.id) !== currentUserId
-          ));
-        } else if (userType === 'student') {
-          filteredUsers = allUsers.filter((user) => (
-            isTeacherRole(user.nivelAcesso)
-            && Number(user.id) !== currentUserId
-          ));
-        } else {
-          filteredUsers = allUsers.filter((user) => Number(user.id) !== currentUserId);
-        }
+        const filteredUsers = allUsers.filter((user) => Number(user.id) !== currentUserId);
 
         setUsers(filteredUsers);
         refreshConversations(filteredUsers);

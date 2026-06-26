@@ -27,10 +27,9 @@ export const appendChatMessage = (userA, userB, message) => {
 };
 
 export const getUserConversationPartners = (currentUserId, users = []) => {
-  if (!currentUserId) return [];
+  if (!currentUserId) return users;
 
-  const userMap = new Map(users.map((user) => [String(user.id), user]));
-  const conversationPartners = [];
+  const lastMessageMap = new Map();
 
   Object.keys(localStorage).forEach((key) => {
     if (!key.startsWith(CHAT_THREAD_PREFIX)) return;
@@ -41,19 +40,18 @@ export const getUserConversationPartners = (currentUserId, users = []) => {
     if (firstId !== currentId && secondId !== currentId) return;
 
     const partnerId = firstId === currentId ? secondId : firstId;
-    const partner = userMap.get(String(partnerId));
     const messages = getChatMessages(currentUserId, partnerId);
     const lastMessage = messages[messages.length - 1];
 
-    if (!partner || !lastMessage) return;
-
-    conversationPartners.push({
-      ...partner,
-      lastMessage,
-    });
+    if (lastMessage) lastMessageMap.set(String(partnerId), lastMessage);
   });
 
-  return conversationPartners.sort(
-    (a, b) => new Date(b.lastMessage.dataChat) - new Date(a.lastMessage.dataChat),
-  );
+  return [...users]
+    .map((user) => ({ ...user, lastMessage: lastMessageMap.get(String(user.id)) || null }))
+    .sort((a, b) => {
+      if (a.lastMessage && b.lastMessage) return new Date(b.lastMessage.dataChat) - new Date(a.lastMessage.dataChat);
+      if (a.lastMessage) return -1;
+      if (b.lastMessage) return 1;
+      return 0;
+    });
 };

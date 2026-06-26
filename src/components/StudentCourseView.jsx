@@ -134,7 +134,6 @@ function StudentCourseViewPage() {
         subtitle="Curso"
         brandDetail={`${NIVEIS[course.categoria] || course.categoria} - ${course.nome}`}
         onHome={() => navigate('/')}
-        onBack={goBack}
         onGoProfile={() => navigate('/profile')}
         onLogout={() => {
           clearSessionData();

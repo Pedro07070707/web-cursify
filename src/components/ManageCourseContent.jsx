@@ -162,7 +162,6 @@ function ManageCourseContent() {
     <div className="page-shell">
       <AppHeader
         subtitle="Gerenciar conteúdo"
-        onBack={() => navigate(`/teacher-course/${courseId}`)}
         onHome={() => navigate('/')}
         onGoProfile={() => navigate('/profile')}
         onLogout={() => {

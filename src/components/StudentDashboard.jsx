@@ -195,7 +195,7 @@ function StudentDashboardPage() {
         onHome={() => navigate('/')}
         navItems={[
           { label: 'Meus cursos', onClick: () => setActiveSection('courses'), active: activeSection === 'courses' },
-          { label: 'Chat', onClick: () => setActiveSection('chat'), active: activeSection === 'chat' },
+          { label: 'Chat', onClick: () => navigate('/chat') },
         ]}
         onGoProfile={() => navigate('/profile')}
         onLogout={handleLogout}
@@ -234,7 +234,7 @@ function StudentDashboardPage() {
                   <button type="button" className="btn btn-primary btn-hero" onClick={() => setActiveSection('courses')}>
                     Meus cursos
                   </button>
-                  <button type="button" className="btn btn-ghost btn-hero" onClick={() => setActiveSection('chat')}>
+                  <button type="button" className="btn btn-ghost btn-hero" onClick={() => navigate('/chat')}>
                     Abrir chat
                   </button>
                 </div>

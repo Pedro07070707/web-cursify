@@ -32,15 +32,13 @@ function TeacherDashboardPage() {
     const fetchData = async () => {
       try {
         const [coursesResponse, usersResponse] = await Promise.all([
-          axios.get('http://localhost:8080/api/v1/curso'),
+          axios.get(`http://localhost:8080/api/v1/usuarioCurso/professor/${currentUserId}`),
           axios.get('http://localhost:8080/api/v1/usuario'),
         ]);
 
         const fetchedCourses = coursesResponse.data || [];
         const fetchedUsers = (usersResponse.data || []).filter((user) => Number(user.id) !== currentUserId);
-        const availableChatUsers = fetchedUsers.filter(
-          (user) => user.nivelAcesso === 'ESTUDANTE' || user.nivelAcesso === 'ALUNO'
-        );
+        const availableChatUsers = fetchedUsers;
 
         setCourses(fetchedCourses);
         setUsers(fetchedUsers);
@@ -163,7 +161,7 @@ function TeacherDashboardPage() {
         onHome={() => navigate('/')}
         navItems={[
           { label: 'Meus cursos', onClick: () => setActiveSection('courses'), active: activeSection === 'courses' },
-          { label: 'Chat', onClick: () => setActiveSection('chat'), active: activeSection === 'chat' },
+          { label: 'Chat', onClick: () => navigate('/chat') },
         ]}
         onGoProfile={() => navigate('/profile')}
         onLogout={handleLogout}
