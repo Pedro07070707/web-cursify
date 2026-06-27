@@ -28,7 +28,7 @@ const getCourseStatusLabel = (status) => {
 function StudentCourseViewPage() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
-  const [contents, setContents] = useState({ material: [], exercicios: [], atividades: [] });
+  const [contents, setContents] = useState({ material: [], exercicios: [] });
   const [loading, setLoading] = useState(true);
   const [studentStatus, setStudentStatus] = useState('Em progresso');
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
@@ -102,7 +102,7 @@ function StudentCourseViewPage() {
           CONTENT_TYPES.map((config) => axios.get(`http://localhost:8080/api/v1/${config.endpoint}`))
         );
 
-        const nextContents = { material: [], exercicios: [], atividades: [] };
+        const nextContents = { material: [], exercicios: [] };
 
         responses.forEach((contentResponse, index) => {
           if (contentResponse.status !== 'fulfilled') return;

@@ -23,7 +23,6 @@ function PublishCoursePage() {
   const [sections, setSections] = useState({
     material: [],
     exercicios: [],
-    atividades: [],
   });
 
   const navigate = useNavigate();
@@ -64,9 +63,6 @@ function PublishCoursePage() {
       if (createdCourseId) {
         const contentPromises = CONTENT_TYPES.flatMap((config) => {
           const validItems = sections[config.key].filter((item) => {
-            if (config.key === 'atividades') {
-              return item.enunciado.trim() && item.alternativa.trim();
-            }
             return item.titulo.trim() && item.subtitulo.trim() && item.conteudo.trim();
           });
 

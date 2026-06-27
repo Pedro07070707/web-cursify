@@ -5,7 +5,7 @@ export const CONTENT_TYPES = [
     endpoint: 'material',
     statusField: 'statusMaterial',
     defaultStatus: 'Nao concluido',
-    buildPayload: (item, courseId, userId, _index, refs = {}) => ({
+    buildPayload: (item, courseId, userId) => ({
       titulo: item.titulo.trim(),
       subtitulo: item.subtitulo.trim(),
       conteudo: item.conteudo.trim(),
@@ -22,7 +22,7 @@ export const CONTENT_TYPES = [
     endpoint: 'exercicios',
     statusField: 'statusExercicios',
     defaultStatus: 'Nao concluido',
-    buildPayload: (item, courseId, userId, _index, refs = {}) => ({
+    buildPayload: (item, courseId, userId) => ({
       titulo: item.titulo.trim(),
       subtitulo: item.subtitulo.trim(),
       conteudo: item.conteudo.trim(),
@@ -35,23 +35,13 @@ export const CONTENT_TYPES = [
   },
 ];
 
-export const createEmptyEntry = (typeKey) => {
-  if (typeKey === 'atividades') {
-    return {
-      enunciado: '',
-      alternativa: '',
-      status: 0,
-    };
-  }
-
-  return {
-    titulo: '',
-    subtitulo: '',
-    conteudo: '',
-    link: '',
-    status: 'Nao concluido',
-  };
-};
+export const createEmptyEntry = () => ({
+  titulo: '',
+  subtitulo: '',
+  conteudo: '',
+  link: '',
+  status: 'Nao concluido',
+});
 
 export const getCourseContentCourseId = (item) => (
   item.cursoId ??
@@ -61,34 +51,12 @@ export const getCourseContentCourseId = (item) => (
   null
 );
 
-export const normalizeCourseContentItem = (typeKey, item) => {
-  if (typeKey === 'atividades') {
-    return {
-      id: item.id,
-      enunciado: item.enunciadoAtividade || '',
-      alternativa: item.alternativaAtividade || '',
-      status: item.statusAtividade ?? 0,
-      cursoId: getCourseContentCourseId(item),
-    };
-  }
-
-  if (typeKey === 'avaliacoes') {
-    return {
-      id: item.id,
-      enunciado: item.enunciadoAvaliacao || '',
-      alternativa: item.alternativaAvaliacao || '',
-      status: item.statusAvaliacao ?? 0,
-      cursoId: getCourseContentCourseId(item),
-    };
-  }
-
-  return {
-    id: item.id,
-    titulo: item.titulo || '',
-    subtitulo: item.subtitulo || '',
-    conteudo: item.conteudo || '',
-    link: item.link || '',
-    status: item.statusMaterial || item.statusExercicios || 'Nao concluido',
-    cursoId: getCourseContentCourseId(item),
-  };
-};
+export const normalizeCourseContentItem = (typeKey, item) => ({
+  id: item.id,
+  titulo: item.titulo || '',
+  subtitulo: item.subtitulo || '',
+  conteudo: item.conteudo || '',
+  link: item.link || '',
+  status: item.statusMaterial || item.statusExercicios || 'Nao concluido',
+  cursoId: getCourseContentCourseId(item),
+});

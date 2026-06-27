@@ -9,7 +9,6 @@ import { CONTENT_TYPES, getCourseContentCourseId, normalizeCourseContentItem } f
 const buildInitialState = () => ({
   material: [],
   exercicios: [],
-  atividades: [],
 });
 
 function ManageCourseContent() {
@@ -72,7 +71,7 @@ function ManageCourseContent() {
   const saveSection = async (config) => {
     const items = sections[config.key];
     const validItems = items.filter((item) => {
-      if (config.key === 'atividades') {
+      if (config.key === 'exercicios') {
         return item.enunciado.trim() && item.alternativa.trim();
       }
 
@@ -188,7 +187,7 @@ function ManageCourseContent() {
               <strong style={{ color: 'var(--text)' }}>Curso:</strong> {course?.nome}
             </p>
             <p style={{ margin: 0, color: 'var(--muted)' }}>
-              Adicione materiais, exercícios, atividades e avaliações deste curso.
+              Adicione materiais e exercícios deste curso.
             </p>
           </div>
 

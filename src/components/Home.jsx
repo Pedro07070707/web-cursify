@@ -92,13 +92,15 @@ function Home() {
               >
                 Criar conta gratuita
               </button>
-              <button
-                type="button"
-                className="btn btn-ghost btn-hero"
-                onClick={() => navigate('/catalog')}
-              >
-                Ver cursos disponíveis
-              </button>
+              {localStorage.getItem('userId') ? (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-hero"
+                  onClick={() => navigate('/catalog')}
+                >
+                  Ver cursos disponíveis
+                </button>
+              ) : null}
             </div>
             <div className="hero-stats">
               <div className="hero-stat">
