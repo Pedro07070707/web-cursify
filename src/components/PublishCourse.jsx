@@ -54,47 +54,31 @@ function PublishCoursePage() {
       cargaHoraria: cargaHorariaNumerica,
       dataCriacao: new Date().toISOString(),
       statusCurso: 'Em progresso',
-      usuarioId: userId,
-      idUsuario: userId,
-      usuario_id: userId,
-      usuario: { id: userId },
       professorId: userId,
-      idProfessor: userId,
     };
 
     try {
-      const usersResponse = await axios.get('http://localhost:8080/api/v1/usuario');
-      const relatedUser = (usersResponse.data || []).find((user) => Number(user.id) === userId);
-
-      if (!relatedUser) {
-        alert('Nao foi possivel localizar o usuario logado na API. Entre novamente para publicar o curso.');
-        return;
-      }
-
       const courseResponse = await axios.post('http://localhost:8080/api/v1/curso', novoCurso);
       const createdCourseId = courseResponse.data?.id;
-      const relatedCourse = courseResponse.data;
 
       if (createdCourseId) {
-        for (const config of CONTENT_TYPES) {
+        const contentPromises = CONTENT_TYPES.flatMap((config) => {
           const validItems = sections[config.key].filter((item) => {
             if (config.key === 'atividades') {
               return item.enunciado.trim() && item.alternativa.trim();
             }
-
             return item.titulo.trim() && item.subtitulo.trim() && item.conteudo.trim();
           });
 
-          await Promise.all(validItems.map((item, index) => (
+          return validItems.map((item, index) =>
             axios.post(
               `http://localhost:8080/api/v1/${config.endpoint}`,
-              config.buildPayload(item, createdCourseId, userId, index, {
-                user: relatedUser,
-                course: relatedCourse,
-              })
+              config.buildPayload(item, createdCourseId, userId, index)
             )
-          )));
-        }
+          );
+        });
+
+        await Promise.all(contentPromises);
       }
 
       alert('Curso publicado com sucesso!');
