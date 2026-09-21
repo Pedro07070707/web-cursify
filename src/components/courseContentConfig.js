@@ -1,3 +1,5 @@
+const text = (value) => String(value ?? '').trim();
+
 export const CONTENT_TYPES = [
   {
     key: 'material',
@@ -6,42 +8,31 @@ export const CONTENT_TYPES = [
     statusField: 'statusMaterial',
     defaultStatus: 'Nao concluido',
     buildPayload: (item, courseId, userId) => ({
-      titulo: item.titulo.trim(),
-      subtitulo: item.subtitulo.trim(),
-      conteudo: item.conteudo.trim(),
-      link: item.link.trim(),
+      titulo: text(item.titulo),
+      subtitulo: text(item.subtitulo),
+      conteudo: text(item.conteudo),
+      link: text(item.link),
       usuario: { id: userId },
       curso: { id: courseId },
-      statusMaterial: item.status || 'Nao concluido',
+      statusMaterial: text(item.status) || 'Nao concluido',
     }),
     getSummary: (item) => item.subtitulo || item.conteudo,
   },
   {
     key: 'exercicios',
-    title: 'Exercicios',
-    endpoint: 'exercicios',
-    statusField: 'statusExercicios',
-    defaultStatus: 'Nao concluido',
+    title: 'Exercicios', endpoint: 'exercicios', statusField: 'statusExercicios', defaultStatus: 'Nao concluido',
     buildPayload: (item, courseId, userId) => ({
-      titulo: item.titulo.trim(),
-      subtitulo: item.subtitulo.trim(),
-      conteudo: item.conteudo.trim(),
-      link: item.link.trim(),
-      usuario: { id: userId },
-      curso: { id: courseId },
-      statusExercicios: item.status || 'Nao concluido',
+      titulo: text(item.titulo) || text(item.enunciado).slice(0, 100), subtitulo: text(item.subtitulo) || 'Exercício',
+      conteudo: text(item.enunciado), enunciado: text(item.enunciado),
+      alternativas: (Array.isArray(item.alternativas) ? item.alternativas : []).map(text).filter(Boolean), respostaCorreta: text(item.respostaCorreta),
+      explicacao: text(item.explicacao), pontos: Number(item.pontos) || 1, link: text(item.link),
+      usuario: { id: userId }, curso: { id: courseId }, statusExercicios: text(item.status) || 'Nao concluido',
     }),
-    getSummary: (item) => item.subtitulo || item.conteudo,
+    getSummary: (item) => item.enunciado || item.conteudo,
   },
 ];
 
-export const createEmptyEntry = () => ({
-  titulo: '',
-  subtitulo: '',
-  conteudo: '',
-  link: '',
-  status: 'Nao concluido',
-});
+export const createEmptyEntry = (typeKey) => typeKey === 'exercicios' ? ({ titulo: '', subtitulo: '', conteudo: '', enunciado: '', alternativas: ['', '', '', ''], respostaCorreta: '', explicacao: '', pontos: 1, link: '', status: 'Nao concluido' }) : ({ titulo: '', subtitulo: '', conteudo: '', link: '', status: 'Nao concluido' });
 
 export const getCourseContentCourseId = (item) => (
   item.cursoId ??
@@ -52,11 +43,8 @@ export const getCourseContentCourseId = (item) => (
 );
 
 export const normalizeCourseContentItem = (typeKey, item) => ({
-  id: item.id,
-  titulo: item.titulo || '',
-  subtitulo: item.subtitulo || '',
-  conteudo: item.conteudo || '',
-  link: item.link || '',
-  status: item.statusMaterial || item.statusExercicios || 'Nao concluido',
-  cursoId: getCourseContentCourseId(item),
+  id: item.id, titulo: item.titulo || '', subtitulo: item.subtitulo || '', conteudo: item.conteudo || '',
+  enunciado: item.enunciado || item.conteudo || '', alternativas: Array.isArray(item.alternativas) ? item.alternativas : ['', '', '', ''],
+  respostaCorreta: item.respostaCorreta || '', explicacao: item.explicacao || '', pontos: item.pontos || 1, link: item.link || '',
+  status: item.statusMaterial || item.statusExercicios || 'Nao concluido', cursoId: getCourseContentCourseId(item),
 });

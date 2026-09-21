@@ -63,7 +63,7 @@ function PublishCoursePage() {
       if (createdCourseId) {
         const contentPromises = CONTENT_TYPES.flatMap((config) => {
           const validItems = sections[config.key].filter((item) => {
-            return item.titulo.trim() && item.subtitulo.trim() && item.conteudo.trim();
+            return Boolean(item.titulo?.trim() && item.subtitulo?.trim() && item.conteudo?.trim());
           });
 
           return validItems.map((item, index) =>
