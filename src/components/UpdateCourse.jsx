@@ -92,7 +92,7 @@ function UpdateCourse() {
           <div className="section-heading section-heading-inline">
             <div>
               <span className="section-kicker">Edição</span>
-              <h3>Atualizar curso</h3>
+              <h3>Atualizar dados do curso</h3>
             </div>
             <button type="button" className="btn btn-ghost" onClick={() => navigate(`/teacher-course/${id}`)}>
               Voltar ao curso

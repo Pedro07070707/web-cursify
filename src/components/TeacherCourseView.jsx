@@ -120,7 +120,7 @@ function TeacherCourseViewPage() {
           <div className="hero-actions">
             <button className="btn btn-primary" onClick={() => navigate('/chat')}>Chat com Alunos</button>
             <button className="btn btn-secondary" onClick={() => navigate(`/manage-course-content/${id}`)}>Gerenciar Conteudo</button>
-            <button className="btn btn-secondary" onClick={() => navigate(`/update-course/${id}`)}>Atualizar Curso</button>
+            <button className="btn btn-secondary" onClick={() => navigate(`/update-course/${id}`)}>Atualizar Dados</button>
             <button className="btn btn-danger" onClick={handleDelete}>Excluir Curso</button>
           </div>
         </div>
