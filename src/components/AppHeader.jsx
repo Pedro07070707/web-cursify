@@ -22,6 +22,10 @@ function AppHeader({
   const isAdmin = localStorage.getItem('nivelAcesso') === 'ADMIN';
   const isStudent = localStorage.getItem('nivelAcesso') === 'ALUNO' || localStorage.getItem('nivelAcesso') === 'STUDENT';
   const isTeacher = localStorage.getItem('nivelAcesso') === 'PROFESSOR' || localStorage.getItem('nivelAcesso') === 'TEACHER';
+  const handleBack = onBack || (() => {
+    if (window.history.length > 1) window.history.back();
+    else window.location.assign('/');
+  });
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -47,8 +51,8 @@ function AppHeader({
       </div>
 
       <div className="app-header__nav">
-        {onBack ? (
-          <button type="button" className="header-back-button" onClick={onBack}>
+        {handleBack ? (
+          <button type="button" className="header-back-button" onClick={handleBack}>
             {backLabel}
           </button>
         ) : null}
@@ -82,6 +86,14 @@ function AppHeader({
 
           {menuOpen ? (
             <div className="menu-dropdown">
+              {isStudent ? (
+                <button type="button" className="menu-item" onClick={() => {
+                  setMenuOpen(false);
+                  window.location.href = '/student';
+                }}>
+                  Inicio
+                </button>
+              ) : null}
               {navItems.length ? (
                 <div className="menu-section">
                   {navItems.map((item) => (
@@ -148,14 +160,6 @@ function AppHeader({
                   window.location.href = '/admin';
                 }}>
                   Painel Admin
-                </button>
-              ) : null}
-              {isStudent ? (
-                <button type="button" className="menu-item" onClick={() => {
-                  setMenuOpen(false);
-                  window.location.href = '/student';
-                }}>
-                  Painel do Estudante
                 </button>
               ) : null}
               {isTeacher ? (

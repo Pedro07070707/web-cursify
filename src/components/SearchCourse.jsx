@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AppHeader from './AppHeader';
@@ -49,21 +49,20 @@ function SearchCoursePage() {
     [courses, searchTerm]
   );
 
-  const handleToggleCourse = (course) => {
+  const handleToggleCourse = async (course) => {
     const existingEntry = getUserCourseEntry(currentUserId, course.id);
-
-    if (existingEntry?.enrolled) {
-      removeUserCourseEntry(currentUserId, course.id);
-      setCourses((currentCourses) => [...currentCourses]);
-      return;
-    }
-
-    axios.post(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${course.id}`)
-      .then(() => {
+    try {
+      if (existingEntry?.enrolled) {
+        await axios.delete(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
+        removeUserCourseEntry(currentUserId, course.id);
+      } else {
+        await axios.post(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
         saveUserCourseEntry(currentUserId, course.id, { enrolled: true, status: 'Em progresso' });
-        setCourses((currentCourses) => [...currentCourses]);
-      })
-      .catch((error) => alert(error.response?.data?.message || 'Não foi possível inscrever-se no curso.'));
+      }
+      setCourses((currentCourses) => [...currentCourses]);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Não foi possível atualizar a matrícula.');
+    }
   };
 
   return (

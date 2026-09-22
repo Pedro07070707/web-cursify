@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AppHeader from './AppHeader';
@@ -36,7 +36,6 @@ function StudentCourseViewPage() {
   const [completedExercises, setCompletedExercises] = useState(() => new Set());
   const [savedProgress, setSavedProgress] = useState(0);
   const navigate = useNavigate();
-  const userName = localStorage.getItem('userName') || 'Visitante';
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const currentUserId = Number(localStorage.getItem('userId'));
   const isLoggedIn = Boolean(localStorage.getItem('userId'));
@@ -74,21 +73,6 @@ function StudentCourseViewPage() {
     } catch (error) {
       console.error('Erro ao concluir curso:', error);
       setFeedback({ type: 'error', message: 'Erro ao concluir o curso.' });
-    }
-  };
-
-  const handleSaveCourse = async () => {
-    if (!isLoggedIn) {
-      requireAccount();
-      return;
-    }
-
-    try {
-      await axios.post(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${id}`);
-      saveUserCourseEntry(currentUserId, id, { enrolled: true, status: studentStatus || 'Em progresso' });
-      setFeedback({ type: 'success', message: 'Curso salvo em Meus cursos.' });
-    } catch (error) {
-      setFeedback({ type: 'error', message: error.response?.data?.message || 'Não foi possível salvar o curso.' });
     }
   };
 
@@ -170,7 +154,6 @@ function StudentCourseViewPage() {
         brandDetail={`${NIVEIS[course.categoria] || course.categoria} - ${course.nome}`}
         onHome={() => navigate('/')}
         navItems={[
-          { label: 'Inicio', onClick: () => navigate('/') },
           ...(userType === 'student' ? [{ label: 'Meus cursos', onClick: () => navigate(homePath, { state: { section: 'courses' } }) }] : []),
           { label: 'Perfil', onClick: () => navigate('/profile') },
           { label: 'Sair', onClick: () => { clearSessionData(); navigate('/'); } },
@@ -189,6 +172,7 @@ function StudentCourseViewPage() {
           <h2>{course.nome}</h2>
           <p><strong>Categoria:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
           <p><strong>Carga horaria:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
+          <p><strong>Matriculados:</strong> {course.numeroAlunos ?? 0}/100</p>
           <p><strong>Data de criacao:</strong> {course.dataCriacao ? new Date(course.dataCriacao).toLocaleDateString('pt-BR') : '-'}</p>
 
           <div>
@@ -215,7 +199,6 @@ function StudentCourseViewPage() {
 
           <div className="hero-actions">
             <button className="btn btn-primary" onClick={() => navigate('/chat')}>Chat com Professor</button>
-            <button className="btn btn-secondary" onClick={handleSaveCourse}>Salvar curso</button>
             {studentStatus === 'Concluido' || savedProgress >= 100 ? (
               <button className="btn btn-secondary" onClick={async () => { await persistProgress(0, false); setSavedProgress(0); setStudentStatus('Em progresso'); setCompletedMaterials(new Set()); setCompletedExercises(new Set()); }}>
                 Reiniciar curso

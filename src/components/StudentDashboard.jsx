@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AppHeader from './AppHeader';
@@ -174,22 +174,27 @@ function StudentDashboardPage() {
     setMessage('');
   };
 
-  const handleToggleCourse = (course) => {
+  const handleToggleCourse = async (course) => {
     const existingEntry = getUserCourseEntry(currentUserId, course.id);
-
-    if (existingEntry?.enrolled) {
-      removeUserCourseEntry(currentUserId, course.id);
+    try {
+      if (existingEntry?.enrolled) {
+        if (Number(course.progresso) >= 100 || getCourseStatusLabel(course.userStatus) === 'Concluido') {
+          setFeedback({ type: 'error', message: 'Cursos concluídos não podem ser removidos.' });
+          return;
+        }
+        await axios.delete(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
+        removeUserCourseEntry(currentUserId, course.id);
+        setCourseStateTick((value) => value + 1);
+        setFeedback({ type: 'success', message: `Curso removido: ${course.nome}.` });
+        return;
+      }
+      await axios.post(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
+      saveUserCourseEntry(currentUserId, course.id, { enrolled: true, status: 'Em progresso' });
       setCourseStateTick((value) => value + 1);
-      setFeedback({ type: 'success', message: `Curso removido: ${course.nome}.` });
-      return;
+      setFeedback({ type: 'success', message: `Curso adicionado: ${course.nome}.` });
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'Não foi possível atualizar a matrícula.' });
     }
-
-    saveUserCourseEntry(currentUserId, course.id, {
-      enrolled: true,
-      status: 'Em progresso',
-    });
-    setCourseStateTick((value) => value + 1);
-    setFeedback({ type: 'success', message: `Curso adicionado: ${course.nome}.` });
   };
 
   const handleLogout = () => {
@@ -323,9 +328,9 @@ function StudentDashboardPage() {
                       <p>{course.descricao}</p>
                       <small>{formatCourseDuration(course)} • Progresso: {course.progresso ?? 0}% • {getCourseStatusLabel(course.userStatus)}</small>
                     </div>
-                    <button type="button" className="btn btn-ghost" onClick={() => handleToggleCourse(course)}>
-                      Remover
-                    </button>
+                    {Number(course.progresso) < 100 && getCourseStatusLabel(course.userStatus) !== 'Concluido' ? (
+                      <button type="button" className="btn btn-ghost" onClick={() => handleToggleCourse(course)}>Remover</button>
+                    ) : null}
                   </article>
                 ))}
               </div>
