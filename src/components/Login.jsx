@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import InlineAlert from './InlineAlert';
 import { useTheme } from '../utils/theme';
@@ -19,7 +19,7 @@ function Login() {
     setInvalidFields({});
 
     try {
-      const response = await axios.post('http://localhost:8080/api/v1/usuario/login', { email, senha });
+      const response = await api.post('/usuario/login', { email, senha });
       const usuario = response.data;
 
       localStorage.setItem('userId', usuario.id);

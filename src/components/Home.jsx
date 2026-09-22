@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import DirectorySearchSection from './DirectorySearchSection';
 import { useTheme } from '../utils/theme';
@@ -17,7 +17,7 @@ function Home() {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const coursesResponse = await axios.get('http://localhost:8080/api/v1/curso');
+        const coursesResponse = await api.get('/curso');
 
         setCourses(coursesResponse.data || []);
       } catch (error) {

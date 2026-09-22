@@ -1,14 +1,14 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import ChatWorkspace from './ChatWorkspace';
 import DirectorySearchSection from './DirectorySearchSection';
 import InlineAlert from './InlineAlert';
 import { clearSessionData } from '../utils/authStorage';
-import { appendChatMessage, getChatMessages, getUserConversationPartners } from '../utils/chatStorage';
 import { formatCourseDuration, NIVEIS } from '../utils/ui';
 import { useTheme } from '../utils/theme';
+import { useChatWorkspace } from '../utils/useChatWorkspace';
 
 function TeacherDashboardPage() {
   const navigate = useNavigate();
@@ -19,31 +19,26 @@ function TeacherDashboardPage() {
   const [chatUsers, setChatUsers] = useState([]);
   const [activeSection, setActiveSection] = useState(location.state?.section || 'home');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [chatSearchTerm, setChatSearchTerm] = useState('');
-  const [conversations, setConversations] = useState([]);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const userName = localStorage.getItem('userName') || 'Professor';
   const currentUserId = Number(localStorage.getItem('userId'));
+
+  const chat = useChatWorkspace({ currentUserId, users: chatUsers, userName });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [coursesResponse, usersResponse] = await Promise.all([
-          axios.get(`http://localhost:8080/api/v1/usuarioCurso/professor/${currentUserId}`),
-          axios.get('http://localhost:8080/api/v1/usuario'),
+          api.get(`/usuarioCurso/professor/${currentUserId}`),
+          api.get('/usuario'),
         ]);
 
         const fetchedCourses = coursesResponse.data || [];
         const fetchedUsers = (usersResponse.data || []).filter((user) => Number(user.id) !== currentUserId);
-        const availableChatUsers = fetchedUsers;
 
         setCourses(fetchedCourses);
         setUsers(fetchedUsers);
-        setChatUsers(availableChatUsers);
-        setConversations(getUserConversationPartners(currentUserId, availableChatUsers));
+        setChatUsers(fetchedUsers);
       } catch (error) {
         console.error('Erro ao carregar dados do professor:', error);
         setFeedback({ type: 'error', message: 'Erro ao carregar dados. Verifique a API.' });
@@ -52,42 +47,6 @@ function TeacherDashboardPage() {
 
     fetchData();
   }, [currentUserId]);
-
-  useEffect(() => {
-    if (!selectedChat || !currentUserId) {
-      setMessages([]);
-      return;
-    }
-
-    setMessages(getChatMessages(currentUserId, selectedChat.id));
-  }, [selectedChat, currentUserId]);
-
-  useEffect(() => {
-    if (!currentUserId || chatUsers.length === 0) return undefined;
-
-    const syncConversations = () => {
-      setConversations(getUserConversationPartners(currentUserId, chatUsers));
-      if (selectedChat) {
-        setMessages(getChatMessages(currentUserId, selectedChat.id));
-      }
-    };
-
-    syncConversations();
-
-    const intervalId = window.setInterval(syncConversations, 1000);
-    const handleStorage = (event) => {
-      if (!event.key || event.key.startsWith('chatThread:')) {
-        syncConversations();
-      }
-    };
-
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, [currentUserId, chatUsers, selectedChat]);
 
   const teacherCourses = useMemo(() => {
     return courses.filter((course) => {
@@ -110,37 +69,9 @@ function TeacherDashboardPage() {
     };
   }, [teacherCourses, users, searchTerm]);
 
-  const searchedUsers = useMemo(() => {
-    const normalizedTerm = chatSearchTerm.trim().toLowerCase();
-    if (!normalizedTerm) return [];
-
-    return chatUsers.filter((user) => (
-      `${user.nome || ''} ${user.email || ''}`.toLowerCase().includes(normalizedTerm)
-    ));
-  }, [chatSearchTerm, chatUsers]);
-
-  const sendMessage = () => {
-    if (!message.trim() || !selectedChat || !currentUserId) return;
-
-    const newMessage = {
-      id: `${currentUserId}-${selectedChat.id}-${Date.now()}`,
-      mensagem: message.trim(),
-      dataChat: new Date().toISOString(),
-      statusChat: 'Enviado',
-      remetenteId: Number(currentUserId),
-      destinatarioId: Number(selectedChat.id),
-      remetenteNome: userName,
-    };
-
-    const nextMessages = appendChatMessage(currentUserId, selectedChat.id, newMessage);
-    setMessages(nextMessages);
-    setConversations(getUserConversationPartners(currentUserId, chatUsers));
-    setMessage('');
-  };
-
   const handleDelete = async (id, nome) => {
     try {
-      await axios.delete(`http://localhost:8080/api/v1/curso/${id}`);
+      await api.delete(`/curso/${id}`);
       setCourses((currentCourses) => currentCourses.filter((course) => course.id !== id));
       setFeedback({ type: 'success', message: `Curso excluido com sucesso: ${nome}.` });
     } catch (error) {
@@ -304,19 +235,16 @@ function TeacherDashboardPage() {
 
         {activeSection === 'chat' ? (
           <ChatWorkspace
-            selectedChat={selectedChat}
-            message={message}
-            onMessageChange={setMessage}
-            onSendMessage={sendMessage}
-            messages={messages}
-            conversations={conversations}
-            searchedUsers={searchedUsers}
-            searchTerm={chatSearchTerm}
-            onSearchChange={setChatSearchTerm}
-            onSelectChat={(user) => {
-              setSelectedChat(user);
-              setMessages(getChatMessages(currentUserId, user.id));
-            }}
+            selectedChat={chat.selectedChat}
+            message={chat.message}
+            onMessageChange={chat.setMessage}
+            onSendMessage={chat.sendMessage}
+            messages={chat.messages}
+            conversations={chat.conversations}
+            searchedUsers={chat.searchedUsers}
+            searchTerm={chat.chatSearchTerm}
+            onSearchChange={chat.setChatSearchTerm}
+            onSelectChat={chat.handleSelectChat}
             currentUserId={currentUserId}
           />
         ) : null}

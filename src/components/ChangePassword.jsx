@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import InlineAlert from './InlineAlert';
 import { clearSessionData } from '../utils/authStorage';
@@ -24,7 +24,7 @@ function ChangePassword() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/v1/usuario');
+        const response = await api.get('/usuario');
         const allUsers = response.data || [];
         const currentUser = allUsers.find((item) => Number(item.id) === Number(userId));
         setUsers(allUsers);
@@ -86,7 +86,7 @@ function ChangePassword() {
         senha: novaSenha || currentUser.senha,
       };
 
-      await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, payload);
+      await api.put(`/usuario/${userId}`, payload);
 
       localStorage.setItem('userName', nome);
       localStorage.setItem('nivelAcesso', nextRole);

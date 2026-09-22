@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import InlineAlert from './InlineAlert';
 import { useTheme } from '../utils/theme';
@@ -66,11 +66,16 @@ function Register() {
       cpf,
       nivelAcesso,
       dataCadastro: new Date().toISOString().slice(0, 19),
-      statusUsuario: 'Ativo',
+      statusUsuario: nivelAcesso === 'PROFESSOR' ? 'Pendente' : 'Ativo',
     };
 
     try {
-      const response = await axios.post('http://localhost:8080/api/v1/usuario', novoUsuario);
+      const response = await api.post('/usuario', novoUsuario);
+
+      if (nivelAcesso === 'PROFESSOR') {
+        setFeedback({ type: 'success', message: 'Cadastro enviado! Aguarde a aprovacao do administrador para acessar sua conta.' });
+        return;
+      }
 
       localStorage.setItem('userId', response.data.id);
       localStorage.setItem('userName', nome);

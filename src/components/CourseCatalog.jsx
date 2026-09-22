@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import InlineAlert from './InlineAlert';
 import { useTheme } from '../utils/theme';
 import { NIVEIS, formatCourseDuration } from '../utils/ui';
+import { calcCourseAverage, getRatingsForCourse } from '../utils/userCourseState';
 
 const CATEGORY_COLORS = {
   FUNDAMENTAL_1: { bg: 'rgba(70,130,180,0.12)', color: '#326791' },
@@ -23,6 +24,21 @@ const COVER_GRADIENTS = [
   'linear-gradient(135deg, #4682b4 0%, #4a9a8a 100%)',
   'linear-gradient(135deg, #2c5f8a 0%, #8fbc8f 100%)',
 ];
+
+function StarDisplay({ average, count }) {
+  if (average === null) return <span className="catalog-no-rating">Sem avaliações</span>;
+  return (
+    <div className="catalog-rating">
+      {[1,2,3,4,5].map((s) => (
+        <svg key={s} width="13" height="13" viewBox="0 0 24 24" fill={s <= Math.round(average) ? '#f59e0b' : 'none'} stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      ))}
+      <span className="catalog-rating-value">{average.toFixed(1)}</span>
+      <span className="catalog-rating-count">({count})</span>
+    </div>
+  );
+}
 
 function CourseCard({ course, onOpen }) {
   const colors = CATEGORY_COLORS[course.categoria] || CATEGORY_COLORS.OUTROS;
@@ -51,6 +67,7 @@ function CourseCard({ course, onOpen }) {
 
         <h3 className="catalog-card-title">{course.nome}</h3>
         <p className="catalog-card-desc">{course.descricao}</p>
+        <StarDisplay average={calcCourseAverage(course.id)} count={getRatingsForCourse(course.id).length} />
 
         <button type="button" className="btn btn-primary catalog-card-btn" onClick={onOpen}>
           Ver curso
@@ -69,10 +86,12 @@ function CourseCatalog() {
   const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [minStars, setMinStars] = useState(0);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
+  const isLoggedIn = Boolean(localStorage.getItem('userId'));
 
   useEffect(() => {
-    axios.get('http://localhost:8080/api/v1/curso')
+    api.get('/curso')
       .then((res) => {
         const visible = (res.data || []).filter(
           (c) => c.statusCurso !== false && c.statusCurso !== 'Inativo'
@@ -83,13 +102,15 @@ function CourseCatalog() {
   }, []);
 
   const filtered = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term = isLoggedIn ? searchTerm.trim().toLowerCase() : '';
     return courses.filter((c) => {
       const matchSearch = !term || `${c.nome || ''} ${c.descricao || ''} ${c.categoria || ''}`.toLowerCase().includes(term);
       const matchCategory = !selectedCategory || c.categoria === selectedCategory;
-      return matchSearch && matchCategory;
+      const avg = calcCourseAverage(c.id);
+      const matchStars = minStars === 0 || (avg !== null && avg >= minStars);
+      return matchSearch && matchCategory && matchStars;
     });
-  }, [courses, searchTerm, selectedCategory]);
+  }, [courses, searchTerm, selectedCategory, minStars, isLoggedIn]);
 
   const categories = useMemo(() => [...new Set(courses.map((c) => c.categoria).filter(Boolean))], [courses]);
 
@@ -148,10 +169,25 @@ function CourseCatalog() {
             </svg>
             <input
               type="text"
-              placeholder="Buscar por nome, descrição ou categoria..."
+              placeholder={isLoggedIn ? 'Buscar por nome, descrição ou categoria...' : 'Faça login para pesquisar cursos'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              disabled={!isLoggedIn}
             />
+          </div>
+
+          <div className="catalog-filter-chips">
+            <span className="catalog-filter-label">Avaliação mínima:</span>
+            {[0,1,2,3,4,5].map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={`catalog-chip${minStars === s ? ' is-active' : ''}`}
+                onClick={() => setMinStars(s)}
+              >
+                {s === 0 ? 'Todas' : `${s}★+`}
+              </button>
+            ))}
           </div>
 
           {categories.length > 0 && (

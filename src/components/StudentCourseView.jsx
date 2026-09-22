@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import InlineAlert from './InlineAlert';
 import CourseContentListSection from './CourseContentListSection';
 import { CONTENT_TYPES, getCourseContentCourseId, normalizeCourseContentItem } from './courseContentConfig';
-import { getUserCourseEntry, saveUserCourseEntry } from '../utils/userCourseState';
+import { getUserCourseEntry, saveUserCourseEntry, saveCourseRating, getUserRatingForCourse, calcCourseAverage, getRatingsForCourse } from '../utils/userCourseState';
 import { clearSessionData } from '../utils/authStorage';
 import { getDashboardPathByRole } from '../utils/ui';
 
@@ -35,6 +35,9 @@ function StudentCourseViewPage() {
   const [completedMaterials, setCompletedMaterials] = useState(() => new Set());
   const [completedExercises, setCompletedExercises] = useState(() => new Set());
   const [savedProgress, setSavedProgress] = useState(0);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingStars, setRatingStars] = useState(0);
+  const [ratingFeedback, setRatingFeedback] = useState('');
   const navigate = useNavigate();
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const currentUserId = Number(localStorage.getItem('userId'));
@@ -79,11 +82,11 @@ function StudentCourseViewPage() {
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/api/v1/curso/${id}`);
+        const response = await api.get(`/curso/${id}`);
         setCourse(response.data);
 
         if (isLoggedIn && userType === 'student') {
-          const progressResponse = await axios.get(`http://localhost:8080/api/v1/usuarioCurso/progresso/${currentUserId}/${id}`);
+          const progressResponse = await api.get(`/usuarioCurso/progresso/${currentUserId}/${id}`);
           const bancoProgress = Number(progressResponse.data?.progresso) || 0;
           setSavedProgress(bancoProgress);
           if (bancoProgress >= 100 || progressResponse.data?.concluido === true) setStudentStatus('Concluido');
@@ -92,7 +95,7 @@ function StudentCourseViewPage() {
         }
 
         const responses = await Promise.allSettled(
-          CONTENT_TYPES.map((config) => axios.get(`http://localhost:8080/api/v1/${config.endpoint}`))
+          CONTENT_TYPES.map((config) => api.get(`/${config.endpoint}`))
         );
 
         const nextContents = { material: [], exercicios: [] };
@@ -131,16 +134,27 @@ function StudentCourseViewPage() {
   const persistProgress = async (nextProgress, concluded = nextProgress >= 100) => {
     if (!isLoggedIn || !Number.isFinite(currentUserId) || !id) return;
     try {
-      await axios.post(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${id}`);
-      await axios.put(`http://localhost:8080/api/v1/usuarioCurso/progresso/${currentUserId}/${id}`, {
+      await api.post(`/usuarioCurso/inscrever/${currentUserId}/${id}`);
+      await api.put(`/usuarioCurso/progresso/${currentUserId}/${id}`, {
         progresso: nextProgress, concluido: concluded,
       });
       setSavedProgress(nextProgress);
-      if (concluded) setStudentStatus('Concluido');
+      if (concluded) {
+        setStudentStatus('Concluido');
+        const alreadyRated = getUserRatingForCourse(currentUserId, id);
+        if (!alreadyRated) setShowRatingModal(true);
+      }
     } catch (error) {
       console.error('Erro ao salvar progresso:', error.response?.data || error);
       setFeedback({ type: 'error', message: error.response?.data?.message || 'Não foi possível salvar o progresso no banco.' });
     }
+  };
+
+  const handleSubmitRating = () => {
+    if (ratingStars === 0) return;
+    saveCourseRating(currentUserId, id, ratingStars, ratingFeedback);
+    setShowRatingModal(false);
+    setFeedback({ type: 'success', message: `Avaliação de ${ratingStars} estrela${ratingStars > 1 ? 's' : ''} registrada. Obrigado!` });
   };
 
   if (loading) return <div className="container"><div className="card">Carregando...</div></div>;
@@ -194,6 +208,21 @@ function StudentCourseViewPage() {
             </div>
           </div>
 
+          {(() => {
+            const avg = calcCourseAverage(id);
+            const count = getRatingsForCourse(id).length;
+            return avg !== null ? (
+              <div className="course-rating-display">
+                {[1,2,3,4,5].map((s) => (
+                  <svg key={s} width="16" height="16" viewBox="0 0 24 24" fill={s <= Math.round(avg) ? '#f59e0b' : 'none'} stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                ))}
+                <span><strong>{avg.toFixed(1)}</strong> média ({count} avaliação{count !== 1 ? 'ões' : ''})</span>
+              </div>
+            ) : null;
+          })()}
+
           <CourseContentListSection locked={studentStatus === 'Concluido' || savedProgress >= 100} title="Materiais" items={contents.material} typeKey="material" emptyMessage="Nenhum material disponivel." onViewed={(materialId) => { if (studentStatus === 'Concluido' || savedProgress >= 100) return; setCompletedMaterials((current) => { const next = new Set(current).add(materialId); persistProgress(Math.max(savedProgress, Math.min(100, savedProgress + Math.round(100 / (totalActivities || 1))))); return next; }); }} />
           <CourseContentListSection locked={studentStatus === 'Concluido' || savedProgress >= 100} title="Exercicios" items={contents.exercicios} typeKey="exercicios" emptyMessage="Nenhum exercicio disponivel." onResolved={(exerciseId) => { if (studentStatus === 'Concluido' || savedProgress >= 100) return; setCompletedExercises((current) => { const next = new Set(current).add(exerciseId); persistProgress(Math.max(savedProgress, Math.min(100, savedProgress + Math.round(100 / (totalActivities || 1))))); return next; }); }} />
 
@@ -207,6 +236,54 @@ function StudentCourseViewPage() {
           </div>
         </div>
       </main>
+
+      {showRatingModal ? (
+        <div className="rating-modal-overlay">
+          <div className="rating-modal">
+            <h3>Avalie este curso</h3>
+            <p>Você concluiu <strong>{course?.nome}</strong>. Deixe sua avaliação!</p>
+
+            <div className="rating-stars-row">
+              {[1,2,3,4,5].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`rating-star-btn${ratingStars >= s ? ' is-active' : ''}`}
+                  onClick={() => setRatingStars(s)}
+                  aria-label={`${s} estrela${s > 1 ? 's' : ''}`}
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill={ratingStars >= s ? '#f59e0b' : 'none'} stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </button>
+              ))}
+            </div>
+            {ratingStars > 0 && <p className="rating-stars-label">{ratingStars} estrela{ratingStars > 1 ? 's' : ''}</p>}
+
+            <div className="form-group" style={{ marginTop: '12px' }}>
+              <label>Feedback (opcional)</label>
+              <textarea
+                className="publish-textarea"
+                rows={3}
+                placeholder="Conte o que achou do curso..."
+                value={ratingFeedback}
+                onChange={(e) => setRatingFeedback(e.target.value)}
+              />
+            </div>
+
+            <div className="rating-modal-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSubmitRating}
+                disabled={ratingStars === 0}
+              >
+                Enviar avaliação
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

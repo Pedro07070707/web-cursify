@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import CourseContentEditorSection from './CourseContentEditorSection';
 import { useTheme } from '../utils/theme';
@@ -30,15 +30,15 @@ function ManageCourseContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const courseResponse = await axios.get(`http://localhost:8080/api/v1/curso/${courseId}`);
+        const courseResponse = await api.get(`/curso/${courseId}`);
         setCourse(courseResponse.data);
 
-        const usersResponse = await axios.get('http://localhost:8080/api/v1/usuario');
+        const usersResponse = await api.get('/usuario');
         const currentUser = (usersResponse.data || []).find((user) => Number(user.id) === userId) || null;
         setRelatedUser(currentUser);
 
         const responses = await Promise.allSettled(
-          validConfigs.map((config) => axios.get(`http://localhost:8080/api/v1/${config.endpoint}`))
+          validConfigs.map((config) => api.get(`/${config.endpoint}`))
         );
 
         const nextSections = buildInitialState();
@@ -98,14 +98,14 @@ function ManageCourseContent() {
             user: relatedUser,
             course,
           });
-          return axios.put(`http://localhost:8080/api/v1/${config.endpoint}/${item.id}`, {
+          return api.put(`/${config.endpoint}/${item.id}`, {
             ...payload,
             id: item.id,
           });
         }
 
-        return axios.post(
-          `http://localhost:8080/api/v1/${config.endpoint}`,
+        return api.post(
+          `/${config.endpoint}`,
           config.buildPayload(item, Number(courseId), userId, index, {
             user: relatedUser,
             course,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import { useTheme } from '../utils/theme';
 
@@ -17,7 +17,7 @@ function UpdateCourse() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`http://localhost:8080/api/v1/curso/${id}`)
+    api.get(`/curso/${id}`)
       .then(res => {
         const c = res.data;
         setForm({
@@ -34,8 +34,8 @@ function UpdateCourse() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.get(`http://localhost:8080/api/v1/curso/${id}`);
-      await axios.put(`http://localhost:8080/api/v1/curso/${id}`, {
+      const response = await api.get(`/curso/${id}`);
+      await api.put(`/curso/${id}`, {
         ...response.data,
         nome: form.nome,
         categoria: form.categoria,

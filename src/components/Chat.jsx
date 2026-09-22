@@ -1,21 +1,16 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import ChatWorkspace from './ChatWorkspace';
-import { getChatMessages, appendChatMessage, getUserConversationPartners } from '../utils/chatStorage';
 import { getDashboardPathByRole, isAdminRole, isTeacherRole, normalizeRole } from '../utils/ui';
 import { useTheme } from '../utils/theme';
+import { useChatWorkspace } from '../utils/useChatWorkspace';
 
 function Chat() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
-  const [conversations, setConversations] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const normalizedRole = normalizeRole(nivelAcesso);
   const userType = isAdminRole(normalizedRole) ? 'admin' : isTeacherRole(normalizedRole) ? 'teacher' : 'student';
@@ -24,25 +19,15 @@ function Chat() {
   const currentUserId = rawUserId ? Number(rawUserId) : null;
   const dashboardPath = getDashboardPathByRole(nivelAcesso);
 
-  const refreshConversations = (availableUsers) => {
-    if (!currentUserId) {
-      setConversations([]);
-      return;
-    }
-
-    setConversations(getUserConversationPartners(currentUserId, availableUsers));
-  };
+  const chat = useChatWorkspace({ currentUserId, users, userName });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const usersResponse = await axios.get('http://localhost:8080/api/v1/usuario');
+        const usersResponse = await api.get('/usuario');
         const allUsers = usersResponse.data || [];
-
         const filteredUsers = allUsers.filter((user) => Number(user.id) !== currentUserId);
-
         setUsers(filteredUsers);
-        refreshConversations(filteredUsers);
       } catch (error) {
         console.error('Erro ao carregar dados do chat:', error);
       }
@@ -51,72 +36,11 @@ function Chat() {
     fetchData();
   }, [userType, currentUserId]);
 
-  useEffect(() => {
-    if (!currentUserId || users.length === 0) return undefined;
-
-    const syncConversations = () => {
-      refreshConversations(users);
-      if (selectedChat) {
-        setMessages(getChatMessages(currentUserId, selectedChat.id));
-      }
-    };
-
-    syncConversations();
-
-    const intervalId = window.setInterval(syncConversations, 1000);
-    const handleStorage = (event) => {
-      if (!event.key || event.key.startsWith('chatThread:')) {
-        syncConversations();
-      }
-    };
-
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, [currentUserId, users, selectedChat]);
-
-  useEffect(() => {
-    if (!selectedChat || !currentUserId) {
-      setMessages([]);
-      return;
-    }
-
-    setMessages(getChatMessages(currentUserId, selectedChat.id));
-  }, [selectedChat, currentUserId]);
-
-  const sendMessage = () => {
-    if (!message.trim() || !selectedChat || !currentUserId) return;
-
-    const senderId = Number(currentUserId);
-    const recipientId = Number(selectedChat.id);
-
-    const newMessage = {
-      id: `${senderId}-${recipientId}-${Date.now()}`,
-      mensagem: message.trim(),
-      dataChat: new Date().toISOString(),
-      statusChat: 'Enviado',
-      remetenteId: senderId,
-      destinatarioId: recipientId,
-      remetenteNome: userName,
-    };
-
-    const nextMessages = appendChatMessage(senderId, recipientId, newMessage);
-    setMessages(nextMessages);
-    refreshConversations(users);
-    setMessage('');
-  };
-
   const searchedUsers = useMemo(() => {
-    const normalizedTerm = searchTerm.trim().toLowerCase();
+    const normalizedTerm = chat.chatSearchTerm.trim().toLowerCase();
     if (!normalizedTerm) return [];
-
-    return users.filter((user) => (
-      `${user.nome || ''} ${user.email || ''}`.toLowerCase().includes(normalizedTerm)
-    ));
-  }, [searchTerm, users]);
+    return users.filter((u) => `${u.nome || ''} ${u.email || ''}`.toLowerCase().includes(normalizedTerm));
+  }, [chat.chatSearchTerm, users]);
 
   return (
     <div className="page-shell">
@@ -140,19 +64,16 @@ function Chat() {
 
       <main className="container dashboard-layout">
         <ChatWorkspace
-          selectedChat={selectedChat}
-          message={message}
-          onMessageChange={setMessage}
-          onSendMessage={sendMessage}
-          messages={messages}
-          conversations={conversations}
+          selectedChat={chat.selectedChat}
+          message={chat.message}
+          onMessageChange={chat.setMessage}
+          onSendMessage={chat.sendMessage}
+          messages={chat.messages}
+          conversations={chat.conversations}
           searchedUsers={searchedUsers}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onSelectChat={(user) => {
-            setSelectedChat(user);
-            setMessages(getChatMessages(currentUserId, user.id));
-          }}
+          searchTerm={chat.chatSearchTerm}
+          onSearchChange={chat.setChatSearchTerm}
+          onSelectChat={chat.handleSelectChat}
           currentUserId={currentUserId}
         />
       </main>

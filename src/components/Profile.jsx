@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import InlineAlert from './InlineAlert';
 import { clearPersistedUserData, clearSessionData } from '../utils/authStorage';
@@ -26,7 +26,7 @@ function Profile() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/v1/usuario');
+        const response = await api.get('/usuario');
         setUsers(response.data || []);
       } catch (error) {
         console.error('Erro ao carregar dados do perfil:', error);
@@ -44,7 +44,7 @@ function Profile() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:8080/api/v1/usuario/${userId}`);
+      await api.delete(`/usuario/${userId}`);
       clearPersistedUserData(userId);
       clearSessionData();
       navigate('/');
@@ -59,7 +59,7 @@ function Profile() {
 
     try {
       const payload = { ...currentUser, statusUsuario: isStatusActive(currentUser.statusUsuario) ? 'Inativo' : 'Ativo' };
-      await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, payload);
+      await api.put(`/usuario/${userId}`, payload);
       setUsers((currentUsers) => currentUsers.map((user) => (
         Number(user.id) === userId ? payload : user
       )));

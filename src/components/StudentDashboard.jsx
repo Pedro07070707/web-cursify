@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import ChatWorkspace from './ChatWorkspace';
 import DirectorySearchSection from './DirectorySearchSection';
 import InlineAlert from './InlineAlert';
 import { getUserCourseEntry, getUserCourseState, removeUserCourseEntry, saveUserCourseEntry } from '../utils/userCourseState';
 import { clearSessionData } from '../utils/authStorage';
-import { appendChatMessage, getChatMessages, getUserConversationPartners } from '../utils/chatStorage';
+import { getChatMessages } from '../utils/chatStorage';
 import { formatCourseDuration, getCourseStatusLabel, NIVEIS } from '../utils/ui';
 import { useTheme } from '../utils/theme';
+import { useChatWorkspace } from '../utils/useChatWorkspace';
 
 function StudentDashboardPage() {
   const navigate = useNavigate();
@@ -19,22 +20,19 @@ function StudentDashboardPage() {
   const [users, setUsers] = useState([]);
   const [activeSection, setActiveSection] = useState(location.state?.section || 'home');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [chatSearchTerm, setChatSearchTerm] = useState('');
-  const [conversations, setConversations] = useState([]);
   const [courseStateTick, setCourseStateTick] = useState(0);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const userName = localStorage.getItem('userName') || 'Aluno';
   const currentUserId = Number(localStorage.getItem('userId'));
 
+  const chat = useChatWorkspace({ currentUserId, users, userName });
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [coursesResponse, usersResponse] = await Promise.all([
-          axios.get('http://localhost:8080/api/v1/curso'),
-          axios.get('http://localhost:8080/api/v1/usuario'),
+          api.get('/curso'),
+          api.get('/usuario'),
         ]);
 
         const visibleCourses = (coursesResponse.data || []).filter(
@@ -44,7 +42,7 @@ function StudentDashboardPage() {
 
         const coursesWithProgress = await Promise.all(visibleCourses.map(async (course) => {
           try {
-            const progressResponse = await axios.get(`http://localhost:8080/api/v1/usuarioCurso/progresso/${currentUserId}/${course.id}`);
+            const progressResponse = await api.get(`/usuarioCurso/progresso/${currentUserId}/${course.id}`);
             const progresso = Number(progressResponse.data?.progresso) || 0;
             return { ...course, progresso, userStatus: progresso >= 100 ? 'Concluido' : 'Em progresso' };
           } catch {
@@ -53,7 +51,6 @@ function StudentDashboardPage() {
         }));
         setAllCourses(coursesWithProgress);
         setUsers(visibleUsers);
-        setConversations(getUserConversationPartners(currentUserId, visibleUsers));
       } catch (error) {
         console.error('Erro ao carregar dados do aluno:', error);
         setFeedback({ type: 'error', message: 'Erro ao carregar dados. Verifique a API.' });
@@ -79,42 +76,6 @@ function StudentDashboardPage() {
       window.removeEventListener('storage', handleStorage);
     };
   }, []);
-
-  useEffect(() => {
-    if (!selectedChat || !currentUserId) {
-      setMessages([]);
-      return;
-    }
-
-    setMessages(getChatMessages(currentUserId, selectedChat.id));
-  }, [selectedChat, currentUserId]);
-
-  useEffect(() => {
-    if (!currentUserId || users.length === 0) return undefined;
-
-    const syncConversations = () => {
-      setConversations(getUserConversationPartners(currentUserId, users));
-      if (selectedChat) {
-        setMessages(getChatMessages(currentUserId, selectedChat.id));
-      }
-    };
-
-    syncConversations();
-
-    const intervalId = window.setInterval(syncConversations, 1000);
-    const handleStorage = (event) => {
-      if (!event.key || event.key.startsWith('chatThread:')) {
-        syncConversations();
-      }
-    };
-
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, [currentUserId, users, selectedChat]);
 
   const searchResults = useMemo(() => {
     const normalizedTerm = searchTerm.trim().toLowerCase();
@@ -146,34 +107,6 @@ function StudentDashboardPage() {
     [enrolledCourses]
   );
 
-  const searchedUsers = useMemo(() => {
-    const normalizedTerm = chatSearchTerm.trim().toLowerCase();
-    if (!normalizedTerm) return [];
-
-    return users.filter((user) => (
-      `${user.nome || ''} ${user.email || ''}`.toLowerCase().includes(normalizedTerm)
-    ));
-  }, [chatSearchTerm, users]);
-
-  const sendMessage = () => {
-    if (!message.trim() || !selectedChat || !currentUserId) return;
-
-    const newMessage = {
-      id: `${currentUserId}-${selectedChat.id}-${Date.now()}`,
-      mensagem: message.trim(),
-      dataChat: new Date().toISOString(),
-      statusChat: 'Enviado',
-      remetenteId: Number(currentUserId),
-      destinatarioId: Number(selectedChat.id),
-      remetenteNome: userName,
-    };
-
-    const nextMessages = appendChatMessage(currentUserId, selectedChat.id, newMessage);
-    setMessages(nextMessages);
-    setConversations(getUserConversationPartners(currentUserId, users));
-    setMessage('');
-  };
-
   const handleToggleCourse = async (course) => {
     const existingEntry = getUserCourseEntry(currentUserId, course.id);
     try {
@@ -182,13 +115,13 @@ function StudentDashboardPage() {
           setFeedback({ type: 'error', message: 'Cursos concluídos não podem ser removidos.' });
           return;
         }
-        await axios.delete(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
+        await api.delete(`/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
         removeUserCourseEntry(currentUserId, course.id);
         setCourseStateTick((value) => value + 1);
         setFeedback({ type: 'success', message: `Curso removido: ${course.nome}.` });
         return;
       }
-      await axios.post(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
+      await api.post(`/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
       saveUserCourseEntry(currentUserId, course.id, { enrolled: true, status: 'Em progresso' });
       setCourseStateTick((value) => value + 1);
       setFeedback({ type: 'success', message: `Curso adicionado: ${course.nome}.` });
@@ -345,19 +278,16 @@ function StudentDashboardPage() {
 
         {activeSection === 'chat' ? (
           <ChatWorkspace
-            selectedChat={selectedChat}
-            message={message}
-            onMessageChange={setMessage}
-            onSendMessage={sendMessage}
-            messages={messages}
-            conversations={conversations}
-            searchedUsers={searchedUsers}
-            searchTerm={chatSearchTerm}
-            onSearchChange={setChatSearchTerm}
-            onSelectChat={(user) => {
-              setSelectedChat(user);
-              setMessages(getChatMessages(currentUserId, user.id));
-            }}
+            selectedChat={chat.selectedChat}
+            message={chat.message}
+            onMessageChange={chat.setMessage}
+            onSendMessage={chat.sendMessage}
+            messages={chat.messages}
+            conversations={chat.conversations}
+            searchedUsers={chat.searchedUsers}
+            searchTerm={chat.chatSearchTerm}
+            onSearchChange={chat.setChatSearchTerm}
+            onSelectChat={chat.handleSelectChat}
             currentUserId={currentUserId}
           />
         ) : null}

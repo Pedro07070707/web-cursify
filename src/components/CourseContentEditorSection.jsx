@@ -20,7 +20,7 @@ const SECTION_ICONS = {
   ),
 };
 
-const ITEM_LABEL = { material: 'Material', exercicios: 'ExercÃ­cio', avaliacoes: 'AvaliaÃ§Ã£o' };
+const ITEM_LABEL = { material: 'Material', exercicios: 'Exercício', avaliacoes: 'Avaliação' };
 
 function CourseContentEditorSection({ config, items, onChange }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -60,7 +60,7 @@ function CourseContentEditorSection({ config, items, onChange }) {
         <div className="content-editor-body">
           {items.length === 0 ? (
             <div className="content-editor-empty">
-              <p>Nenhum item adicionado nesta seÃ§Ã£o.</p>
+              <p>Nenhum item adicionado nesta seção.</p>
             </div>
           ) : (
             <div className="content-editor-items">
@@ -78,22 +78,55 @@ function CourseContentEditorSection({ config, items, onChange }) {
 
                   {config.key === 'exercicios' ? (
                     <>
-                      <div className="form-group"><label>Enunciado</label><textarea value={item.enunciado} onChange={(e) => handleItemChange(index, 'enunciado', e.target.value)} rows={4} placeholder="Digite o enunciado..." className="publish-textarea" /></div>
-                      <div className="form-group"><label>Alternativas</label>{item.alternativas.map((alternativa, alternativaIndex) => (<div className="input-icon-wrap" key={alternativaIndex}><input type="text" value={alternativa} onChange={(e) => handleItemChange(index, 'alternativas', item.alternativas.map((valor, i) => i === alternativaIndex ? e.target.value : valor))} placeholder={`Alternativa ${String.fromCharCode(65 + alternativaIndex)}`} /></div>))}</div>
-                      <div className="publish-form-row"><div className="form-group"><label>Resposta correta</label><div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>{item.alternativas.map((alternativa, alternativaIndex) => (<button type="button" key={alternativaIndex} className={`btn ${item.respostaCorreta === alternativa && alternativa ? 'btn-primary' : 'btn-ghost'}`} onClick={() => handleItemChange(index, 'respostaCorreta', alternativa)} disabled={!alternativa?.trim()}>{String.fromCharCode(65 + alternativaIndex)})</button>))}</div></div><div className="form-group"><label>Pontos</label><input type="number" min="1" value={item.pontos} onChange={(e) => handleItemChange(index, 'pontos', e.target.value)} /></div></div>
-                      <div className="form-group"><label>Explicação (opcional)</label><textarea value={item.explicacao} onChange={(e) => handleItemChange(index, 'explicacao', e.target.value)} rows={2} placeholder="Explique a resposta..." className="publish-textarea" /></div>
+                      <div className="form-group">
+                        <label>Enunciado</label>
+                        <textarea value={item.enunciado} onChange={(e) => handleItemChange(index, 'enunciado', e.target.value)} rows={4} placeholder="Digite o enunciado..." className="publish-textarea" />
+                      </div>
+                      <div className="form-group">
+                        <label>Alternativas</label>
+                        {item.alternativas.map((alternativa, alternativaIndex) => (
+                          <div className="input-icon-wrap" key={alternativaIndex}>
+                            <input
+                              type="text"
+                              value={alternativa}
+                              onChange={(e) => handleItemChange(index, 'alternativas', item.alternativas.map((valor, i) => i === alternativaIndex ? e.target.value : valor))}
+                              placeholder={`Alternativa ${String.fromCharCode(65 + alternativaIndex)}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="publish-form-row">
+                        <div className="form-group">
+                          <label>Resposta correta</label>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {item.alternativas.map((alternativa, alternativaIndex) => (
+                              <button
+                                type="button"
+                                key={alternativaIndex}
+                                className={`btn ${item.respostaCorreta === alternativa && alternativa ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => handleItemChange(index, 'respostaCorreta', alternativa)}
+                                disabled={!alternativa?.trim()}
+                              >
+                                {String.fromCharCode(65 + alternativaIndex)})
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <label>Pontos</label>
+                          <input type="number" min="1" value={item.pontos} onChange={(e) => handleItemChange(index, 'pontos', e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label>Explicação (opcional)</label>
+                        <textarea value={item.explicacao} onChange={(e) => handleItemChange(index, 'explicacao', e.target.value)} rows={2} placeholder="Explique a resposta..." className="publish-textarea" />
+                      </div>
                     </>
                   ) : config.key === 'avaliacoes' ? (
                     <>
                       <div className="form-group">
                         <label>Enunciado</label>
-                        <textarea
-                          value={item.enunciado}
-                          onChange={(e) => handleItemChange(index, 'enunciado', e.target.value)}
-                          rows={3}
-                          placeholder="Digite o enunciado..."
-                          className="publish-textarea"
-                        />
+                        <textarea value={item.enunciado} onChange={(e) => handleItemChange(index, 'enunciado', e.target.value)} rows={3} placeholder="Digite o enunciado..." className="publish-textarea" />
                       </div>
                       <div className="form-group">
                         <label>Alternativa / Resposta</label>
@@ -107,14 +140,14 @@ function CourseContentEditorSection({ config, items, onChange }) {
                     <>
                       <div className="publish-form-row">
                         <div className="form-group">
-                          <label>TÃ­tulo</label>
+                          <label>Título</label>
                           <div className="input-icon-wrap">
                             <svg className="input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/></svg>
-                            <input type="text" value={item.titulo} onChange={(e) => handleItemChange(index, 'titulo', e.target.value)} placeholder="Ex: IntroduÃ§Ã£o" />
+                            <input type="text" value={item.titulo} onChange={(e) => handleItemChange(index, 'titulo', e.target.value)} placeholder="Ex: Introdução" />
                           </div>
                         </div>
                         <div className="form-group">
-                          <label>SubtÃ­tulo</label>
+                          <label>Subtítulo</label>
                           <div className="input-icon-wrap">
                             <svg className="input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="11" y2="12"/></svg>
                             <input type="text" value={item.subtitulo} onChange={(e) => handleItemChange(index, 'subtitulo', e.target.value)} placeholder="Ex: Conceitos iniciais" />
@@ -122,12 +155,12 @@ function CourseContentEditorSection({ config, items, onChange }) {
                         </div>
                       </div>
                       <div className="form-group">
-                        <label>ConteÃºdo</label>
+                        <label>Conteúdo</label>
                         <textarea
                           value={item.conteudo}
                           onChange={(e) => handleItemChange(index, 'conteudo', e.target.value)}
                           rows={3}
-                          placeholder="Descreva o conteÃºdo..."
+                          placeholder="Descreva o conteúdo..."
                           className="publish-textarea"
                         />
                       </div>

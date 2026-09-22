@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import DirectorySearchSection from './DirectorySearchSection';
 import { getUserCourseEntry, removeUserCourseEntry, saveUserCourseEntry } from '../utils/userCourseState';
@@ -20,7 +20,7 @@ function SearchCoursePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const coursesResponse = await axios.get('http://localhost:8080/api/v1/curso');
+        const coursesResponse = await api.get('/curso');
 
         const visibleCourses = (coursesResponse.data || []).filter(
           (course) => course.statusCurso !== false && course.statusCurso !== 'Inativo'
@@ -28,7 +28,7 @@ function SearchCoursePage() {
 
         const coursesWithEnrollment = await Promise.all(visibleCourses.map(async (course) => {
           try {
-            const occupancy = await axios.get(`http://localhost:8080/api/v1/usuarioCurso/ocupacao/${course.id}`);
+            const occupancy = await api.get(`/usuarioCurso/ocupacao/${course.id}`);
             return { ...course, enrolledCount: occupancy.data.matriculados, enrollmentLimit: occupancy.data.limite, courseFull: occupancy.data.cheio };
           } catch {
             return { ...course, enrolledCount: 0, enrollmentLimit: 100, courseFull: false };
@@ -53,10 +53,10 @@ function SearchCoursePage() {
     const existingEntry = getUserCourseEntry(currentUserId, course.id);
     try {
       if (existingEntry?.enrolled) {
-        await axios.delete(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
+        await api.delete(`/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
         removeUserCourseEntry(currentUserId, course.id);
       } else {
-        await axios.post(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
+        await api.post(`/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
         saveUserCourseEntry(currentUserId, course.id, { enrolled: true, status: 'Em progresso' });
       }
       setCourses((currentCourses) => [...currentCourses]);

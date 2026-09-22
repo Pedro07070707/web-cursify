@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import InlineAlert from './InlineAlert';
 import CourseContentListSection from './CourseContentListSection';
@@ -43,11 +43,11 @@ function TeacherCourseViewPage() {
 
     const fetchCourse = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/api/v1/curso/${id}`);
+        const response = await api.get(`/curso/${id}`);
         setCourse(response.data);
 
         const responses = await Promise.allSettled(
-          CONTENT_TYPES.map((config) => axios.get(`http://localhost:8080/api/v1/${config.endpoint}`))
+          CONTENT_TYPES.map((config) => api.get(`/${config.endpoint}`))
         );
 
         const nextContents = { material: [], exercicios: [] };
@@ -75,7 +75,7 @@ function TeacherCourseViewPage() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:8080/api/v1/curso/${id}`);
+      await api.delete(`/curso/${id}`);
       setFeedback({ type: 'success', message: `Curso excluido com sucesso: ${course.nome}.` });
       navigate(userType === 'admin' ? '/admin' : '/teacher');
     } catch (error) {

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import CourseContentEditorSection from './CourseContentEditorSection';
 import { CONTENT_TYPES } from './courseContentConfig';
@@ -61,12 +61,12 @@ function PublishCoursePage() {
       categoria,
       cargaHoraria: cargaHorariaNumerica,
       dataCriacao: new Date().toISOString(),
-      statusCurso: 'Em progresso',
+      statusCurso: userType === 'admin' ? 'Em progresso' : 'Pendente',
       professorId: userId,
     };
 
     try {
-      const courseResponse = await axios.post('http://localhost:8080/api/v1/curso', novoCurso);
+      const courseResponse = await api.post('/curso', novoCurso);
       const createdCourseId = courseResponse.data?.id;
 
       if (createdCourseId) {
@@ -76,8 +76,8 @@ function PublishCoursePage() {
           });
 
           return validItems.map((item, index) =>
-            axios.post(
-              `http://localhost:8080/api/v1/${config.endpoint}`,
+            api.post(
+              `/${config.endpoint}`,
               config.buildPayload(item, createdCourseId, userId, index)
             )
           );
@@ -86,7 +86,7 @@ function PublishCoursePage() {
         await Promise.all(contentPromises);
       }
 
-      alert('Curso publicado com sucesso!');
+      alert(userType === 'admin' ? 'Curso publicado com sucesso!' : 'Curso enviado para aprovação do administrador!');
       navigate(createdCourseId ? `/manage-course-content/${createdCourseId}` : (userType === 'admin' ? '/admin' : '/teacher'));
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.response?.data || error.message;

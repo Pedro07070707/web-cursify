@@ -1,14 +1,14 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import AppHeader from './AppHeader';
 import ChatWorkspace from './ChatWorkspace';
 import DirectorySearchSection from './DirectorySearchSection';
 import InlineAlert from './InlineAlert';
 import { clearSessionData } from '../utils/authStorage';
-import { appendChatMessage, getChatMessages, getUserConversationPartners } from '../utils/chatStorage';
 import { formatCourseDuration, getUserRoleLabel, NIVEIS } from '../utils/ui';
 import { useTheme } from '../utils/theme';
+import { useChatWorkspace } from '../utils/useChatWorkspace';
 
 function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -18,22 +18,25 @@ function AdminDashboardPage() {
   const [courses, setCourses] = useState([]);
   const [activeSection, setActiveSection] = useState(location.state?.section || 'home');
   const [panelTab, setPanelTab] = useState('users');
+  const [approvalFeedback, setApprovalFeedback] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [chatSearchTerm, setChatSearchTerm] = useState('');
-  const [conversations, setConversations] = useState([]);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const currentUserId = Number(localStorage.getItem('userId'));
   const isUserActive = (statusUsuario) => statusUsuario === true || statusUsuario === 'Ativo';
+
+  const availableUsers = useMemo(
+    () => users.filter((user) => Number(user.id) !== currentUserId),
+    [users, currentUserId]
+  );
+
+  const chat = useChatWorkspace({ currentUserId, users: availableUsers, userName: '' });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [usersResponse, coursesResponse] = await Promise.all([
-          axios.get('http://localhost:8080/api/v1/usuario'),
-          axios.get('http://localhost:8080/api/v1/curso'),
+          api.get('/usuario'),
+          api.get('/curso'),
         ]);
 
         const fetchedUsers = usersResponse.data || [];
@@ -41,12 +44,6 @@ function AdminDashboardPage() {
 
         setUsers(fetchedUsers);
         setCourses(fetchedCourses);
-        setConversations(
-          getUserConversationPartners(
-            currentUserId,
-            fetchedUsers.filter((user) => Number(user.id) !== currentUserId)
-          )
-        );
       } catch (error) {
         console.error('Erro ao carregar dados do admin:', error);
         setFeedback({ type: 'error', message: 'Erro ao carregar dados. Verifique a API.' });
@@ -55,47 +52,6 @@ function AdminDashboardPage() {
 
     fetchData();
   }, [currentUserId]);
-
-  const availableUsers = useMemo(
-    () => users.filter((user) => Number(user.id) !== currentUserId),
-    [users, currentUserId]
-  );
-
-  useEffect(() => {
-    if (!selectedChat || !currentUserId) {
-      setMessages([]);
-      return;
-    }
-
-    setMessages(getChatMessages(currentUserId, selectedChat.id));
-  }, [selectedChat, currentUserId]);
-
-  useEffect(() => {
-    if (!currentUserId || availableUsers.length === 0) return undefined;
-
-    const syncConversations = () => {
-      setConversations(getUserConversationPartners(currentUserId, availableUsers));
-      if (selectedChat) {
-        setMessages(getChatMessages(currentUserId, selectedChat.id));
-      }
-    };
-
-    syncConversations();
-
-    const intervalId = window.setInterval(syncConversations, 1000);
-    const handleStorage = (event) => {
-      if (!event.key || event.key.startsWith('chatThread:')) {
-        syncConversations();
-      }
-    };
-
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, [currentUserId, availableUsers, selectedChat]);
 
   const searchResults = useMemo(() => {
     const normalizedTerm = searchTerm.trim().toLowerCase();
@@ -107,39 +63,12 @@ function AdminDashboardPage() {
     };
   }, [courses, availableUsers, searchTerm]);
 
-  const searchedUsers = useMemo(() => {
-    const normalizedTerm = chatSearchTerm.trim().toLowerCase();
-    if (!normalizedTerm) return [];
-
-    return availableUsers.filter((user) => (
-      `${user.nome || ''} ${user.email || ''}`.toLowerCase().includes(normalizedTerm)
-    ));
-  }, [chatSearchTerm, availableUsers]);
-
-  const sendMessage = () => {
-    if (!message.trim() || !selectedChat || !currentUserId) return;
-
-    const newMessage = {
-      id: `${currentUserId}-${selectedChat.id}-${Date.now()}`,
-      mensagem: message.trim(),
-      dataChat: new Date().toISOString(),
-      statusChat: 'Enviado',
-      remetenteId: Number(currentUserId),
-      destinatarioId: Number(selectedChat.id),
-    };
-
-    const nextMessages = appendChatMessage(currentUserId, selectedChat.id, newMessage);
-    setMessages(nextMessages);
-    setConversations(getUserConversationPartners(currentUserId, availableUsers));
-    setMessage('');
-  };
-
   const handleUpdateStatus = async (userId, userDisplayName) => {
     const user = users.find((item) => item.id === userId);
     const newStatus = isUserActive(user.statusUsuario) ? 'Inativo' : 'Ativo';
 
     try {
-      await axios.put(`http://localhost:8080/api/v1/usuario/${userId}`, {
+      await api.put(`/usuario/${userId}`, {
         ...user,
         statusUsuario: newStatus,
       });
@@ -156,7 +85,7 @@ function AdminDashboardPage() {
 
   const handleDeleteUser = async (userId, userDisplayName) => {
     try {
-      await axios.delete(`http://localhost:8080/api/v1/usuario/${userId}`);
+      await api.delete(`/usuario/${userId}`);
       setUsers((currentUsers) => currentUsers.filter((item) => item.id !== userId));
       setFeedback({ type: 'success', message: `Usuario excluido: ${userDisplayName}.` });
     } catch (error) {
@@ -165,9 +94,60 @@ function AdminDashboardPage() {
     }
   };
 
+  const pendingCourses = useMemo(() => courses.filter((c) => c.statusCurso === 'Pendente'), [courses]);
+  const pendingTeachers = useMemo(
+    () => users.filter((u) => u.nivelAcesso === 'PROFESSOR' && u.statusUsuario === 'Pendente'),
+    [users]
+  );
+
+  const handleApproveCourse = async (courseId, courseName) => {
+    const course = courses.find((c) => c.id === courseId);
+    try {
+      await api.put(`/curso/${courseId}`, { ...course, statusCurso: 'Em progresso' });
+      setCourses((prev) => prev.map((c) => c.id === courseId ? { ...c, statusCurso: 'Em progresso' } : c));
+      setApprovalFeedback((prev) => ({ ...prev, [`course-${courseId}`]: 'aprovado' }));
+      setFeedback({ type: 'success', message: `Curso aprovado: ${courseName}.` });
+    } catch {
+      setFeedback({ type: 'error', message: 'Erro ao aprovar curso.' });
+    }
+  };
+
+  const handleRejectCourse = async (courseId, courseName) => {
+    const course = courses.find((c) => c.id === courseId);
+    try {
+      await api.put(`/curso/${courseId}`, { ...course, statusCurso: 'Rejeitado' });
+      setCourses((prev) => prev.map((c) => c.id === courseId ? { ...c, statusCurso: 'Rejeitado' } : c));
+      setApprovalFeedback((prev) => ({ ...prev, [`course-${courseId}`]: 'rejeitado' }));
+      setFeedback({ type: 'success', message: `Curso rejeitado: ${courseName}.` });
+    } catch {
+      setFeedback({ type: 'error', message: 'Erro ao rejeitar curso.' });
+    }
+  };
+
+  const handleApproveTeacher = async (userId, userName) => {
+    const user = users.find((u) => u.id === userId);
+    try {
+      await api.put(`/usuario/${userId}`, { ...user, statusUsuario: 'Ativo' });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, statusUsuario: 'Ativo' } : u));
+      setFeedback({ type: 'success', message: `Professor aprovado: ${userName}.` });
+    } catch {
+      setFeedback({ type: 'error', message: 'Erro ao aprovar professor.' });
+    }
+  };
+
+  const handleRejectTeacher = async (userId, userName) => {
+    try {
+      await api.delete(`/usuario/${userId}`);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setFeedback({ type: 'success', message: `Cadastro rejeitado: ${userName}.` });
+    } catch {
+      setFeedback({ type: 'error', message: 'Erro ao rejeitar professor.' });
+    }
+  };
+
   const handleDeleteCourse = async (courseId, courseName) => {
     try {
-      await axios.delete(`http://localhost:8080/api/v1/curso/${courseId}`);
+      await api.delete(`/curso/${courseId}`);
       setCourses((currentCourses) => currentCourses.filter((item) => item.id !== courseId));
       setFeedback({ type: 'success', message: `Curso excluido: ${courseName}.` });
     } catch (error) {
@@ -289,19 +269,16 @@ function AdminDashboardPage() {
 
         {activeSection === 'chat' ? (
           <ChatWorkspace
-            selectedChat={selectedChat}
-            message={message}
-            onMessageChange={setMessage}
-            onSendMessage={sendMessage}
-            messages={messages}
-            conversations={conversations}
-            searchedUsers={searchedUsers}
-            searchTerm={chatSearchTerm}
-            onSearchChange={setChatSearchTerm}
-            onSelectChat={(user) => {
-              setSelectedChat(user);
-              setMessages(getChatMessages(currentUserId, user.id));
-            }}
+            selectedChat={chat.selectedChat}
+            message={chat.message}
+            onMessageChange={chat.setMessage}
+            onSendMessage={chat.sendMessage}
+            messages={chat.messages}
+            conversations={chat.conversations}
+            searchedUsers={chat.searchedUsers}
+            searchTerm={chat.chatSearchTerm}
+            onSearchChange={chat.setChatSearchTerm}
+            onSelectChat={chat.handleSelectChat}
             currentUserId={currentUserId}
           />
         ) : null}
@@ -314,19 +291,19 @@ function AdminDashboardPage() {
                 <h3>Administracao da plataforma</h3>
               </div>
               <div className="segmented-tabs">
-                <button
-                  type="button"
-                  className={`segmented-tab${panelTab === 'users' ? ' is-active' : ''}`}
-                  onClick={() => setPanelTab('users')}
-                >
+                <button type="button" className={`segmented-tab${panelTab === 'users' ? ' is-active' : ''}`} onClick={() => setPanelTab('users')}>
                   Usuarios
                 </button>
-                <button
-                  type="button"
-                  className={`segmented-tab${panelTab === 'courses' ? ' is-active' : ''}`}
-                  onClick={() => setPanelTab('courses')}
-                >
+                <button type="button" className={`segmented-tab${panelTab === 'courses' ? ' is-active' : ''}`} onClick={() => setPanelTab('courses')}>
                   Cursos
+                </button>
+                <button type="button" className={`segmented-tab${panelTab === 'approve-courses' ? ' is-active' : ''}`} onClick={() => setPanelTab('approve-courses')}>
+                  Cursos pendentes
+                  {pendingCourses.length > 0 && <span className="approval-badge">{pendingCourses.length}</span>}
+                </button>
+                <button type="button" className={`segmented-tab${panelTab === 'approve-teachers' ? ' is-active' : ''}`} onClick={() => setPanelTab('approve-teachers')}>
+                  Professores pendentes
+                  {pendingTeachers.length > 0 && <span className="approval-badge">{pendingTeachers.length}</span>}
                 </button>
               </div>
             </div>
@@ -395,6 +372,62 @@ function AdminDashboardPage() {
                   </article>
                 ))}
               </div>
+            ) : null}
+
+            {panelTab === 'approve-courses' ? (
+              pendingCourses.length === 0 ? (
+                <div className="empty-state-card"><p>Nenhum curso aguardando aprovacao.</p></div>
+              ) : (
+                <div className="approval-list">
+                  {pendingCourses.map((course) => {
+                    const decision = approvalFeedback[`course-${course.id}`];
+                    return (
+                      <div key={course.id} className="approval-item">
+                        <div className="approval-item-info">
+                          <span className="course-tag">{NIVEIS[course.categoria] || course.categoria}</span>
+                          <strong>{course.nome}</strong>
+                          <p>{course.descricao}</p>
+                          <small>{formatCourseDuration(course)}</small>
+                        </div>
+                        <div className="approval-item-actions">
+                          {decision ? (
+                            <span className={`approval-decision approval-decision-${decision}`}>
+                              {decision === 'aprovado' ? '✓ Aprovado' : '✗ Rejeitado'}
+                            </span>
+                          ) : (
+                            <>
+                              <button type="button" className="btn btn-primary" onClick={() => handleApproveCourse(course.id, course.nome)}>Aprovar</button>
+                              <button type="button" className="btn btn-danger" onClick={() => handleRejectCourse(course.id, course.nome)}>Rejeitar</button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : null}
+
+            {panelTab === 'approve-teachers' ? (
+              pendingTeachers.length === 0 ? (
+                <div className="empty-state-card"><p>Nenhum professor aguardando aprovacao.</p></div>
+              ) : (
+                <div className="approval-list">
+                  {pendingTeachers.map((user) => (
+                    <div key={user.id} className="approval-item">
+                      <div className="approval-item-info">
+                        <strong>{user.nome}</strong>
+                        <p>{user.email}</p>
+                        <small>CPF: {user.cpf || '-'}</small>
+                      </div>
+                      <div className="approval-item-actions">
+                        <button type="button" className="btn btn-primary" onClick={() => handleApproveTeacher(user.id, user.nome)}>Aprovar</button>
+                        <button type="button" className="btn btn-danger" onClick={() => handleRejectTeacher(user.id, user.nome)}>Rejeitar</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
             ) : null}
           </section>
         ) : null}
