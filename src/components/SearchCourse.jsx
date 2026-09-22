@@ -26,7 +26,15 @@ function SearchCoursePage() {
           (course) => course.statusCurso !== false && course.statusCurso !== 'Inativo'
         );
 
-        setCourses(visibleCourses);
+        const coursesWithEnrollment = await Promise.all(visibleCourses.map(async (course) => {
+          try {
+            const occupancy = await axios.get(`http://localhost:8080/api/v1/usuarioCurso/ocupacao/${course.id}`);
+            return { ...course, enrolledCount: occupancy.data.matriculados, enrollmentLimit: occupancy.data.limite, courseFull: occupancy.data.cheio };
+          } catch {
+            return { ...course, enrolledCount: 0, enrollmentLimit: 100, courseFull: false };
+          }
+        }));
+        setCourses(coursesWithEnrollment);
       } catch (error) {
         console.error('Erro ao carregar dados da busca:', error);
         alert('Erro ao carregar os dados da busca. Verifique a API.');
@@ -50,11 +58,12 @@ function SearchCoursePage() {
       return;
     }
 
-    saveUserCourseEntry(currentUserId, course.id, {
-      enrolled: true,
-      status: 'Em progresso',
-    });
-    setCourses((currentCourses) => [...currentCourses]);
+    axios.post(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${course.id}`)
+      .then(() => {
+        saveUserCourseEntry(currentUserId, course.id, { enrolled: true, status: 'Em progresso' });
+        setCourses((currentCourses) => [...currentCourses]);
+      })
+      .catch((error) => alert(error.response?.data?.message || 'Não foi possível inscrever-se no curso.'));
   };
 
   return (

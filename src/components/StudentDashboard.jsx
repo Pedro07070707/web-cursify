@@ -42,7 +42,16 @@ function StudentDashboardPage() {
         );
         const visibleUsers = (usersResponse.data || []).filter((user) => Number(user.id) !== currentUserId);
 
-        setAllCourses(visibleCourses);
+        const coursesWithProgress = await Promise.all(visibleCourses.map(async (course) => {
+          try {
+            const progressResponse = await axios.get(`http://localhost:8080/api/v1/usuarioCurso/progresso/${currentUserId}/${course.id}`);
+            const progresso = Number(progressResponse.data?.progresso) || 0;
+            return { ...course, progresso, userStatus: progresso >= 100 ? 'Concluido' : 'Em progresso' };
+          } catch {
+            return { ...course, progresso: 0, userStatus: 'Em progresso' };
+          }
+        }));
+        setAllCourses(coursesWithProgress);
         setUsers(visibleUsers);
         setConversations(getUserConversationPartners(currentUserId, visibleUsers));
       } catch (error) {
@@ -128,7 +137,7 @@ function StudentDashboardPage() {
       .filter((course) => userCourseState[String(course.id)]?.enrolled)
       .map((course) => ({
         ...course,
-        userStatus: userCourseState[String(course.id)]?.status || 'Em progresso',
+        userStatus: course.userStatus || userCourseState[String(course.id)]?.status || 'Em progresso',
       }));
   }, [allCourses, currentUserId, courseStateTick]);
 
@@ -312,7 +321,7 @@ function StudentDashboardPage() {
                       <span className="course-tag">{NIVEIS[course.categoria] || course.categoria}</span>
                       <h3>{course.nome}</h3>
                       <p>{course.descricao}</p>
-                      <small>{formatCourseDuration(course)} • {getCourseStatusLabel(course.userStatus)}</small>
+                      <small>{formatCourseDuration(course)} • Progresso: {course.progresso ?? 0}% • {getCourseStatusLabel(course.userStatus)}</small>
                     </div>
                     <button type="button" className="btn btn-ghost" onClick={() => handleToggleCourse(course)}>
                       Remover

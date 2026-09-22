@@ -38,6 +38,7 @@ function DirectorySearchSection({
                 <div>
                   <h5>{course.nome || course.titulo}</h5>
                   <p>{course.descricao}</p>
+                  <small>Matriculados: {course.enrolledCount ?? 0}/{course.enrollmentLimit ?? 100}</small>
                   <small>{NIVEIS[course.categoria] || course.categoria} • {formatCourseDuration(course)}</small>
                 </div>
 
@@ -45,11 +46,12 @@ function DirectorySearchSection({
                   <button type="button" className="btn btn-ghost" onClick={() => onOpenCourse(course)}>
                     Abrir
                   </button>
-                  {courseActionLabel && onCourseAction ? (
+                  {courseActionLabel && onCourseAction && !course.courseFull ? (
                     <button type="button" className="btn btn-primary" onClick={() => onCourseAction(course)}>
                       {isCourseSelected?.(course) ? `Remover` : courseActionLabel}
                     </button>
                   ) : null}
+                  {course.courseFull ? <small>Curso cheio</small> : null}
                 </div>
               </article>
             ))

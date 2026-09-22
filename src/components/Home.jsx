@@ -73,8 +73,7 @@ function Home() {
               <span className="hero-highlight">evolua de verdade</span>
             </h1>
             <p className="hero-modern-desc">
-              Cursos completos de Matemática e Português do Ensino Fundamental ao Médio,
-              com conteúdo estruturado, acompanhamento de progresso e ambiente dedicado
+              Cursos com conteúdo estruturado, acompanhamento de progresso e ambiente dedicado
               para alunos e professores.
             </p>
             <div className="hero-actions">
@@ -83,7 +82,7 @@ function Home() {
                 className="btn btn-primary btn-hero"
                 onClick={() => navigate(localStorage.getItem('userId') ? getDashboardPathByRole(nivelAcesso) : '/login')}
               >
-                Começar agora
+                Entrar
               </button>
               <button
                 type="button"

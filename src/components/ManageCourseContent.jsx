@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import AppHeader from './AppHeader';
@@ -11,6 +11,8 @@ const buildInitialState = () => ({
   exercicios: [],
 });
 
+const contentKey = (item) => [item.titulo, item.subtitulo, item.conteudo, item.link].map((value) => String(value || '').trim()).join('|');
+
 function ManageCourseContent() {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ function ManageCourseContent() {
   const [sections, setSections] = useState(buildInitialState);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const saveInProgress = useRef(false);
 
   const validConfigs = useMemo(() => CONTENT_TYPES, []);
 
@@ -44,9 +47,15 @@ function ManageCourseContent() {
           const config = validConfigs[index];
           if (response.status !== 'fulfilled') return;
 
-          nextSections[config.key] = (response.value.data || [])
+          const uniqueItems = new Map();
+          (response.value.data || [])
             .filter((item) => String(getCourseContentCourseId(item)) === String(courseId))
-            .map((item) => normalizeCourseContentItem(config.key, item));
+            .map((item) => normalizeCourseContentItem(config.key, item))
+            .forEach((item) => {
+              const key = contentKey(item);
+              if (!uniqueItems.has(key)) uniqueItems.set(key, item);
+            });
+          nextSections[config.key] = [...uniqueItems.values()];
         });
 
         setSections(nextSections);
@@ -70,13 +79,17 @@ function ManageCourseContent() {
 
   const saveSection = async (config) => {
     const items = sections[config.key];
-    const validItems = items.filter((item) => {
+      const validItems = items.filter((item) => {
       if (config.key === 'exercicios') {
-        return item.enunciado.trim() && item.alternativa.trim();
+        return Boolean(
+          item.enunciado?.trim() &&
+          Array.isArray(item.alternativas) &&
+          item.alternativas.some((alternativa) => alternativa?.trim())
+        );
       }
 
-      return item.titulo.trim() && item.subtitulo.trim() && item.conteudo.trim();
-    });
+      return Boolean(item.titulo?.trim() && item.subtitulo?.trim() && item.conteudo?.trim());
+      }).filter((item, index, list) => list.findIndex((candidate) => candidate.id ? candidate.id === item.id : contentKey(candidate) === contentKey(item)) === index);
 
     try {
       await Promise.all(validItems.map((item, index) => {
@@ -106,13 +119,18 @@ function ManageCourseContent() {
   };
 
   const handleSaveAll = async () => {
+    if (saveInProgress.current) return;
+    saveInProgress.current = true;
+
     if (!userId || Number.isNaN(userId)) {
       alert('Nao foi possivel identificar o usuario logado. Entre novamente para salvar o conteudo.');
+      saveInProgress.current = false;
       return;
     }
 
     if (!relatedUser || !course) {
       alert('Nao foi possivel carregar os dados necessarios para salvar o conteudo do curso.');
+      saveInProgress.current = false;
       return;
     }
 
@@ -130,6 +148,7 @@ function ManageCourseContent() {
       alert(`Erro ao salvar conteudo do curso: ${message}`);
     } finally {
       setSaving(false);
+      saveInProgress.current = false;
     }
   };
 

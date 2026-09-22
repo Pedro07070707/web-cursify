@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AppHeader from './AppHeader';
@@ -24,6 +24,8 @@ function PublishCoursePage() {
     material: [],
     exercicios: [],
   });
+  const publishingRef = useRef(false);
+  const [publishing, setPublishing] = useState(false);
 
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -33,16 +35,23 @@ function PublishCoursePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (publishingRef.current) return;
+    publishingRef.current = true;
+    setPublishing(true);
 
     const cargaHorariaNumerica = Number(cargaHoraria);
 
     if (!nome.trim() || !descricao.trim() || Number.isNaN(cargaHorariaNumerica) || cargaHorariaNumerica <= 0) {
       alert('Preencha os dados obrigatorios do curso corretamente.');
+      publishingRef.current = false;
+      setPublishing(false);
       return;
     }
 
     if (!userId || Number.isNaN(userId)) {
       alert('Nao foi possivel identificar o usuario logado. Entre novamente para publicar o curso.');
+      publishingRef.current = false;
+      setPublishing(false);
       return;
     }
 
@@ -82,6 +91,9 @@ function PublishCoursePage() {
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.response?.data || error.message;
       alert(`Erro ao publicar curso: ${errorMsg}`);
+    } finally {
+      publishingRef.current = false;
+      setPublishing(false);
     }
   };
 
@@ -192,8 +204,8 @@ function PublishCoursePage() {
               ))}
             </div>
 
-            <button type="submit" className="btn btn-primary auth-submit-full">
-              Publicar curso
+            <button type="submit" className="btn btn-primary auth-submit-full" disabled={publishing}>
+              {publishing ? 'Publicando...' : 'Publicar curso'}
             </button>
           </form>
         </div>

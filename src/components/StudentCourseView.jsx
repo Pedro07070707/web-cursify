@@ -32,6 +32,9 @@ function StudentCourseViewPage() {
   const [loading, setLoading] = useState(true);
   const [studentStatus, setStudentStatus] = useState('Em progresso');
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
+  const [completedMaterials, setCompletedMaterials] = useState(() => new Set());
+  const [completedExercises, setCompletedExercises] = useState(() => new Set());
+  const [savedProgress, setSavedProgress] = useState(0);
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName') || 'Visitante';
   const nivelAcesso = localStorage.getItem('nivelAcesso');
@@ -74,17 +77,19 @@ function StudentCourseViewPage() {
     }
   };
 
-  const handleSaveCourse = () => {
+  const handleSaveCourse = async () => {
     if (!isLoggedIn) {
       requireAccount();
       return;
     }
 
-    saveUserCourseEntry(currentUserId, id, {
-      enrolled: true,
-      status: studentStatus || 'Em progresso',
-    });
-    setFeedback({ type: 'success', message: 'Curso salvo em Meus cursos.' });
+    try {
+      await axios.post(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${id}`);
+      saveUserCourseEntry(currentUserId, id, { enrolled: true, status: studentStatus || 'Em progresso' });
+      setFeedback({ type: 'success', message: 'Curso salvo em Meus cursos.' });
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'Não foi possível salvar o curso.' });
+    }
   };
 
   useEffect(() => {
@@ -94,8 +99,12 @@ function StudentCourseViewPage() {
         setCourse(response.data);
 
         if (isLoggedIn && userType === 'student') {
+          const progressResponse = await axios.get(`http://localhost:8080/api/v1/usuarioCurso/progresso/${currentUserId}/${id}`);
+          const bancoProgress = Number(progressResponse.data?.progresso) || 0;
+          setSavedProgress(bancoProgress);
+          if (bancoProgress >= 100 || progressResponse.data?.concluido === true) setStudentStatus('Concluido');
           const existingEntry = getUserCourseEntry(currentUserId, id);
-          setStudentStatus(existingEntry?.status || 'Em progresso');
+          if (bancoProgress < 100) setStudentStatus(existingEntry?.status || 'Em progresso');
         }
 
         const responses = await Promise.allSettled(
@@ -107,9 +116,15 @@ function StudentCourseViewPage() {
         responses.forEach((contentResponse, index) => {
           if (contentResponse.status !== 'fulfilled') return;
           const config = CONTENT_TYPES[index];
-          nextContents[config.key] = (contentResponse.value.data || [])
+          const unique = new Map();
+          (contentResponse.value.data || [])
             .filter((item) => String(getCourseContentCourseId(item)) === String(id))
-            .map((item) => normalizeCourseContentItem(config.key, item));
+            .map((item) => normalizeCourseContentItem(config.key, item))
+            .forEach((item) => {
+              const key = [item.titulo, item.subtitulo, item.conteudo, item.link].join('|');
+              if (!unique.has(key)) unique.set(key, item);
+            });
+          nextContents[config.key] = [...unique.values()];
         });
 
         setContents(nextContents);
@@ -125,6 +140,25 @@ function StudentCourseViewPage() {
     else setLoading(false);
   }, [currentUserId, id, isLoggedIn, userType]);
 
+  const totalActivities = contents.material.length + contents.exercicios.length;
+  const completedActivities = completedMaterials.size + completedExercises.size;
+  const progress = Math.max(savedProgress, totalActivities ? Math.round((completedActivities / totalActivities) * 100) : 0);
+
+  const persistProgress = async (nextProgress, concluded = nextProgress >= 100) => {
+    if (!isLoggedIn || !Number.isFinite(currentUserId) || !id) return;
+    try {
+      await axios.post(`http://localhost:8080/api/v1/usuarioCurso/inscrever/${currentUserId}/${id}`);
+      await axios.put(`http://localhost:8080/api/v1/usuarioCurso/progresso/${currentUserId}/${id}`, {
+        progresso: nextProgress, concluido: concluded,
+      });
+      setSavedProgress(nextProgress);
+      if (concluded) setStudentStatus('Concluido');
+    } catch (error) {
+      console.error('Erro ao salvar progresso:', error.response?.data || error);
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'Não foi possível salvar o progresso no banco.' });
+    }
+  };
+
   if (loading) return <div className="container"><div className="card">Carregando...</div></div>;
   if (!course) return <div className="container"><div className="card">Curso nao encontrado</div></div>;
 
@@ -132,8 +166,15 @@ function StudentCourseViewPage() {
     <div className="page-shell">
       <AppHeader
         subtitle="Curso"
+        onBack={goBack}
         brandDetail={`${NIVEIS[course.categoria] || course.categoria} - ${course.nome}`}
         onHome={() => navigate('/')}
+        navItems={[
+          { label: 'Inicio', onClick: () => navigate('/') },
+          ...(userType === 'student' ? [{ label: 'Meus cursos', onClick: () => navigate(homePath, { state: { section: 'courses' } }) }] : []),
+          { label: 'Perfil', onClick: () => navigate('/profile') },
+          { label: 'Sair', onClick: () => { clearSessionData(); navigate('/'); } },
+        ]}
         onGoProfile={() => navigate('/profile')}
         onLogout={() => {
           clearSessionData();
@@ -162,15 +203,24 @@ function StudentCourseViewPage() {
             </div>
           </div>
 
-          <CourseContentListSection title="Materiais" items={contents.material} typeKey="material" emptyMessage="Nenhum material disponivel." />
-          <CourseContentListSection title="Exercicios" items={contents.exercicios} typeKey="exercicios" emptyMessage="Nenhum exercicio disponivel." />
+          <div style={{ marginTop: '1rem' }}>
+            <strong>Progresso: {progress}%</strong>
+            <div style={{ height: '10px', background: '#e5e7eb', borderRadius: '999px', marginTop: '0.5rem' }}>
+              <div style={{ width: `${progress}%`, height: '100%', background: '#2563eb', borderRadius: '999px', transition: 'width .2s' }} />
+            </div>
+          </div>
+
+          <CourseContentListSection locked={studentStatus === 'Concluido' || savedProgress >= 100} title="Materiais" items={contents.material} typeKey="material" emptyMessage="Nenhum material disponivel." onViewed={(materialId) => { if (studentStatus === 'Concluido' || savedProgress >= 100) return; setCompletedMaterials((current) => { const next = new Set(current).add(materialId); persistProgress(Math.max(savedProgress, Math.min(100, savedProgress + Math.round(100 / (totalActivities || 1))))); return next; }); }} />
+          <CourseContentListSection locked={studentStatus === 'Concluido' || savedProgress >= 100} title="Exercicios" items={contents.exercicios} typeKey="exercicios" emptyMessage="Nenhum exercicio disponivel." onResolved={(exerciseId) => { if (studentStatus === 'Concluido' || savedProgress >= 100) return; setCompletedExercises((current) => { const next = new Set(current).add(exerciseId); persistProgress(Math.max(savedProgress, Math.min(100, savedProgress + Math.round(100 / (totalActivities || 1))))); return next; }); }} />
 
           <div className="hero-actions">
             <button className="btn btn-primary" onClick={() => navigate('/chat')}>Chat com Professor</button>
             <button className="btn btn-secondary" onClick={handleSaveCourse}>Salvar curso</button>
-            <button className="btn btn-secondary" onClick={handleCompleteCourse} disabled={studentStatus === 'Concluido'}>
-              {studentStatus === 'Concluido' ? 'Curso concluido' : 'Marcar como concluido'}
-            </button>
+            {studentStatus === 'Concluido' || savedProgress >= 100 ? (
+              <button className="btn btn-secondary" onClick={async () => { await persistProgress(0, false); setSavedProgress(0); setStudentStatus('Em progresso'); setCompletedMaterials(new Set()); setCompletedExercises(new Set()); }}>
+                Reiniciar curso
+              </button>
+            ) : null}
           </div>
         </div>
       </main>
