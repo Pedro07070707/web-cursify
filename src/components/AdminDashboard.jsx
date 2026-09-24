@@ -96,7 +96,7 @@ function AdminDashboardPage() {
 
   const pendingCourses = useMemo(() => courses.filter((c) => c.statusCurso === 'Pendente'), [courses]);
   const pendingTeachers = useMemo(
-    () => users.filter((u) => u.nivelAcesso === 'PROFESSOR' && u.statusUsuario === 'Pendente'),
+    () => users.filter((u) => u.nivelAcesso === 'PROFESSOR' && !u.professorAprovado),
     [users]
   );
 
@@ -127,8 +127,8 @@ function AdminDashboardPage() {
   const handleApproveTeacher = async (userId, userName) => {
     const user = users.find((u) => u.id === userId);
     try {
-      await api.put(`/usuario/${userId}`, { ...user, statusUsuario: 'Ativo' });
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, statusUsuario: 'Ativo' } : u));
+      await api.put(`/usuario/${userId}`, { ...user, statusUsuario: 'Ativo', professorAprovado: true });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, statusUsuario: 'Ativo', professorAprovado: true } : u));
       setFeedback({ type: 'success', message: `Professor aprovado: ${userName}.` });
     } catch {
       setFeedback({ type: 'error', message: 'Erro ao aprovar professor.' });

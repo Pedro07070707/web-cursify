@@ -67,6 +67,7 @@ function Register() {
       nivelAcesso,
       dataCadastro: new Date().toISOString().slice(0, 19),
       statusUsuario: nivelAcesso === 'PROFESSOR' ? 'Pendente' : 'Ativo',
+      professorAprovado: nivelAcesso === 'PROFESSOR' ? false : true,
     };
 
     try {
