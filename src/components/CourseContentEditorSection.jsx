@@ -163,12 +163,7 @@ function CourseContentEditorSection({ config, items, onChange }) {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Link</label>
-                        <div className="input-icon-wrap">
-                          <svg className="input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                          <input type="text" value={item.linkTitulo || ''} onChange={(e) => handleItemChange(index, 'linkTitulo', e.target.value)} placeholder="Título do link" />
-                          <input type="url" value={item.link} onChange={(e) => handleItemChange(index, 'link', e.target.value)} placeholder="https://..." />
-                        </div>
+                        <label>Links</label>
                         <div className="material-links-list">
                           {(item.links || []).map((link, linkIndex) => (
                             <div className="input-icon-wrap" key={linkIndex}>
@@ -177,7 +172,7 @@ function CourseContentEditorSection({ config, items, onChange }) {
                               <button type="button" className="btn btn-danger" onClick={() => handleItemChange(index, 'links', item.links.filter((_, i) => i !== linkIndex))}>Remover</button>
                             </div>
                           ))}
-                          <button type="button" className="btn btn-ghost" onClick={() => handleItemChange(index, 'links', [...(item.links || []), { titulo: '', url: '' }])}>Adicionar outro link</button>
+                          <button type="button" className="btn btn-ghost" onClick={() => handleItemChange(index, 'links', [...(item.links || []), { titulo: '', url: '' }])}>Adicionar link</button>
                         </div>
                       </div>
                     </>

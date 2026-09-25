@@ -14,12 +14,14 @@ function UpdateCourse() {
   const [form, setForm] = useState({
     nome: '', categoria: '', descricao: '', cargaHoraria: '',
   });
+  const [cursoOriginal, setCursoOriginal] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api.get(`/curso/${id}`)
       .then(res => {
         const c = res.data;
+        setCursoOriginal(c);
         setForm({
           nome: c.nome || '',
           categoria: c.categoria || '',
@@ -34,9 +36,8 @@ function UpdateCourse() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.get(`/curso/${id}`);
       await api.put(`/curso/${id}`, {
-        ...response.data,
+        ...cursoOriginal,
         nome: form.nome,
         categoria: form.categoria,
         descricao: form.descricao,

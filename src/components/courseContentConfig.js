@@ -28,7 +28,7 @@ export const CONTENT_TYPES = [
   },
 ];
 
-export const createEmptyEntry = (typeKey) => typeKey === 'exercicios' ? ({ titulo: '', subtitulo: '', conteudo: '', enunciado: '', alternativas: ['', '', '', ''], respostaCorreta: '', explicacao: '', link: '', status: 'Nao concluido' }) : ({ titulo: '', subtitulo: '', conteudo: '', links: [], status: 'Nao concluido' });
+export const createEmptyEntry = (typeKey) => typeKey === 'exercicios' ? ({ titulo: '', subtitulo: '', conteudo: '', enunciado: '', alternativas: ['', '', '', ''], respostaCorreta: '', explicacao: '', status: 'Nao concluido' }) : ({ titulo: '', subtitulo: '', conteudo: '', links: [], status: 'Nao concluido' });
 
 export const getCourseContentCourseId = (item) => (
   item.cursoId ??

@@ -22,7 +22,7 @@ function MaterialItem({ item, index, onViewed, locked }) {
     setOpened(true);
     onViewed?.(item.id);
   };
-  const materialLinks = [{ titulo: item.linkTitulo || 'Abrir link complementar', url: item.link }, ...(item.links || [])].filter((link) => link?.url);
+  const materialLinks = (item.links || []).filter((link) => link?.url);
   return <article className="topic-item"><strong>{index + 1}. {item.titulo}</strong>{item.subtitulo ? <div style={{ marginTop: '0.5rem' }}>{item.subtitulo}</div> : null}{!opened ? <button type="button" className="btn btn-ghost" style={{ marginTop: '0.75rem' }} onClick={openMaterial} disabled={locked}>Abrir material</button> : <div style={{ marginTop: '0.75rem' }}>{item.conteudo ? <div>{item.conteudo}</div> : null}<div className="material-link-buttons">{materialLinks.map((link, linkIndex) => <a className="material-link-button" key={`${link.url}-${linkIndex}`} href={link.url} target="_blank" rel="noreferrer">{link.titulo || `Abrir link ${linkIndex + 1}`}</a>)}</div></div>}</article>;
 }
 
