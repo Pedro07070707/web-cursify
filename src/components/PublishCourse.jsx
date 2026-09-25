@@ -61,7 +61,7 @@ function PublishCoursePage() {
       categoria,
       cargaHoraria: cargaHorariaNumerica,
       dataCriacao: new Date().toISOString(),
-      statusCurso: userType === 'admin' ? 'Em progresso' : 'Pendente',
+      statusCurso: 'Em progresso',
       professorId: userId,
     };
 

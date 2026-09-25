@@ -98,7 +98,7 @@ function CourseCatalog() {
     api.get('/curso')
       .then((res) => {
         const visible = (res.data || []).filter(
-          (c) => c.statusCurso !== false && c.statusCurso !== 'Inativo'
+          (c) => c.cursoAprovado === 1
         );
         setCourses(visible);
       })

@@ -94,7 +94,7 @@ function AdminDashboardPage() {
     }
   };
 
-  const pendingCourses = useMemo(() => courses.filter((c) => c.statusCurso === 'Pendente'), [courses]);
+  const pendingCourses = useMemo(() => courses.filter((c) => !c.cursoAprovado), [courses]);
   const pendingTeachers = useMemo(
     () => users.filter((u) => u.nivelAcesso === 'PROFESSOR' && !u.professorAprovado),
     [users]
@@ -103,8 +103,8 @@ function AdminDashboardPage() {
   const handleApproveCourse = async (courseId, courseName) => {
     const course = courses.find((c) => c.id === courseId);
     try {
-      await api.put(`/curso/${courseId}`, { ...course, statusCurso: 'Em progresso' });
-      setCourses((prev) => prev.map((c) => c.id === courseId ? { ...c, statusCurso: 'Em progresso' } : c));
+      await api.put(`/curso/${courseId}`, { ...course, cursoAprovado: 1 });
+      setCourses((prev) => prev.map((c) => c.id === courseId ? { ...c, cursoAprovado: 1 } : c));
       setApprovalFeedback((prev) => ({ ...prev, [`course-${courseId}`]: 'aprovado' }));
       setFeedback({ type: 'success', message: `Curso aprovado: ${courseName}.` });
     } catch {
@@ -115,8 +115,8 @@ function AdminDashboardPage() {
   const handleRejectCourse = async (courseId, courseName) => {
     const course = courses.find((c) => c.id === courseId);
     try {
-      await api.put(`/curso/${courseId}`, { ...course, statusCurso: 'Rejeitado' });
-      setCourses((prev) => prev.map((c) => c.id === courseId ? { ...c, statusCurso: 'Rejeitado' } : c));
+      await api.put(`/curso/${courseId}`, { ...course, cursoAprovado: 2, statusCurso: 'Rejeitado' });
+      setCourses((prev) => prev.map((c) => c.id === courseId ? { ...c, cursoAprovado: 2, statusCurso: 'Rejeitado' } : c));
       setApprovalFeedback((prev) => ({ ...prev, [`course-${courseId}`]: 'rejeitado' }));
       setFeedback({ type: 'success', message: `Curso rejeitado: ${courseName}.` });
     } catch {
@@ -127,8 +127,8 @@ function AdminDashboardPage() {
   const handleApproveTeacher = async (userId, userName) => {
     const user = users.find((u) => u.id === userId);
     try {
-      await api.put(`/usuario/${userId}`, { ...user, statusUsuario: 'Ativo', professorAprovado: true });
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, statusUsuario: 'Ativo', professorAprovado: true } : u));
+      await api.put(`/usuario/${userId}`, { ...user, statusUsuario: 'Ativo', professorAprovado: 1 });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, statusUsuario: 'Ativo', professorAprovado: 1 } : u));
       setFeedback({ type: 'success', message: `Professor aprovado: ${userName}.` });
     } catch {
       setFeedback({ type: 'error', message: 'Erro ao aprovar professor.' });
@@ -136,9 +136,10 @@ function AdminDashboardPage() {
   };
 
   const handleRejectTeacher = async (userId, userName) => {
+    const user = users.find((u) => u.id === userId);
     try {
-      await api.delete(`/usuario/${userId}`);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      await api.put(`/usuario/${userId}`, { ...user, statusUsuario: 'Inativo', professorAprovado: 2 });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, statusUsuario: 'Inativo', professorAprovado: 2 } : u));
       setFeedback({ type: 'success', message: `Cadastro rejeitado: ${userName}.` });
     } catch {
       setFeedback({ type: 'error', message: 'Erro ao rejeitar professor.' });
