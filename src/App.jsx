@@ -20,6 +20,8 @@ import ChangePassword from './components/ChangePassword';
 import UpdateCourse from './components/UpdateCourse';
 import ManageCourseContent from './components/ManageCourseContent';
 import CourseCatalog from './components/CourseCatalog';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import './App.css';
 
 function App() {
@@ -50,6 +52,8 @@ function App() {
           <Route path="/manage-course-content/:courseId" element={<ManageCourseContent />} />
           <Route path="/subject/:subjectKey/:levelKey" element={<SubjectDetails />} />
           <Route path="/catalog" element={<CourseCatalog />} />
+          <Route path="/esqueci-senha" element={<ForgotPassword />} />
+          <Route path="/redefinir-senha" element={<ResetPassword />} />
         </Routes>
       </div>
     </Router>

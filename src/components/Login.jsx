@@ -136,6 +136,16 @@ function Login() {
               <button type="submit" className="btn btn-primary auth-submit-full">
                 Entrar
               </button>
+
+              <p style={{ textAlign: 'right', margin: '8px 0 0' }}>
+                <span
+                  className="auth-switch"
+                  style={{ cursor: 'pointer', fontSize: '0.9rem' }}
+                  onClick={() => navigate('/esqueci-senha')}
+                >
+                  Esqueci minha senha
+                </span>
+              </p>
             </form>
 
             <p className="auth-switch">
