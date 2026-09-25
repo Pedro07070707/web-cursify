@@ -22,6 +22,8 @@ function StudentDashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [courseStateTick, setCourseStateTick] = useState(0);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
+  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
   const userName = localStorage.getItem('userName') || 'Aluno';
   const currentUserId = Number(localStorage.getItem('userId'));
 
@@ -30,10 +32,16 @@ function StudentDashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [coursesResponse, usersResponse] = await Promise.all([
+        const [coursesResponse, usersResponse, enrollmentsResponse] = await Promise.all([
           api.get('/curso'),
           api.get('/usuario'),
+          api.get('/usuarioCurso'),
         ]);
+
+        const enrolledIds = (enrollmentsResponse.data || [])
+          .filter((row) => Number(row.usuario?.id ?? row.usuario_id) === currentUserId)
+          .map((row) => Number(row.curso?.id ?? row.curso_id));
+        setEnrolledCourseIds([...new Set(enrolledIds)]);
 
         const visibleCourses = (coursesResponse.data || []).filter(
           (course) => course.statusCurso !== false && course.statusCurso !== 'Inativo'
@@ -58,6 +66,13 @@ function StudentDashboardPage() {
     };
 
     fetchData();
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    api.get('/preferencia', { params: { usuarioId: currentUserId, tipo: 'FAVORITO' } })
+      .then(({ data }) => setFavoriteIds((data || []).map((item) => Number(item.cursoId))))
+      .catch(() => setFavoriteIds([]));
   }, [currentUserId]);
 
   useEffect(() => {
@@ -92,20 +107,30 @@ function StudentDashboardPage() {
   }, [allCourses, users, searchTerm]);
 
   const enrolledCourses = useMemo(() => {
-    const userCourseState = getUserCourseState(currentUserId);
-
     return allCourses
-      .filter((course) => userCourseState[String(course.id)]?.enrolled)
+      .filter((course) => enrolledCourseIds.includes(Number(course.id)))
       .map((course) => ({
         ...course,
-        userStatus: course.userStatus || userCourseState[String(course.id)]?.status || 'Em progresso',
+        userStatus: course.userStatus || 'Em progresso',
       }));
-  }, [allCourses, currentUserId, courseStateTick]);
+  }, [allCourses, enrolledCourseIds, courseStateTick]);
 
   const completedCount = useMemo(
     () => enrolledCourses.filter((course) => getCourseStatusLabel(course.userStatus) === 'Concluido').length,
     [enrolledCourses]
   );
+
+  const favoriteCourses = useMemo(() => allCourses.filter((course) => favoriteIds.includes(Number(course.id))), [allCourses, favoriteIds]);
+  const showingFavorites = location.state?.coursesTab === 'favorites';
+  const displayedCourses = showingFavorites ? favoriteCourses : enrolledCourses;
+
+  const toggleFavorite = async (courseId) => {
+    const id = Number(courseId);
+    const active = favoriteIds.includes(id);
+    if (active) await api.delete('/preferencia', { params: { usuarioId: currentUserId, cursoId: id, tipo: 'FAVORITO' } });
+    else await api.put('/preferencia', { usuarioId: currentUserId, cursoId: id, tipo: 'FAVORITO', valor: 'true' });
+    setFavoriteIds((items) => active ? items.filter((item) => item !== id) : [...items, id]);
+  };
 
   const handleToggleCourse = async (course) => {
     const existingEntry = getUserCourseEntry(currentUserId, course.id);
@@ -116,12 +141,14 @@ function StudentDashboardPage() {
           return;
         }
         await api.delete(`/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
+        setEnrolledCourseIds((items) => items.filter((id) => id !== Number(course.id)));
         removeUserCourseEntry(currentUserId, course.id);
         setCourseStateTick((value) => value + 1);
         setFeedback({ type: 'success', message: `Curso removido: ${course.nome}.` });
         return;
       }
       await api.post(`/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
+      setEnrolledCourseIds((items) => items.includes(Number(course.id)) ? items : [...items, Number(course.id)]);
       saveUserCourseEntry(currentUserId, course.id, { enrolled: true, status: 'Em progresso' });
       setCourseStateTick((value) => value + 1);
       setFeedback({ type: 'success', message: `Curso adicionado: ${course.nome}.` });
@@ -251,9 +278,14 @@ function StudentDashboardPage() {
               <h3>Todos os cursos do aluno</h3>
             </div>
 
-            {enrolledCourses.length ? (
+            <div className="segmented-tabs">
+              <button type="button" className={`btn ${!showingFavorites ? 'btn-primary' : 'btn-ghost'}`} onClick={() => navigate(location.pathname, { state: { section: 'courses', coursesTab: 'enrolled' } })}>Inscritos ({enrolledCourses.length})</button>
+              <button type="button" className={`btn ${showingFavorites ? 'btn-primary' : 'btn-ghost'}`} onClick={() => navigate(location.pathname, { state: { section: 'courses', coursesTab: 'favorites' } })}>♥ Favoritos ({favoriteCourses.length})</button>
+            </div>
+
+            {displayedCourses.length ? (
               <div className="course-grid modern-grid">
-                {enrolledCourses.map((course) => (
+                {displayedCourses.map((course) => (
                   <article key={course.id} className="course-card modern-card">
                     <div className="course-card-body" onClick={() => navigate(`/course-view/${course.id}`)}>
                       <span className="course-tag">{NIVEIS[course.categoria] || course.categoria}</span>
@@ -261,6 +293,7 @@ function StudentDashboardPage() {
                       <p>{course.descricao}</p>
                       <small>{formatCourseDuration(course)} • Progresso: {course.progresso ?? 0}% • {getCourseStatusLabel(course.userStatus)}</small>
                     </div>
+                    <button type="button" className="btn btn-ghost" onClick={() => toggleFavorite(course.id)}>{favoriteIds.includes(Number(course.id)) ? 'Remover favorito' : 'Adicionar aos favoritos'}</button>
                     {Number(course.progresso) < 100 && getCourseStatusLabel(course.userStatus) !== 'Concluido' ? (
                       <button type="button" className="btn btn-ghost" onClick={() => handleToggleCourse(course)}>Remover</button>
                     ) : null}

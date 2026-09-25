@@ -22,10 +22,26 @@ function AppHeader({
   const isAdmin = localStorage.getItem('nivelAcesso') === 'ADMIN';
   const isStudent = localStorage.getItem('nivelAcesso') === 'ALUNO' || localStorage.getItem('nivelAcesso') === 'STUDENT';
   const isTeacher = localStorage.getItem('nivelAcesso') === 'PROFESSOR' || localStorage.getItem('nivelAcesso') === 'TEACHER';
+  const dashboardPath = isAdmin ? '/admin' : isTeacher ? '/teacher' : '/student';
   const handleBack = onBack || (() => {
+    const historyIndex = Number(window.history.state?.idx);
+    if (isLoggedIn && Number.isFinite(historyIndex) && historyIndex > 1) {
+      window.history.back();
+      return;
+    }
+    if (isLoggedIn) {
+      window.location.assign(dashboardPath);
+      return;
+    }
     if (window.history.length > 1) window.history.back();
     else window.location.assign('/');
   });
+
+  const handleHome = () => {
+    if (isLoggedIn) window.location.assign(dashboardPath);
+    else if (onHome) onHome();
+    else window.location.assign('/');
+  };
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -41,7 +57,7 @@ function AppHeader({
   return (
     <header className={`app-header${variant === 'home' ? ' app-header-home' : ''}`}>
       <div className="app-header__brand">
-        <button type="button" className="logo logo-button" onClick={onHome}>
+        <button type="button" className="logo logo-button" onClick={handleHome}>
           <img src="/logoCursiFy.png" alt="Web Cursify" />
           <span>
             <strong>CursiFy</strong>

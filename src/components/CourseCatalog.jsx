@@ -40,7 +40,7 @@ function StarDisplay({ average, count }) {
   );
 }
 
-function CourseCard({ course, onOpen }) {
+function CourseCard({ course, onOpen, isFavorite, onToggleFavorite }) {
   const colors = CATEGORY_COLORS[course.categoria] || CATEGORY_COLORS.OUTROS;
   const gradient = COVER_GRADIENTS[course.id % COVER_GRADIENTS.length];
   const initials = (course.nome || '?').split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -69,6 +69,9 @@ function CourseCard({ course, onOpen }) {
         <p className="catalog-card-desc">{course.descricao}</p>
         <StarDisplay average={calcCourseAverage(course.id)} count={getRatingsForCourse(course.id).length} />
 
+        <button type="button" className="btn btn-ghost" onClick={onToggleFavorite} style={{ marginBottom: '8px' }}>
+          {isFavorite ? '♥ Remover favorito' : '♡ Adicionar aos favoritos'}
+        </button>
         <button type="button" className="btn btn-primary catalog-card-btn" onClick={onOpen}>
           Ver curso
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -88,6 +91,7 @@ function CourseCatalog() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [minStars, setMinStars] = useState(0);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
+  const [favorites, setFavorites] = useState([]);
   const isLoggedIn = Boolean(localStorage.getItem('userId'));
 
   useEffect(() => {
@@ -100,6 +104,20 @@ function CourseCatalog() {
       })
       .catch(() => setFeedback({ type: 'error', message: 'Erro ao carregar cursos.' }));
   }, []);
+
+  useEffect(() => {
+    const userId = Number(localStorage.getItem('userId'));
+    if (userId) api.get('/preferencia', { params: { usuarioId: userId, tipo: 'FAVORITO' } }).then(({ data }) => setFavorites((data || []).map((item) => Number(item.cursoId))));
+  }, []);
+
+  const toggleFavorite = async (courseId) => {
+    const userId = Number(localStorage.getItem('userId'));
+    if (!userId) { setFeedback({ type: 'info', message: 'Entre na sua conta para favoritar cursos.' }); return; }
+    const active = favorites.includes(Number(courseId));
+    if (active) await api.delete('/preferencia', { params: { usuarioId: userId, cursoId: courseId, tipo: 'FAVORITO' } });
+    else await api.put('/preferencia', { usuarioId: userId, cursoId: Number(courseId), tipo: 'FAVORITO', valor: 'true' });
+    setFavorites((items) => active ? items.filter((id) => id !== Number(courseId)) : [...items, Number(courseId)]);
+  };
 
   const filtered = useMemo(() => {
     const term = isLoggedIn ? searchTerm.trim().toLowerCase() : '';
@@ -227,6 +245,8 @@ function CourseCatalog() {
                   key={course.id}
                   course={course}
                   onOpen={() => navigate(`/course-view/${course.id}`)}
+                  isFavorite={favorites.includes(Number(course.id))}
+                  onToggleFavorite={() => toggleFavorite(course.id)}
                 />
               ))}
             </div>

@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { appendChatMessage, getChatMessages, getUserConversationPartners } from './chatStorage';
+import api from './api';
+
+const normalize = (row) => ({
+  id: row.id,
+  mensagem: row.mensagem?.conteudo || row.conteudo,
+  dataChat: row.dataChat || row.mensagem?.dataMensagem,
+  statusChat: row.statusChat,
+  remetenteId: Number(row.remetenteId),
+  destinatarioId: Number(row.destinatarioId),
+  remetenteNome: row.remetente,
+  cursoNome: row.cursoNome,
+});
 
 export const useChatWorkspace = ({ currentUserId, users, userName }) => {
   const [selectedChat, setSelectedChat] = useState(null);
@@ -13,21 +24,29 @@ export const useChatWorkspace = ({ currentUserId, users, userName }) => {
       setMessages([]);
       return;
     }
-    setMessages(getChatMessages(currentUserId, selectedChat.id));
+    api.get(`/chat/conversa/${currentUserId}/${selectedChat.id}`).then(({ data }) => setMessages(data.map(normalize))).catch(() => setMessages([]));
   }, [selectedChat, currentUserId]);
 
   useEffect(() => {
     if (!currentUserId || users.length === 0) return undefined;
 
-    const sync = () => {
-      setConversations(getUserConversationPartners(currentUserId, users));
-      if (selectedChat) setMessages(getChatMessages(currentUserId, selectedChat.id));
+    const sync = async () => {
+      const rows = await Promise.all(users.map(async (user) => {
+        const { data } = await api.get(`/chat/conversa/${currentUserId}/${user.id}`);
+        const last = data.length ? normalize(data[data.length - 1]) : null;
+        return { ...user, lastMessage: last ? { mensagem: last.mensagem, dataChat: last.dataChat, cursoNome: last.cursoNome } : null };
+      }));
+      setConversations(rows.filter((u) => u.lastMessage).sort((a, b) => new Date(b.lastMessage.dataChat) - new Date(a.lastMessage.dataChat)));
+      if (selectedChat) {
+        const { data } = await api.get(`/chat/conversa/${currentUserId}/${selectedChat.id}`);
+        setMessages(data.map(normalize));
+      }
     };
 
     sync();
     const intervalId = window.setInterval(sync, 1000);
     const handleStorage = (e) => {
-      if (!e.key || e.key.startsWith('chatThread:')) sync();
+      if (!e.key) sync();
     };
 
     window.addEventListener('storage', handleStorage);
@@ -46,25 +65,17 @@ export const useChatWorkspace = ({ currentUserId, users, userName }) => {
   const sendMessage = () => {
     if (!message.trim() || !selectedChat || !currentUserId) return;
 
-    const newMessage = {
-      id: `${currentUserId}-${selectedChat.id}-${Date.now()}`,
-      mensagem: message.trim(),
-      dataChat: new Date().toISOString(),
-      statusChat: 'Enviado',
-      remetenteId: Number(currentUserId),
-      destinatarioId: Number(selectedChat.id),
-      remetenteNome: userName,
-    };
-
-    const nextMessages = appendChatMessage(currentUserId, selectedChat.id, newMessage);
-    setMessages(nextMessages);
-    setConversations(getUserConversationPartners(currentUserId, users));
-    setMessage('');
+    api.post('/chat', { remetente: userName, remetenteId: Number(currentUserId), destinatarioId: Number(selectedChat.id), usuarioId: Number(currentUserId), mensagem: { conteudo: message.trim(), dataMensagem: new Date().toISOString(), statusMensagem: 'Enviado' } })
+      .then(({ data }) => { setMessages((current) => [...current, normalize(data)]); setMessage(''); })
+      .catch((error) => {
+        console.error('Erro ao enviar mensagem:', error);
+        window.alert(error.response?.data?.message || 'Não foi possível enviar a mensagem.');
+      });
   };
 
   const handleSelectChat = (user) => {
     setSelectedChat(user);
-    setMessages(getChatMessages(currentUserId, user.id));
+    api.get(`/chat/conversa/${currentUserId}/${user.id}`).then(({ data }) => setMessages(data.map(normalize)));
   };
 
   return {

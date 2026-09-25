@@ -46,12 +46,12 @@ function StudentCourseViewPage() {
   const homePath = isLoggedIn ? getDashboardPathByRole(nivelAcesso) : '/';
 
   const goBack = () => {
-    if (window.history.length > 1) {
+    const historyIndex = Number(window.history.state?.idx);
+    if (Number.isFinite(historyIndex) && historyIndex > 1) {
       navigate(-1);
       return;
     }
-
-    navigate('/');
+    navigate(homePath);
   };
 
   const requireAccount = () => {

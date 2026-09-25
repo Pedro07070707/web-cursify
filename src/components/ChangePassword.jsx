@@ -86,17 +86,24 @@ function ChangePassword() {
         senha: novaSenha || currentUser.senha,
       };
 
-      await api.put(`/usuario/${userId}`, payload);
+      const response = await api.put(`/usuario/${userId}`, payload);
+      const persistedUser = response.data;
 
       localStorage.setItem('userName', nome);
-      localStorage.setItem('nivelAcesso', nextRole);
+      localStorage.setItem('nivelAcesso', persistedUser.nivelAcesso);
       setUsers((currentUsers) => currentUsers.map((item) => (
-        Number(item.id) === Number(userId) ? payload : item
+        Number(item.id) === Number(userId) ? persistedUser : item
       )));
       setNovaSenha('');
       setConfirmarSenha('');
       setConfirmEmail('');
-      setFeedback({ type: 'success', message: 'Perfil atualizado com sucesso.' });
+      setFeedback({
+        type: nextRole === 'PROFESSOR' && persistedUser.nivelAcesso !== 'PROFESSOR' ? 'info' : 'success',
+        message: nextRole === 'PROFESSOR' && persistedUser.nivelAcesso !== 'PROFESSOR'
+          ? 'Solicitação enviada. A conta continuará como aluno até a aprovação do administrador.'
+          : 'Perfil atualizado com sucesso.',
+      });
+      window.setTimeout(() => window.location.reload(), 800);
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
       setFeedback({ type: 'error', message: 'Erro ao atualizar perfil. Tente novamente.' });

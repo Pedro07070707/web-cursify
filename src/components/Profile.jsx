@@ -12,6 +12,9 @@ function Profile() {
   const { theme, toggleTheme } = useTheme();
   const [users, setUsers] = useState([]);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
+  const [bio, setBio] = useState('');
+  const [foto, setFoto] = useState('');
+  const [fotoCapa, setFotoCapa] = useState('');
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const dashboardPath = getDashboardPathByRole(nivelAcesso);
   const userId = Number(localStorage.getItem('userId'));
@@ -41,6 +44,38 @@ function Profile() {
     () => users.find((user) => Number(user.id) === userId),
     [users, userId]
   );
+
+  useEffect(() => { setBio(currentUser?.bio || ''); setFoto(currentUser?.foto || ''); setFotoCapa(currentUser?.fotoCapa || ''); }, [currentUser]);
+
+  const readImage = (file, setter) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setter(String(reader.result || '').replace(/^data:image\/[^;]+;base64,/, ''));
+    reader.readAsDataURL(file);
+  };
+
+  const toImageSrc = (value) => {
+    if (!value) return '';
+    if (typeof value === 'string') return value.startsWith('data:') ? value : `data:image/jpeg;base64,${value}`;
+    if (Array.isArray(value)) {
+      const binary = value.map((byte) => String.fromCharCode(byte)).join('');
+      return `data:image/jpeg;base64,${btoa(binary)}`;
+    }
+    return '';
+  };
+
+  const handleSaveBio = async () => {
+    if (!currentUser) return;
+    try {
+      const payload = { ...currentUser, bio, foto, fotoCapa };
+      await api.put(`/usuario/${userId}`, payload);
+      setUsers((items) => items.map((item) => Number(item.id) === userId ? { ...item, bio, foto, fotoCapa } : item));
+      setFeedback({ type: 'success', message: 'Perfil salvo no banco.' });
+    } catch (error) {
+      console.error(error);
+      setFeedback({ type: 'error', message: 'Não foi possível salvar a biografia.' });
+    }
+  };
 
   const handleDelete = async () => {
     try {
@@ -99,11 +134,12 @@ function Profile() {
         <InlineAlert type={feedback.type} message={feedback.message} />
 
         {/* Hero do perfil */}
-        <section className="profile-hero-card panel-card">
-          <div className="profile-hero-avatar">
-            {(currentUser?.nome || 'US').slice(0, 2).toUpperCase()}
+        <section className="profile-hero-card panel-card" style={{ position: 'relative', overflow: 'hidden', backgroundImage: toImageSrc(currentUser?.fotoCapa) ? `url(${toImageSrc(currentUser?.fotoCapa)})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          {toImageSrc(currentUser?.fotoCapa) && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.42)' }} />}
+          <div className="profile-hero-avatar" style={{ position: 'relative', zIndex: 1 }}>
+            {toImageSrc(currentUser?.foto) ? <img src={toImageSrc(currentUser.foto)} alt="Foto de perfil" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : (currentUser?.nome || 'US').slice(0, 2).toUpperCase()}
           </div>
-          <div className="profile-hero-info">
+          <div className="profile-hero-info" style={{ position: 'relative', zIndex: 1 }}>
             <div className="profile-hero-badges">
               <span className="section-badge">{getUserRoleLabel(currentUser?.nivelAcesso)}</span>
               <span className={`profile-status-badge${isStatusActive(currentUser?.statusUsuario) ? ' is-active' : ' is-inactive'}`}>
@@ -117,6 +153,7 @@ function Profile() {
           <button
             type="button"
             className="btn btn-primary profile-hero-action"
+            style={{ position: 'relative', zIndex: 1 }}
             onClick={() => navigate('/change-password')}
           >
             Editar perfil
@@ -159,14 +196,15 @@ function Profile() {
           </article>
 
           <article className="dash-summary-card">
-            <div className="feature-icon-wrap feature-icon-green">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </div>
-            <h3>Atualizações</h3>
-            <p>Altere sua senha e dados cadastrais a qualquer momento.</p>
-            <button type="button" className="btn btn-primary" style={{ marginTop: '8px' }} onClick={() => navigate('/change-password')}>
-              Atualizar perfil
-            </button>
+            <h3>Biografia</h3>
+            <textarea value={bio} onChange={(event) => setBio(event.target.value)} placeholder="Fale um pouco sobre você" maxLength={2000} />
+            <button type="button" className="btn btn-primary" style={{ marginTop: '8px' }} onClick={handleSaveBio}>Salvar bio</button>
+          </article>
+          <article className="dash-summary-card">
+            <h3>Fotos do perfil</h3>
+            <label style={{ marginTop: '8px' }}>Foto de perfil<input type="file" accept="image/*" onChange={(event) => readImage(event.target.files?.[0], setFoto)} /></label>
+            <label style={{ marginTop: '8px' }}>Foto de capa<input type="file" accept="image/*" onChange={(event) => readImage(event.target.files?.[0], setFotoCapa)} /></label>
+            <button type="button" className="btn btn-primary" style={{ marginTop: '8px' }} onClick={handleSaveBio}>Salvar fotos</button>
           </article>
 
           <article className="dash-summary-card">

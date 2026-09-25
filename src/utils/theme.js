@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import api from './api';
 
 const THEME_STORAGE_KEY = 'cursify-theme';
 
@@ -23,11 +24,25 @@ export const useTheme = () => {
   const [theme, setTheme] = useState(getStoredTheme);
 
   useEffect(() => {
+    const userId = Number(window.localStorage.getItem('userId'));
+    if (!userId) return;
+    api.get(`/usuario/${userId}`).then(({ data }) => {
+      const saved = data.temaPreferido === 'dark' ? 'dark' : 'light';
+      setTheme(saved);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
   return {
     theme,
-    toggleTheme: () => setTheme((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark')),
+    toggleTheme: () => setTheme((currentTheme) => {
+      const next = currentTheme === 'dark' ? 'light' : 'dark';
+      const userId = Number(window.localStorage.getItem('userId'));
+      if (userId) api.put(`/usuario/${userId}/tema`, { temaPreferido: next }).catch(() => {});
+      return next;
+    }),
   };
 };

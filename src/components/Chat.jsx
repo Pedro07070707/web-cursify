@@ -24,7 +24,7 @@ function Chat() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const usersResponse = await api.get('/usuario');
+        const usersResponse = await api.get(`/chat/contatos/${currentUserId}`);
         const allUsers = usersResponse.data || [];
         const filteredUsers = allUsers.filter((user) => Number(user.id) !== currentUserId);
         setUsers(filteredUsers);
