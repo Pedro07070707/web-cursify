@@ -42,7 +42,7 @@ function UpdateCourse() {
         descricao: form.descricao,
         cargaHoraria: form.cargaHoraria,
       });
-      alert('Curso atualizado com sucesso!');
+      alert('Curso atualizado.');
       navigate(`/teacher-course/${id}`);
     } catch (error) {
       const msg = error.response?.data?.message || error.message;

@@ -101,7 +101,7 @@ function ChangePassword() {
         type: nextRole === 'PROFESSOR' && persistedUser.nivelAcesso !== 'PROFESSOR' ? 'info' : 'success',
         message: nextRole === 'PROFESSOR' && persistedUser.nivelAcesso !== 'PROFESSOR'
           ? 'Solicitação enviada. A conta continuará como aluno até a aprovação do administrador.'
-          : 'Perfil atualizado com sucesso.',
+          : 'Perfil atualizado.',
       });
       window.setTimeout(() => window.location.reload(), 800);
     } catch (error) {

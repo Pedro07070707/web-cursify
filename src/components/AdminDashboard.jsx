@@ -2,13 +2,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import AppHeader from './AppHeader';
-import ChatWorkspace from './ChatWorkspace';
 import DirectorySearchSection from './DirectorySearchSection';
 import InlineAlert from './InlineAlert';
 import { clearSessionData } from '../utils/authStorage';
 import { formatCourseDuration, getUserRoleLabel, NIVEIS } from '../utils/ui';
 import { useTheme } from '../utils/theme';
-import { useChatWorkspace } from '../utils/useChatWorkspace';
 
 function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -29,7 +27,6 @@ function AdminDashboardPage() {
     [users, currentUserId]
   );
 
-  const chat = useChatWorkspace({ currentUserId, users: availableUsers, userName: '' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,17 +91,17 @@ function AdminDashboardPage() {
     }
   };
 
-  const pendingCourses = useMemo(() => courses.filter((c) => !c.cursoAprovado), [courses]);
+  const pendingCourses = useMemo(() => courses.filter((c) => String(c.cursoAprovado || '').toLowerCase() === 'pendente'), [courses]);
   const pendingTeachers = useMemo(
-    () => users.filter((u) => u.nivelAcesso === 'PROFESSOR' && !u.professorAprovado),
+    () => users.filter((u) => u.nivelAcesso === 'PROFESSOR' && String(u.professorAprovado || '').toLowerCase() === 'pendente'),
     [users]
   );
 
   const handleApproveCourse = async (courseId, courseName) => {
     const course = courses.find((c) => c.id === courseId);
     try {
-      await api.put(`/curso/${courseId}`, { ...course, cursoAprovado: 1 });
-      setCourses((prev) => prev.map((c) => c.id === courseId ? { ...c, cursoAprovado: 1 } : c));
+      await api.put(`/curso/${courseId}`, { ...course, cursoAprovado: 'Aprovado' });
+      setCourses((prev) => prev.map((c) => c.id === courseId ? { ...c, cursoAprovado: 'Aprovado' } : c));
       setApprovalFeedback((prev) => ({ ...prev, [`course-${courseId}`]: 'aprovado' }));
       setFeedback({ type: 'success', message: `Curso aprovado: ${courseName}.` });
     } catch {
@@ -114,9 +111,11 @@ function AdminDashboardPage() {
 
   const handleRejectCourse = async (courseId, courseName) => {
     const course = courses.find((c) => c.id === courseId);
+    const motivo = window.prompt(`Informe o motivo da recusa de "${courseName}":`);
+    if (!motivo || !motivo.trim()) return;
     try {
-      await api.put(`/curso/${courseId}`, { ...course, cursoAprovado: 2, statusCurso: 'Rejeitado' });
-      setCourses((prev) => prev.map((c) => c.id === courseId ? { ...c, cursoAprovado: 2, statusCurso: 'Rejeitado' } : c));
+      await api.put(`/curso/${courseId}`, { ...course, cursoAprovado: 'Reprovado', statusCurso: 'Reprovado', motivoRecusa: motivo.trim() });
+      setCourses((prev) => prev.map((c) => c.id === courseId ? { ...c, cursoAprovado: 'Reprovado', statusCurso: 'Reprovado', motivoRecusa: motivo.trim() } : c));
       setApprovalFeedback((prev) => ({ ...prev, [`course-${courseId}`]: 'rejeitado' }));
       setFeedback({ type: 'success', message: `Curso rejeitado: ${courseName}.` });
     } catch {
@@ -127,8 +126,8 @@ function AdminDashboardPage() {
   const handleApproveTeacher = async (userId, userName) => {
     const user = users.find((u) => u.id === userId);
     try {
-      await api.put(`/usuario/${userId}`, { ...user, statusUsuario: 'Ativo', professorAprovado: 1 });
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, statusUsuario: 'Ativo', professorAprovado: 1 } : u));
+      await api.put(`/usuario/${userId}`, { ...user, statusUsuario: 'Ativo', professorAprovado: 'Aprovado' });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, statusUsuario: 'Ativo', professorAprovado: 'Aprovado' } : u));
       setFeedback({ type: 'success', message: `Professor aprovado: ${userName}.` });
     } catch {
       setFeedback({ type: 'error', message: 'Erro ao aprovar professor.' });
@@ -138,8 +137,8 @@ function AdminDashboardPage() {
   const handleRejectTeacher = async (userId, userName) => {
     const user = users.find((u) => u.id === userId);
     try {
-      await api.put(`/usuario/${userId}`, { ...user, statusUsuario: 'Inativo', professorAprovado: 2 });
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, statusUsuario: 'Inativo', professorAprovado: 2 } : u));
+      await api.put(`/usuario/${userId}`, { ...user, statusUsuario: 'Inativo', professorAprovado: 'Reprovado' });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, statusUsuario: 'Inativo', professorAprovado: 'Reprovado' } : u));
       setFeedback({ type: 'success', message: `Cadastro rejeitado: ${userName}.` });
     } catch {
       setFeedback({ type: 'error', message: 'Erro ao rejeitar professor.' });
@@ -167,9 +166,10 @@ function AdminDashboardPage() {
       <AppHeader
         subtitle="Area do administrador"
         onHome={() => navigate('/')}
+        onBack={() => setActiveSection('home')}
+        onAdminPanel={() => setActiveSection('panel')}
         navItems={[
-          { label: 'Chat', onClick: () => setActiveSection('chat'), active: activeSection === 'chat' },
-          { label: 'Painel', onClick: () => setActiveSection('panel'), active: activeSection === 'panel' },
+          { label: 'Início', onClick: () => setActiveSection('home'), active: activeSection === 'home' },
         ]}
         onGoProfile={() => navigate('/profile')}
         onLogout={handleLogout}
@@ -204,9 +204,6 @@ function AdminDashboardPage() {
                 <div className="hero-actions">
                   <button type="button" className="btn btn-primary btn-hero" onClick={() => setActiveSection('panel')}>
                     Abrir painel
-                  </button>
-                  <button type="button" className="btn btn-ghost btn-hero" onClick={() => setActiveSection('chat')}>
-                    Chat
                   </button>
                 </div>
               </div>
@@ -266,22 +263,6 @@ function AdminDashboardPage() {
               </article>
             </section>
           </>
-        ) : null}
-
-        {activeSection === 'chat' ? (
-          <ChatWorkspace
-            selectedChat={chat.selectedChat}
-            message={chat.message}
-            onMessageChange={chat.setMessage}
-            onSendMessage={chat.sendMessage}
-            messages={chat.messages}
-            conversations={chat.conversations}
-            searchedUsers={chat.searchedUsers}
-            searchTerm={chat.chatSearchTerm}
-            onSearchChange={chat.setChatSearchTerm}
-            onSelectChat={chat.handleSelectChat}
-            currentUserId={currentUserId}
-          />
         ) : null}
 
         {activeSection === 'panel' ? (
@@ -397,6 +378,7 @@ function AdminDashboardPage() {
                             </span>
                           ) : (
                             <>
+                              <button type="button" className="btn btn-ghost" onClick={() => navigate(`/course-view/${course.id}`)}>Visualizar curso</button>
                               <button type="button" className="btn btn-primary" onClick={() => handleApproveCourse(course.id, course.nome)}>Aprovar</button>
                               <button type="button" className="btn btn-danger" onClick={() => handleRejectCourse(course.id, course.nome)}>Rejeitar</button>
                             </>

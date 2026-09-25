@@ -98,7 +98,7 @@ function CourseCatalog() {
     api.get('/curso')
       .then((res) => {
         const visible = (res.data || []).filter(
-          (c) => c.cursoAprovado === 1
+          (c) => String(c.cursoAprovado).toLowerCase() === 'aprovado'
         );
         setCourses(visible);
       })

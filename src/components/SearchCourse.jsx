@@ -23,7 +23,8 @@ function SearchCoursePage() {
         const coursesResponse = await api.get('/curso');
 
         const visibleCourses = (coursesResponse.data || []).filter(
-          (course) => course.statusCurso !== false && course.statusCurso !== 'Inativo'
+          (course) => String(course.cursoAprovado || '').toLowerCase() === 'aprovado'
+            && course.statusCurso !== false && course.statusCurso !== 'Inativo'
         );
 
         const coursesWithEnrollment = await Promise.all(visibleCourses.map(async (course) => {

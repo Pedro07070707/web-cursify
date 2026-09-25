@@ -20,7 +20,7 @@ function PublishVideo() {
       file: videoFile?.name || 'video.mp4'
     };
 
-    alert('Vídeo aula publicada com sucesso!');
+    alert('Vídeo aula publicada.');
     navigate(userType === 'admin' ? '/admin' : '/teacher');
   };
 

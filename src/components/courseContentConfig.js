@@ -9,7 +9,7 @@ export const CONTENT_TYPES = [
       titulo: text(item.titulo),
       subtitulo: text(item.subtitulo),
       conteudo: text(item.conteudo),
-      link: text(item.link),
+      links: (Array.isArray(item.links) ? item.links : []).filter((link) => link?.url).map((link) => ({ titulo: text(link.titulo) || 'Abrir link', url: text(link.url) })),
       usuario: { id: userId },
       curso: { id: courseId },
     }),
@@ -19,8 +19,7 @@ export const CONTENT_TYPES = [
     key: 'exercicios',
     title: 'Exercicios', endpoint: 'exercicios', statusField: 'statusExercicios', defaultStatus: 'Nao concluido',
     buildPayload: (item, courseId, userId) => ({
-      titulo: text(item.titulo) || text(item.enunciado).slice(0, 100), subtitulo: text(item.subtitulo) || 'Exercício',
-      conteudo: text(item.enunciado), enunciado: text(item.enunciado),
+      enunciado: text(item.enunciado),
       alternativas: (Array.isArray(item.alternativas) ? item.alternativas : []).map(text).filter(Boolean), respostaCorreta: text(item.respostaCorreta),
       explicacao: text(item.explicacao),
       usuario: { id: userId }, curso: { id: courseId }, statusExercicios: text(item.status) || 'Nao concluido',
@@ -29,7 +28,7 @@ export const CONTENT_TYPES = [
   },
 ];
 
-export const createEmptyEntry = (typeKey) => typeKey === 'exercicios' ? ({ titulo: '', subtitulo: '', conteudo: '', enunciado: '', alternativas: ['', '', '', ''], respostaCorreta: '', explicacao: '', pontos: 1, link: '', status: 'Nao concluido' }) : ({ titulo: '', subtitulo: '', conteudo: '', link: '', status: 'Nao concluido' });
+export const createEmptyEntry = (typeKey) => typeKey === 'exercicios' ? ({ titulo: '', subtitulo: '', conteudo: '', enunciado: '', alternativas: ['', '', '', ''], respostaCorreta: '', explicacao: '', link: '', status: 'Nao concluido' }) : ({ titulo: '', subtitulo: '', conteudo: '', links: [], status: 'Nao concluido' });
 
 export const getCourseContentCourseId = (item) => (
   item.cursoId ??
@@ -42,6 +41,6 @@ export const getCourseContentCourseId = (item) => (
 export const normalizeCourseContentItem = (typeKey, item) => ({
   id: item.id, titulo: item.titulo || '', subtitulo: item.subtitulo || '', conteudo: item.conteudo || '',
   enunciado: item.enunciado || item.conteudo || '', alternativas: Array.isArray(item.alternativas) ? item.alternativas : ['', '', '', ''],
-  respostaCorreta: item.respostaCorreta || '', explicacao: item.explicacao || '', pontos: item.pontos || 1, link: item.link || '',
+  respostaCorreta: item.respostaCorreta || '', explicacao: item.explicacao || '', links: Array.isArray(item.links) ? item.links.map((link) => typeof link === 'string' ? ({ titulo: 'Abrir link', url: link }) : link) : [],
   status: item.statusMaterial || item.statusExercicios || 'Nao concluido', cursoId: getCourseContentCourseId(item),
 });

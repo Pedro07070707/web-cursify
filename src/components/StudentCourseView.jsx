@@ -28,6 +28,7 @@ const getCourseStatusLabel = (status) => {
 function StudentCourseViewPage() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [contents, setContents] = useState({ material: [], exercicios: [] });
   const [loading, setLoading] = useState(true);
   const [studentStatus, setStudentStatus] = useState('Em progresso');
@@ -46,11 +47,6 @@ function StudentCourseViewPage() {
   const homePath = isLoggedIn ? getDashboardPathByRole(nivelAcesso) : '/';
 
   const goBack = () => {
-    const historyIndex = Number(window.history.state?.idx);
-    if (Number.isFinite(historyIndex) && historyIndex > 1) {
-      navigate(-1);
-      return;
-    }
     navigate(homePath);
   };
 
@@ -72,7 +68,7 @@ function StudentCourseViewPage() {
         status: 'Concluido',
       });
       setStudentStatus('Concluido');
-      setFeedback({ type: 'success', message: 'Curso concluido com sucesso.' });
+      setFeedback({ type: 'success', message: 'Curso concluído.' });
     } catch (error) {
       console.error('Erro ao concluir curso:', error);
       setFeedback({ type: 'error', message: 'Erro ao concluir o curso.' });
@@ -83,6 +79,12 @@ function StudentCourseViewPage() {
     const fetchCourse = async () => {
       try {
         const response = await api.get(`/curso/${id}`);
+        if (String(response.data?.cursoAprovado || '').toLowerCase() !== 'aprovado') {
+          setFeedback({ type: 'error', message: 'Este curso ainda não foi aprovado pelo administrador.' });
+          setAccessDenied(true);
+          setCourse(null);
+          return;
+        }
         setCourse(response.data);
 
         if (isLoggedIn && userType === 'student') {
@@ -158,6 +160,7 @@ function StudentCourseViewPage() {
   };
 
   if (loading) return <div className="container"><div className="card">Carregando...</div></div>;
+  if (accessDenied) return <div className="container"><div className="card section-stack"><h2>Curso indisponível</h2><InlineAlert type="error" message={feedback.message} /><button className="btn btn-secondary" onClick={goBack}>Voltar</button></div></div>;
   if (!course) return <div className="container"><div className="card">Curso nao encontrado</div></div>;
 
   return (
@@ -184,10 +187,12 @@ function StudentCourseViewPage() {
 
         <div className="card section-stack">
           <h2>{course.nome}</h2>
-          <p><strong>Categoria:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
-          <p><strong>Carga horaria:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
-          <p><strong>Matriculados:</strong> {course.numeroAlunos ?? 0}/100</p>
-          <p><strong>Data de criacao:</strong> {course.dataCriacao ? new Date(course.dataCriacao).toLocaleDateString('pt-BR') : '-'}</p>
+          <div className="course-detail-meta">
+            <div><span>Categoria</span><strong>{NIVEIS[course.categoria] || course.categoria}</strong></div>
+            <div><span>Carga horária</span><strong>{course.duracao || `${course.cargaHoraria} horas`}</strong></div>
+            <div><span>Matriculados</span><strong>{course.numeroAlunos ?? 0}/100</strong></div>
+            <div><span>Data de criação</span><strong>{course.dataCriacao ? new Date(course.dataCriacao).toLocaleDateString('pt-BR') : '-'}</strong></div>
+          </div>
 
           <div>
             <h3>Descricao do Curso</h3>

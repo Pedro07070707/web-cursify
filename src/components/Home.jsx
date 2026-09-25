@@ -29,7 +29,8 @@ function Home() {
   }, []);
 
   const availableCourses = useMemo(
-    () => courses.filter((course) => course.statusCurso !== false && course.statusCurso !== 'Inativo'),
+    () => courses.filter((course) => String(course.cursoAprovado || '').toLowerCase() === 'aprovado'
+      && course.statusCurso !== false && course.statusCurso !== 'Inativo'),
     [courses]
   );
 

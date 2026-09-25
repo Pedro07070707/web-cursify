@@ -11,7 +11,10 @@ const buildInitialState = () => ({
   exercicios: [],
 });
 
-const contentKey = (item) => [item.titulo, item.subtitulo, item.conteudo, item.link].map((value) => String(value || '').trim()).join('|');
+const contentKey = (item) => item.id
+  ? `id:${item.id}`
+  : [item.enunciado, ...(item.alternativas || []), item.respostaCorreta, item.titulo, item.subtitulo, item.conteudo, item.link]
+    .map((value) => String(value || '').trim()).join('|');
 
 function ManageCourseContent() {
   const { courseId } = useParams();
@@ -141,7 +144,7 @@ function ManageCourseContent() {
         await saveSection(config);
       }
 
-      alert('Conteudo do curso salvo com sucesso!');
+        alert('Conteúdo do curso salvo.');
       navigate(`/teacher-course/${courseId}`);
     } catch (error) {
       const message = error.response?.data?.message || error.response?.data || error.message;

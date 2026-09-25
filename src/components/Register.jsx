@@ -11,6 +11,7 @@ function Register() {
   const [senha, setSenha] = useState('');
   const [cpf, setCpf] = useState('');
   const [nivelAcesso, setNivelAcesso] = useState('ALUNO');
+  const [codigoAdmin, setCodigoAdmin] = useState('');
   const [aceitaTermos, setAceitaTermos] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
@@ -59,6 +60,11 @@ function Register() {
       return;
     }
 
+    if (nivelAcesso === 'ADMIN' && codigoAdmin !== '260926') {
+      setFeedback({ type: 'error', message: 'Código de administrador inválido.' });
+      return;
+    }
+
     const novoUsuario = {
       nome,
       email,
@@ -67,7 +73,9 @@ function Register() {
       nivelAcesso,
       dataCadastro: new Date().toISOString().slice(0, 19),
       statusUsuario: nivelAcesso === 'PROFESSOR' ? 'Pendente' : 'Ativo',
-      professorAprovado: nivelAcesso === 'PROFESSOR' ? false : true,
+      // O backend/banco usam 0=pending, 1=approved, 2=rejected.
+      professorAprovado: nivelAcesso === 'PROFESSOR' ? 'Pendente' : 'Aprovado',
+      codigoAdmin: nivelAcesso === 'ADMIN' ? codigoAdmin : null,
     };
 
     try {
@@ -93,8 +101,11 @@ function Register() {
       }
     } catch (error) {
       console.error('Erro ao cadastrar usuario:', error);
-      const msg = error.response?.data?.message || error.response?.data || error.message;
-      const serialized = JSON.stringify(msg);
+      const rawMessage = error.response?.data?.message || error.response?.data || error.message;
+      const rawText = typeof rawMessage === 'string' ? rawMessage : JSON.stringify(rawMessage);
+      const serialized = /unique key|duplicate key|UQ__Usuario/i.test(rawText)
+        ? (/(cpf|D836E71F9EF96B01)/i.test(rawText) ? 'Este CPF já está cadastrado.' : 'Este e-mail já está cadastrado.')
+        : rawText.replace(/^"|"$/g, '');
       setFeedback({ type: 'error', message: `Erro ao cadastrar: ${serialized}` });
       setInvalidFields({
         email: serialized.toLowerCase().includes('email'),
@@ -252,6 +263,22 @@ function Register() {
                   </button>
                 </div>
               </div>
+
+              {nivelAcesso === 'ADMIN' && (
+                <div className="form-group">
+                  <label htmlFor="codigo-admin">Código de administrador</label>
+                  <input
+                    id="codigo-admin"
+                    type="password"
+                    value={codigoAdmin}
+                    onChange={(e) => setCodigoAdmin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="Digite o código"
+                    required
+                  />
+                </div>
+              )}
 
               <label className="privacy-checkbox">
                 <input

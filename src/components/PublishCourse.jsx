@@ -65,29 +65,36 @@ function PublishCoursePage() {
       professorId: userId,
     };
 
+    const exercicioInvalido = sections.exercicios.find((item) => {
+      const alternativas = (item.alternativas || []).map((value) => String(value || '').trim()).filter(Boolean);
+      return !item.enunciado?.trim() || alternativas.length === 0 || !item.respostaCorreta?.trim();
+    });
+    if (exercicioInvalido) {
+      alert('Preencha pelo menos uma alternativa e marque a resposta correta em todos os exercícios.');
+      publishingRef.current = false;
+      setPublishing(false);
+      return;
+    }
+
     try {
       const courseResponse = await api.post('/curso', novoCurso);
       const createdCourseId = courseResponse.data?.id;
 
       if (createdCourseId) {
-        const contentPromises = CONTENT_TYPES.flatMap((config) => {
-          const validItems = sections[config.key].filter((item) => {
-            return Boolean(item.titulo?.trim() && item.subtitulo?.trim() && item.conteudo?.trim());
-          });
-
-          return validItems.map((item, index) =>
-            api.post(
-              `/${config.endpoint}`,
-              config.buildPayload(item, createdCourseId, userId, index)
-            )
-          );
-        });
-
-        await Promise.all(contentPromises);
+        // Envia um item por vez para evitar concorrência na coleção de alternativas
+        // dos exercícios no SQL Server.
+        for (const config of CONTENT_TYPES) {
+          const validItems = sections[config.key].filter((item) => config.key === 'exercicios'
+            ? Boolean(item.enunciado?.trim()) && (item.alternativas || []).some((value) => String(value || '').trim()) && Boolean(item.respostaCorreta?.trim())
+            : Boolean(item.titulo?.trim() && item.subtitulo?.trim() && item.conteudo?.trim()));
+          for (let index = 0; index < validItems.length; index += 1) {
+            await api.post(`/${config.endpoint}`, config.buildPayload(validItems[index], createdCourseId, userId, index));
+          }
+        }
       }
 
-      alert(userType === 'admin' ? 'Curso publicado com sucesso!' : 'Curso enviado para aprovação do administrador!');
-      navigate(createdCourseId ? `/manage-course-content/${createdCourseId}` : (userType === 'admin' ? '/admin' : '/teacher'));
+      alert(userType === 'admin' ? 'Curso publicado.' : 'Curso enviado para aprovação do administrador.');
+      navigate(userType === 'admin' ? '/admin' : '/teacher');
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.response?.data || error.message;
       alert(`Erro ao publicar curso: ${errorMsg}`);

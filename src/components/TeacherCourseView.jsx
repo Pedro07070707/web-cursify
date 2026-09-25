@@ -77,7 +77,7 @@ function TeacherCourseViewPage() {
   const handleDelete = async () => {
     try {
       await api.delete(`/curso/${id}`);
-      setFeedback({ type: 'success', message: `Curso excluido com sucesso: ${course.nome}.` });
+      setFeedback({ type: 'success', message: `Curso excluído: ${course.nome}.` });
       navigate(userType === 'admin' ? '/admin' : '/teacher');
     } catch (error) {
       console.error('Erro ao excluir curso:', error);
@@ -93,6 +93,7 @@ function TeacherCourseViewPage() {
       <AppHeader
         subtitle="Curso"
         brandDetail={`${NIVEIS[course.categoria] || course.categoria} - ${course.nome}`}
+        onBack={goBack}
         onHome={() => navigate('/')}
         onGoProfile={() => navigate('/profile')}
         onLogout={() => {
@@ -106,9 +107,12 @@ function TeacherCourseViewPage() {
 
         <div className="card section-stack">
           <h2>{course.nome}</h2>
-          <p><strong>Categoria:</strong> {NIVEIS[course.categoria] || course.categoria}</p>
-          <p><strong>Carga horaria:</strong> {course.duracao || `${course.cargaHoraria} horas`}</p>
-          <p><strong>Data de criacao:</strong> {course.dataCriacao ? new Date(course.dataCriacao).toLocaleDateString('pt-BR') : '-'}</p>
+          <div className="course-detail-meta">
+            <div><span>Categoria</span><strong>{NIVEIS[course.categoria] || course.categoria}</strong></div>
+            <div><span>Carga horária</span><strong>{course.duracao || `${course.cargaHoraria} horas`}</strong></div>
+            <div><span>Matriculados</span><strong>{course.numeroAlunos ?? 0}/100</strong></div>
+            <div><span>Data de criação</span><strong>{course.dataCriacao ? new Date(course.dataCriacao).toLocaleDateString('pt-BR') : '-'}</strong></div>
+          </div>
 
           <div>
             <h3>Descricao do Curso</h3>

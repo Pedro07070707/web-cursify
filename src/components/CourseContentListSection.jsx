@@ -9,8 +9,8 @@ function ExerciseItem({ item, index, onResolved, locked }) {
     const selectedAnswer = alternatives[selected];
     const correct = selectedAnswer?.trim().toLowerCase() === String(item.respostaCorreta || '').trim().toLowerCase()
       || String(selected) === String(item.respostaCorreta);
-    setResult({ correct, points: correct ? Number(item.pontos) || 1 : 0 });
-    if (correct) onResolved?.(item.id, Number(item.pontos) || 1);
+    setResult({ correct });
+    if (correct) onResolved?.(item.id);
   };
   return <div className="topic-item"><strong>{index + 1}. {item.enunciado || item.conteudo}</strong><div style={{ marginTop: '0.75rem', display: 'grid', gap: '0.5rem' }}>{alternatives.map((alternative, alternativeIndex) => <label key={`${item.id}-${alternativeIndex}`} style={{ cursor: 'pointer' }}><input type="radio" name={`exercise-${item.id}`} checked={selected === alternativeIndex} disabled={locked} onChange={() => setSelected(alternativeIndex)} /> {String.fromCharCode(65 + alternativeIndex)}) {alternative}</label>)}</div><button type="button" className="btn btn-primary" style={{ marginTop: '0.75rem' }} onClick={submit} disabled={locked || selected === null}>Enviar resposta</button>{result ? <div style={{ marginTop: '0.5rem' }}>{result.correct ? 'Resposta correta!' : 'Resposta incorreta. Tente novamente.'}{item.explicacao ? ` ${item.explicacao}` : ''}</div> : null}</div>;
 }
@@ -22,7 +22,8 @@ function MaterialItem({ item, index, onViewed, locked }) {
     setOpened(true);
     onViewed?.(item.id);
   };
-  return <article className="topic-item"><strong>{index + 1}. {item.titulo}</strong>{item.subtitulo ? <div style={{ marginTop: '0.5rem' }}>{item.subtitulo}</div> : null}{!opened ? <button type="button" className="btn btn-ghost" style={{ marginTop: '0.75rem' }} onClick={openMaterial} disabled={locked}>Abrir material</button> : <div style={{ marginTop: '0.75rem' }}>{item.conteudo ? <div>{item.conteudo}</div> : null}{item.link ? <a href={item.link} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: '0.5rem' }}>Abrir link complementar</a> : null}</div>}</article>;
+  const materialLinks = [{ titulo: item.linkTitulo || 'Abrir link complementar', url: item.link }, ...(item.links || [])].filter((link) => link?.url);
+  return <article className="topic-item"><strong>{index + 1}. {item.titulo}</strong>{item.subtitulo ? <div style={{ marginTop: '0.5rem' }}>{item.subtitulo}</div> : null}{!opened ? <button type="button" className="btn btn-ghost" style={{ marginTop: '0.75rem' }} onClick={openMaterial} disabled={locked}>Abrir material</button> : <div style={{ marginTop: '0.75rem' }}>{item.conteudo ? <div>{item.conteudo}</div> : null}<div className="material-link-buttons">{materialLinks.map((link, linkIndex) => <a className="material-link-button" key={`${link.url}-${linkIndex}`} href={link.url} target="_blank" rel="noreferrer">{link.titulo || `Abrir link ${linkIndex + 1}`}</a>)}</div></div>}</article>;
 }
 
 function CourseContentListSection({ title, items, typeKey, emptyMessage, onResolved, onViewed, locked = false }) {

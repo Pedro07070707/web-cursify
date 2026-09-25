@@ -14,16 +14,13 @@ function DirectorySearchSection({
 
   return (
     <section className={`panel-card search-section${minimal ? ' search-section-minimal' : ''}`}>
-      {!minimal ? null : <div className="search-top-spacer" />}
-
-      <div className="search-hero-input">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Pesquise cursos"
-        />
-      </div>
+      <input
+        className="search-hero-input"
+        type="text"
+        value={searchTerm}
+        onChange={(event) => onSearchChange(event.target.value)}
+        placeholder="Pesquise cursos"
+      />
 
       {hasQuery ? (
         <div className="result-column single-result-column">

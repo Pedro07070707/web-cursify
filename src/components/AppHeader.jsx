@@ -12,6 +12,8 @@ function AppHeader({
   onLogin,
   onRegister,
   onHome,
+  onAdminPanel,
+  onMyCourses,
   onToggleTheme,
   theme = 'light',
   subtitle,
@@ -22,8 +24,18 @@ function AppHeader({
   const isAdmin = localStorage.getItem('nivelAcesso') === 'ADMIN';
   const isStudent = localStorage.getItem('nivelAcesso') === 'ALUNO' || localStorage.getItem('nivelAcesso') === 'STUDENT';
   const isTeacher = localStorage.getItem('nivelAcesso') === 'PROFESSOR' || localStorage.getItem('nivelAcesso') === 'TEACHER';
+  const isPresentation = variant === 'home';
   const dashboardPath = isAdmin ? '/admin' : isTeacher ? '/teacher' : '/student';
-  const handleBack = onBack || (() => {
+  const standardNavItems = isPresentation ? [] : [
+    { label: 'Início', onClick: () => window.location.assign(dashboardPath) },
+    ...(isAdmin ? [{ label: 'Painel Admin', onClick: onAdminPanel || (() => window.location.assign('/admin')) }] : []),
+    ...(!isAdmin ? [{ label: 'Meus cursos', onClick: onMyCourses || (() => window.location.assign(dashboardPath)) }] : []),
+    ...((isStudent || isTeacher) ? [{ label: 'Chat', onClick: () => window.location.assign('/chat') }] : []),
+  ];
+  const reservedLabels = new Set(['perfil', 'tema', 'sair', 'painel', 'painel do professor', 'painel admin']);
+  const effectiveNavItems = [...standardNavItems, ...navItems.filter((item) => !reservedLabels.has(item.label.toLowerCase()))]
+    .filter((item, index, items) => items.findIndex((candidate) => candidate.label.toLowerCase() === item.label.toLowerCase()) === index);
+  const handleBack = isPresentation ? null : (onBack || (() => {
     const historyIndex = Number(window.history.state?.idx);
     if (isLoggedIn && Number.isFinite(historyIndex) && historyIndex > 1) {
       window.history.back();
@@ -35,7 +47,7 @@ function AppHeader({
     }
     if (window.history.length > 1) window.history.back();
     else window.location.assign('/');
-  });
+  }));
 
   const handleHome = () => {
     if (isLoggedIn) window.location.assign(dashboardPath);
@@ -102,17 +114,9 @@ function AppHeader({
 
           {menuOpen ? (
             <div className="menu-dropdown">
-              {isStudent ? (
-                <button type="button" className="menu-item" onClick={() => {
-                  setMenuOpen(false);
-                  window.location.href = '/student';
-                }}>
-                  Inicio
-                </button>
-              ) : null}
-              {navItems.length ? (
+              {effectiveNavItems.length ? (
                 <div className="menu-section">
-                  {navItems.map((item) => (
+                  {effectiveNavItems.map((item) => (
                     <button
                       key={`menu-${item.label}`}
                       type="button"
@@ -162,28 +166,12 @@ function AppHeader({
                   Cadastrar
                 </button>
               ) : null}
-              {isLoggedIn && onGoProfile ? (
+              {!isPresentation && isLoggedIn && onGoProfile ? (
                 <button type="button" className="menu-item" onClick={() => {
                   setMenuOpen(false);
                   onGoProfile();
                 }}>
                   Perfil
-                </button>
-              ) : null}
-              {isAdmin ? (
-                <button type="button" className="menu-item" onClick={() => {
-                  setMenuOpen(false);
-                  window.location.href = '/admin';
-                }}>
-                  Painel Admin
-                </button>
-              ) : null}
-              {isTeacher ? (
-                <button type="button" className="menu-item" onClick={() => {
-                  setMenuOpen(false);
-                  window.location.href = '/teacher';
-                }}>
-                  Painel do Professor
                 </button>
               ) : null}
               <button type="button" className="menu-item menu-item-theme" onClick={() => {
@@ -192,7 +180,7 @@ function AppHeader({
                 <span>Tema</span>
                 <strong>{theme === 'dark' ? 'Escuro' : 'Claro'}</strong>
               </button>
-              {isLoggedIn && onLogout ? (
+              {!isPresentation && isLoggedIn && onLogout ? (
                 <button type="button" className="menu-item" onClick={() => {
                   setMenuOpen(false);
                   onLogout();

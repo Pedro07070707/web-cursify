@@ -15,6 +15,8 @@ function Profile() {
   const [bio, setBio] = useState('');
   const [foto, setFoto] = useState('');
   const [fotoCapa, setFotoCapa] = useState('');
+  const [profileCode, setProfileCode] = useState('');
+  const [awaitingProfileCode, setAwaitingProfileCode] = useState(false);
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const dashboardPath = getDashboardPathByRole(nivelAcesso);
   const userId = Number(localStorage.getItem('userId'));
@@ -67,13 +69,22 @@ function Profile() {
   const handleSaveBio = async () => {
     if (!currentUser) return;
     try {
+      if (!awaitingProfileCode) {
+        await api.post('/recuperacao-senha/perfil/solicitar-codigo', { usuarioId: userId });
+        setAwaitingProfileCode(true);
+        setFeedback({ type: 'info', message: 'Código enviado para seu e-mail.' });
+        return;
+      }
+      await api.post('/recuperacao-senha/perfil/confirmar', { usuarioId: userId, codigo: profileCode });
       const payload = { ...currentUser, bio, foto, fotoCapa };
       await api.put(`/usuario/${userId}`, payload);
+      setAwaitingProfileCode(false);
+      setProfileCode('');
       setUsers((items) => items.map((item) => Number(item.id) === userId ? { ...item, bio, foto, fotoCapa } : item));
-      setFeedback({ type: 'success', message: 'Perfil salvo no banco.' });
+      setFeedback({ type: 'success', message: 'Biografia salva.' });
     } catch (error) {
       console.error(error);
-      setFeedback({ type: 'error', message: 'Não foi possível salvar a biografia.' });
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'Código inválido ou não foi possível salvar o perfil.' });
     }
   };
 
@@ -122,7 +133,9 @@ function Profile() {
           ...(nivelAcesso !== 'ADMIN'
             ? [{ label: 'Meus cursos', onClick: () => navigate(dashboardPath, { state: { section: 'courses' } }) }]
             : [{ label: 'Painel', onClick: () => navigate(dashboardPath, { state: { section: 'panel' } }) }]),
-          { label: 'Chat', onClick: () => navigate(dashboardPath, { state: { section: 'chat' } }) },
+          ...(nivelAcesso !== 'ADMIN'
+            ? [{ label: 'Chat', onClick: () => navigate(dashboardPath, { state: { section: 'chat' } }) }]
+            : []),
         ]}
         onGoProfile={() => navigate('/profile')}
         onLogout={handleLogout}
@@ -198,13 +211,14 @@ function Profile() {
           <article className="dash-summary-card">
             <h3>Biografia</h3>
             <textarea value={bio} onChange={(event) => setBio(event.target.value)} placeholder="Fale um pouco sobre você" maxLength={2000} />
-            <button type="button" className="btn btn-primary" style={{ marginTop: '8px' }} onClick={handleSaveBio}>Salvar bio</button>
+            {awaitingProfileCode && <input value={profileCode} onChange={(event) => setProfileCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="Código enviado por e-mail" maxLength={6} inputMode="numeric" />}
+            <button type="button" className="btn btn-primary" style={{ marginTop: '8px' }} onClick={handleSaveBio}>{awaitingProfileCode ? 'Confirmar alterações' : 'Salvar bio'}</button>
           </article>
           <article className="dash-summary-card">
             <h3>Fotos do perfil</h3>
             <label style={{ marginTop: '8px' }}>Foto de perfil<input type="file" accept="image/*" onChange={(event) => readImage(event.target.files?.[0], setFoto)} /></label>
             <label style={{ marginTop: '8px' }}>Foto de capa<input type="file" accept="image/*" onChange={(event) => readImage(event.target.files?.[0], setFotoCapa)} /></label>
-            <button type="button" className="btn btn-primary" style={{ marginTop: '8px' }} onClick={handleSaveBio}>Salvar fotos</button>
+            <button type="button" className="btn btn-primary" style={{ marginTop: '8px' }} onClick={handleSaveBio}>{awaitingProfileCode ? 'Confirmar alterações' : 'Salvar fotos'}</button>
           </article>
 
           <article className="dash-summary-card">

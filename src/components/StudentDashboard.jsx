@@ -44,7 +44,8 @@ function StudentDashboardPage() {
         setEnrolledCourseIds([...new Set(enrolledIds)]);
 
         const visibleCourses = (coursesResponse.data || []).filter(
-          (course) => course.statusCurso !== false && course.statusCurso !== 'Inativo'
+          (course) => String(course.cursoAprovado || '').toLowerCase() === 'aprovado'
+            && course.statusCurso !== false && course.statusCurso !== 'Inativo'
         );
         const visibleUsers = (usersResponse.data || []).filter((user) => Number(user.id) !== currentUserId);
 
@@ -144,7 +145,7 @@ function StudentDashboardPage() {
         setEnrolledCourseIds((items) => items.filter((id) => id !== Number(course.id)));
         removeUserCourseEntry(currentUserId, course.id);
         setCourseStateTick((value) => value + 1);
-        setFeedback({ type: 'success', message: `Curso removido: ${course.nome}.` });
+          setFeedback({ type: 'success', message: `Curso removido: ${course.nome}.` });
         return;
       }
       await api.post(`/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
@@ -167,6 +168,7 @@ function StudentDashboardPage() {
       <AppHeader
         subtitle="Area do aluno"
         onHome={() => navigate('/')}
+        onMyCourses={() => setActiveSection('courses')}
         navItems={[
           { label: 'Meus cursos', onClick: () => setActiveSection('courses'), active: activeSection === 'courses' },
           { label: 'Chat', onClick: () => navigate('/chat') },

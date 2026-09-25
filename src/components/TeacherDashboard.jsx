@@ -73,7 +73,7 @@ function TeacherDashboardPage() {
     try {
       await api.delete(`/curso/${id}`);
       setCourses((currentCourses) => currentCourses.filter((course) => course.id !== id));
-      setFeedback({ type: 'success', message: `Curso excluido com sucesso: ${nome}.` });
+      setFeedback({ type: 'success', message: `Curso excluído: ${nome}.` });
     } catch (error) {
       console.error('Erro ao excluir curso:', error);
       setFeedback({ type: 'error', message: 'Erro ao excluir o curso. Tente novamente.' });
@@ -90,6 +90,7 @@ function TeacherDashboardPage() {
       <AppHeader
         subtitle="Area do professor"
         onHome={() => navigate('/')}
+        onMyCourses={() => setActiveSection('courses')}
         navItems={[
           { label: 'Meus cursos', onClick: () => setActiveSection('courses'), active: activeSection === 'courses' },
           { label: 'Chat', onClick: () => navigate('/chat') },
@@ -196,7 +197,7 @@ function TeacherDashboardPage() {
             <div className="section-heading section-heading-inline">
               <div>
                 <span className="section-kicker">Meus cursos</span>
-                <h3>Todos os cursos publicados pelo professor</h3>
+                <h3>Meus cursos</h3>
               </div>
               <button type="button" className="btn btn-primary" onClick={() => navigate('/publish-course')}>
                 Publicar curso
@@ -212,6 +213,8 @@ function TeacherDashboardPage() {
                       <h3>{course.nome}</h3>
                       <p>{course.descricao}</p>
                       <small>{formatCourseDuration(course)}</small>
+                      {course.cursoAprovado === 'Pendente' && <small className="approval-decision">Pendente de aprovação do administrador</small>}
+                      {course.cursoAprovado === 'Reprovado' && <small className="approval-decision approval-decision-rejeitado">Curso recusado: {course.motivoRecusa || 'motivo não informado'}</small>}
                     </div>
                     <div className="card-button-row">
                       <button type="button" className="btn btn-ghost" onClick={() => navigate(`/update-course/${course.id}`)}>

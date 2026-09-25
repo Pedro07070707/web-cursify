@@ -149,7 +149,7 @@ img { max-width: 100%; }
 .search-hero-input, .chat-search {
   border-radius: 20px; background: var(--surface); border: 1px solid var(--border); padding: 14px 16px;
 }
-.search-hero-input input, .chat-search input, .chat-composer input, .form-group input, .form-group select, .form-group textarea {
+.search-hero-input, .search-hero-input input, .chat-search input, .chat-composer input, .form-group input, .form-group select, .form-group textarea {
   width: 100%; border: 0; outline: none; background: transparent; color: var(--text);
 }
 
@@ -173,6 +173,14 @@ img { max-width: 100%; }
 .dashboard-hero-stats article { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 18px; display: grid; gap: 4px; }
 .dashboard-hero-stats strong { font-size: 1.8rem; color: var(--primary-strong); }
 .section-stack { padding: 28px; }
+.course-detail-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 8px 0 12px; }
+.course-detail-meta > div { display: grid; gap: 6px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--secondary-soft); }
+.course-detail-meta span { color: var(--muted); font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.course-detail-meta strong { color: var(--text); font-size: .96rem; }
+.material-link-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.material-link-button { display: inline-flex; align-items: center; padding: 10px 14px; border-radius: 10px; background: var(--primary); color: #fff; font-weight: 700; text-decoration: none; transition: transform .15s, opacity .15s; }
+.material-link-button:hover { transform: translateY(-1px); opacity: .9; }
+@media (max-width: 760px) { .course-detail-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .course-grid, .modern-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
 .course-card-body { display: grid; gap: 10px; cursor: pointer; }
 .chat-workspace { grid-template-columns: 320px minmax(0, 1fr); align-items: stretch; }
