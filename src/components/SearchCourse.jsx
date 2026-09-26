@@ -12,6 +12,7 @@ function SearchCoursePage() {
   const { theme, toggleTheme } = useTheme();
   const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [enrolledIds, setEnrolledIds] = useState([]);
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const currentUserId = Number(localStorage.getItem('userId'));
   const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'student';
@@ -36,6 +37,12 @@ function SearchCoursePage() {
           }
         }));
         setCourses(coursesWithEnrollment);
+        if (currentUserId) {
+          const enrollmentsResponse = await api.get('/usuarioCurso');
+          setEnrolledIds((enrollmentsResponse.data || [])
+            .filter((row) => Number(row.usuario?.id ?? row.usuario_id) === currentUserId)
+            .map((row) => Number(row.curso?.id ?? row.curso_id)));
+        }
       } catch (error) {
         console.error('Erro ao carregar dados da busca:', error);
         alert('Erro ao carregar os dados da busca. Verifique a API.');
@@ -56,9 +63,11 @@ function SearchCoursePage() {
       if (existingEntry?.enrolled) {
         await api.delete(`/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
         removeUserCourseEntry(currentUserId, course.id);
+        setEnrolledIds((items) => items.filter((id) => id !== Number(course.id)));
       } else {
         await api.post(`/usuarioCurso/inscrever/${currentUserId}/${course.id}`);
         saveUserCourseEntry(currentUserId, course.id, { enrolled: true, status: 'Em progresso' });
+        setEnrolledIds((items) => items.includes(Number(course.id)) ? items : [...items, Number(course.id)]);
       }
       setCourses((currentCourses) => [...currentCourses]);
     } catch (error) {
@@ -97,7 +106,7 @@ function SearchCoursePage() {
           results={results}
           courseActionLabel={userType === 'student' ? 'Adicionar aos meus cursos' : undefined}
           onCourseAction={userType === 'student' ? handleToggleCourse : undefined}
-          isCourseSelected={(course) => Boolean(getUserCourseEntry(currentUserId, course.id)?.enrolled)}
+          isCourseSelected={(course) => enrolledIds.includes(Number(course.id))}
           onOpenCourse={(course) => navigate(`/course-view/${course.id}`)}
         />
       </main>

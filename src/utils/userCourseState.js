@@ -53,16 +53,22 @@ export const getCourseRatings = () => {
   }
 };
 
-export const saveCourseRating = (userId, courseId, nota, feedbackText = '') => {
+export const saveCourseRating = (userId, courseId, nota) => {
   const all = getCourseRatings();
   const key = `${userId}:${courseId}`;
-  all[key] = { userId, courseId: String(courseId), nota, feedback: feedbackText, createdAt: new Date().toISOString() };
+  all[key] = { userId, courseId: String(courseId), nota, createdAt: new Date().toISOString() };
   localStorage.setItem(RATINGS_KEY, JSON.stringify(all));
 };
 
 export const getUserRatingForCourse = (userId, courseId) => {
   const all = getCourseRatings();
   return all[`${userId}:${courseId}`] || null;
+};
+
+export const removeCourseRating = (userId, courseId) => {
+  const all = getCourseRatings();
+  delete all[`${userId}:${courseId}`];
+  localStorage.setItem(RATINGS_KEY, JSON.stringify(all));
 };
 
 export const getRatingsForCourse = (courseId) => {

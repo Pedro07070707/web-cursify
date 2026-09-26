@@ -5,7 +5,6 @@ import AppHeader from './AppHeader';
 import InlineAlert from './InlineAlert';
 import { useTheme } from '../utils/theme';
 import { NIVEIS, formatCourseDuration } from '../utils/ui';
-import { calcCourseAverage, getRatingsForCourse } from '../utils/userCourseState';
 
 const CATEGORY_COLORS = {
   FUNDAMENTAL_1: { bg: 'rgba(70,130,180,0.12)', color: '#326791' },
@@ -40,7 +39,7 @@ function StarDisplay({ average, count }) {
   );
 }
 
-function CourseCard({ course, onOpen, isFavorite, onToggleFavorite }) {
+function CourseCard({ course, onOpen, onToggleFavorite, ratingSummary = { average: 0, count: 0 }, isEnrolled = false, onToggleEnrollment }) {
   const colors = CATEGORY_COLORS[course.categoria] || CATEGORY_COLORS.OUTROS;
   const gradient = COVER_GRADIENTS[course.id % COVER_GRADIENTS.length];
   const initials = (course.nome || '?').split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -66,12 +65,18 @@ function CourseCard({ course, onOpen, isFavorite, onToggleFavorite }) {
         </div>
 
         <h3 className="catalog-card-title">{course.nome}</h3>
+        {isEnrolled ? <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem' }}>✓ Adicionado aos meus cursos</div> : null}
         <p className="catalog-card-desc">{course.descricao}</p>
-        <StarDisplay average={calcCourseAverage(course.id)} count={getRatingsForCourse(course.id).length} />
+        <StarDisplay average={ratingSummary.count ? ratingSummary.average : null} count={ratingSummary.count} />
 
         <button type="button" className="btn btn-ghost" onClick={onToggleFavorite} style={{ marginBottom: '8px' }}>
           {isFavorite ? '♥ Remover favorito' : '♡ Adicionar aos favoritos'}
         </button>
+        {onToggleEnrollment ? (
+          <button type="button" className="btn btn-ghost" onClick={onToggleEnrollment} style={{ marginBottom: '8px' }}>
+            {isEnrolled ? 'Remover dos meus cursos' : 'Adicionar aos meus cursos'}
+          </button>
+        ) : null}
         <button type="button" className="btn btn-primary catalog-card-btn" onClick={onOpen}>
           Ver curso
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -92,6 +97,8 @@ function CourseCatalog() {
   const [minStars, setMinStars] = useState(0);
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const [favorites, setFavorites] = useState([]);
+  const [ratingSummaries, setRatingSummaries] = useState({});
+  const [enrolledIds, setEnrolledIds] = useState([]);
   const isLoggedIn = Boolean(localStorage.getItem('userId'));
 
   useEffect(() => {
@@ -101,8 +108,21 @@ function CourseCatalog() {
           (c) => String(c.cursoAprovado).toLowerCase() === 'aprovado'
         );
         setCourses(visible);
+        Promise.all(visible.map(async (course) => {
+          try {
+            const { data } = await api.get('/preferencia/curso', { params: { cursoId: course.id } });
+            return [course.id, data];
+          } catch {
+            return [course.id, { average: 0, count: 0 }];
+          }
+        })).then((entries) => setRatingSummaries(Object.fromEntries(entries)));
       })
       .catch(() => setFeedback({ type: 'error', message: 'Erro ao carregar cursos.' }));
+  }, []);
+
+  useEffect(() => {
+    const userId = Number(localStorage.getItem('userId'));
+    if (userId) api.get('/usuarioCurso').then(({ data }) => setEnrolledIds((data || []).filter((row) => Number(row.usuario?.id ?? row.usuario_id) === userId).map((row) => Number(row.curso?.id ?? row.curso_id))));
   }, []);
 
   useEffect(() => {
@@ -119,16 +139,32 @@ function CourseCatalog() {
     setFavorites((items) => active ? items.filter((id) => id !== Number(courseId)) : [...items, Number(courseId)]);
   };
 
+  const toggleEnrollment = async (courseId) => {
+    const userId = Number(localStorage.getItem('userId'));
+    if (!userId) {
+      setFeedback({ type: 'info', message: 'Entre na sua conta para adicionar cursos.' });
+      return;
+    }
+    const enrolled = enrolledIds.includes(Number(courseId));
+    try {
+      if (enrolled) await api.delete(`/usuarioCurso/inscrever/${userId}/${courseId}`);
+      else await api.post(`/usuarioCurso/inscrever/${userId}/${courseId}`);
+      setEnrolledIds((items) => enrolled ? items.filter((id) => id !== Number(courseId)) : [...items, Number(courseId)]);
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'Não foi possível atualizar seus cursos.' });
+    }
+  };
+
   const filtered = useMemo(() => {
     const term = isLoggedIn ? searchTerm.trim().toLowerCase() : '';
     return courses.filter((c) => {
       const matchSearch = !term || `${c.nome || ''} ${c.descricao || ''} ${c.categoria || ''}`.toLowerCase().includes(term);
       const matchCategory = !selectedCategory || c.categoria === selectedCategory;
-      const avg = calcCourseAverage(c.id);
+      const avg = ratingSummaries[c.id]?.count ? Number(ratingSummaries[c.id].average) : null;
       const matchStars = minStars === 0 || (avg !== null && avg >= minStars);
       return matchSearch && matchCategory && matchStars;
     });
-  }, [courses, searchTerm, selectedCategory, minStars, isLoggedIn]);
+  }, [courses, searchTerm, selectedCategory, minStars, isLoggedIn, ratingSummaries]);
 
   const categories = useMemo(() => [...new Set(courses.map((c) => c.categoria).filter(Boolean))], [courses]);
 
@@ -247,6 +283,9 @@ function CourseCatalog() {
                   onOpen={() => navigate(`/course-view/${course.id}`)}
                   isFavorite={favorites.includes(Number(course.id))}
                   onToggleFavorite={() => toggleFavorite(course.id)}
+                  ratingSummary={ratingSummaries[course.id]}
+                  isEnrolled={enrolledIds.includes(Number(course.id))}
+                  onToggleEnrollment={isLoggedIn ? () => toggleEnrollment(course.id) : undefined}
                 />
               ))}
             </div>

@@ -36,7 +36,13 @@ export const useChatWorkspace = ({ currentUserId, users, userName }) => {
         const last = data.length ? normalize(data[data.length - 1]) : null;
         return { ...user, lastMessage: last ? { mensagem: last.mensagem, dataChat: last.dataChat, cursoNome: last.cursoNome } : null };
       }));
-      setConversations(rows.filter((u) => u.lastMessage).sort((a, b) => new Date(b.lastMessage.dataChat) - new Date(a.lastMessage.dataChat)));
+      // Exibe todos os contatos com os quais o usuário pode conversar,
+      // inclusive aqueles que ainda não possuem mensagens.
+      setConversations(rows.sort((a, b) => {
+        if (!a.lastMessage) return 1;
+        if (!b.lastMessage) return -1;
+        return new Date(b.lastMessage.dataChat) - new Date(a.lastMessage.dataChat);
+      }));
       if (selectedChat) {
         const { data } = await api.get(`/chat/conversa/${currentUserId}/${selectedChat.id}`);
         setMessages(data.map(normalize));

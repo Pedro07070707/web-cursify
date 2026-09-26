@@ -43,9 +43,9 @@ function DirectorySearchSection({
                   <button type="button" className="btn btn-ghost" onClick={() => onOpenCourse(course)}>
                     Abrir
                   </button>
-                  {courseActionLabel && onCourseAction && !(course.courseFull ?? (Number(course.numeroAlunos) >= 100)) ? (
+                  {courseActionLabel && onCourseAction && (isCourseSelected?.(course) || !(course.courseFull ?? (Number(course.numeroAlunos) >= 100))) ? (
                     <button type="button" className="btn btn-primary" onClick={() => onCourseAction(course)}>
-                      {isCourseSelected?.(course) ? `Remover` : courseActionLabel}
+                      {isCourseSelected?.(course) ? '✓ Adicionado aos meus cursos' : courseActionLabel}
                     </button>
                   ) : null}
                   {(course.courseFull ?? (Number(course.numeroAlunos) >= 100)) ? <small>Curso cheio</small> : null}

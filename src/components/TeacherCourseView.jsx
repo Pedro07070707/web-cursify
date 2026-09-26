@@ -27,8 +27,7 @@ function TeacherCourseViewPage() {
   const userType = nivelAcesso === 'ADMIN' ? 'admin' : 'teacher';
 
   const goBack = () => {
-    const historyIndex = Number(window.history.state?.idx);
-    if (Number.isFinite(historyIndex) && historyIndex > 1) {
+    if (window.history.length > 1) {
       navigate(-1);
       return;
     }
@@ -95,6 +94,7 @@ function TeacherCourseViewPage() {
         brandDetail={`${NIVEIS[course.categoria] || course.categoria} - ${course.nome}`}
         onBack={goBack}
         onHome={() => navigate('/')}
+        onMyCourses={() => navigate('/teacher', { state: { section: 'courses' } })}
         onGoProfile={() => navigate('/profile')}
         onLogout={() => {
           clearSessionData();

@@ -8,9 +8,9 @@ function CourseRedirect() {
 
   useEffect(() => {
     if (nivelAcesso === 'PROFESSOR' || nivelAcesso === 'ADMIN') {
-      navigate(`/teacher-course/${id}`);
+      navigate(`/teacher-course/${id}`, { replace: true });
     } else {
-      navigate(`/student-course/${id}`);
+      navigate(`/student-course/${id}`, { replace: true });
     }
   }, [id, nivelAcesso, navigate]);
 

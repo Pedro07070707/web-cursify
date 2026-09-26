@@ -13,7 +13,7 @@ function ChangePassword() {
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [tipoConta, setTipoConta] = useState(localStorage.getItem('nivelAcesso') || 'ALUNO');
-  const [confirmEmail, setConfirmEmail] = useState('');
+  const [confirmSenha, setConfirmSenha] = useState('');
   const [feedback, setFeedback] = useState({ type: 'info', message: '' });
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -61,8 +61,8 @@ function ChangePassword() {
       return;
     }
 
-    if (confirmEmail.trim().toLowerCase() !== String(currentUser.email || '').toLowerCase()) {
-      setFeedback({ type: 'error', message: 'Digite o email da conta para confirmar a atualizacao.' });
+    if (!confirmSenha) {
+      setFeedback({ type: 'error', message: 'Digite sua senha atual para confirmar a atualização.' });
       return;
     }
 
@@ -79,6 +79,7 @@ function ChangePassword() {
     const nextRole = currentUser.nivelAcesso === 'ADMIN' ? 'ADMIN' : tipoConta;
 
     try {
+      await api.post('/usuario/login', { email: currentUser.email, senha: confirmSenha });
       const payload = {
         ...currentUser,
         nome,
@@ -96,17 +97,17 @@ function ChangePassword() {
       )));
       setNovaSenha('');
       setConfirmarSenha('');
-      setConfirmEmail('');
+      setConfirmSenha('');
       setFeedback({
         type: nextRole === 'PROFESSOR' && persistedUser.nivelAcesso !== 'PROFESSOR' ? 'info' : 'success',
         message: nextRole === 'PROFESSOR' && persistedUser.nivelAcesso !== 'PROFESSOR'
           ? 'Solicitação enviada. A conta continuará como aluno até a aprovação do administrador.'
           : 'Perfil atualizado.',
       });
-      window.setTimeout(() => window.location.reload(), 800);
+      window.setTimeout(() => navigate('/profile'), 800);
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
-      setFeedback({ type: 'error', message: 'Erro ao atualizar perfil. Tente novamente.' });
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'Senha atual inválida ou não foi possível atualizar o perfil.' });
     }
   };
 
@@ -198,14 +199,15 @@ function ChangePassword() {
             </div>
 
             <div className="form-group">
-              <label>Confirmar com o email:</label>
+              <label>Senha atual:</label>
               <input
-                type="email"
-                value={confirmEmail}
-                onChange={(e) => setConfirmEmail(e.target.value)}
+                type="password"
+                value={confirmSenha}
+                onChange={(e) => setConfirmSenha(e.target.value)}
                 required
-                placeholder="Digite seu email para confirmar"
+                placeholder="Digite sua senha para confirmar"
               />
+              <small className="field-help">Sua senha atual é necessária para confirmar a alteração.</small>
             </div>
 
             <button type="submit" className="btn btn-primary auth-submit">

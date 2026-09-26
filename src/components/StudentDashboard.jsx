@@ -134,7 +134,9 @@ function StudentDashboardPage() {
   };
 
   const handleToggleCourse = async (course) => {
-    const existingEntry = getUserCourseEntry(currentUserId, course.id);
+      const existingEntry = enrolledCourseIds.includes(Number(course.id))
+        ? { enrolled: true }
+        : getUserCourseEntry(currentUserId, course.id);
     try {
       if (existingEntry?.enrolled) {
         if (Number(course.progresso) >= 100 || getCourseStatusLabel(course.userStatus) === 'Concluido') {
@@ -190,7 +192,7 @@ function StudentDashboardPage() {
           results={searchResults}
           courseActionLabel="Adicionar aos meus cursos"
           onCourseAction={handleToggleCourse}
-          isCourseSelected={(course) => Boolean(getUserCourseEntry(currentUserId, course.id)?.enrolled)}
+          isCourseSelected={(course) => enrolledCourseIds.includes(Number(course.id))}
           onOpenCourse={(course) => navigate(`/course-view/${course.id}`)}
           onUserAction={() => navigate('/profile')}
         />

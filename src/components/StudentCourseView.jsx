@@ -5,7 +5,7 @@ import AppHeader from './AppHeader';
 import InlineAlert from './InlineAlert';
 import CourseContentListSection from './CourseContentListSection';
 import { CONTENT_TYPES, getCourseContentCourseId, normalizeCourseContentItem } from './courseContentConfig';
-import { getUserCourseEntry, saveUserCourseEntry, saveCourseRating, getUserRatingForCourse, calcCourseAverage, getRatingsForCourse } from '../utils/userCourseState';
+import { getUserCourseEntry, saveUserCourseEntry, saveCourseRating, removeCourseRating, getUserRatingForCourse, calcCourseAverage, getRatingsForCourse } from '../utils/userCourseState';
 import { clearSessionData } from '../utils/authStorage';
 import { getDashboardPathByRole } from '../utils/ui';
 
@@ -38,7 +38,7 @@ function StudentCourseViewPage() {
   const [savedProgress, setSavedProgress] = useState(0);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [ratingStars, setRatingStars] = useState(0);
-  const [ratingFeedback, setRatingFeedback] = useState('');
+  const [ratingSummary, setRatingSummary] = useState({ average: 0, count: 0 });
   const navigate = useNavigate();
   const nivelAcesso = localStorage.getItem('nivelAcesso');
   const currentUserId = Number(localStorage.getItem('userId'));
@@ -47,6 +47,10 @@ function StudentCourseViewPage() {
   const homePath = isLoggedIn ? getDashboardPathByRole(nivelAcesso) : '/';
 
   const goBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
     navigate(homePath);
   };
 
@@ -86,6 +90,9 @@ function StudentCourseViewPage() {
           return;
         }
         setCourse(response.data);
+        api.get('/preferencia/curso', { params: { cursoId: id, usuarioId: currentUserId } })
+          .then(({ data }) => setRatingSummary({ average: Number(data.average) || 0, count: Number(data.count) || 0 }))
+          .catch(() => setRatingSummary({ average: 0, count: 0 }));
 
         if (isLoggedIn && userType === 'student') {
           const progressResponse = await api.get(`/usuarioCurso/progresso/${currentUserId}/${id}`);
@@ -110,7 +117,11 @@ function StudentCourseViewPage() {
             .filter((item) => String(getCourseContentCourseId(item)) === String(id))
             .map((item) => normalizeCourseContentItem(config.key, item))
             .forEach((item) => {
-              const key = [item.titulo, item.subtitulo, item.conteudo, item.link].join('|');
+              const key = item.id
+                ? `id:${item.id}`
+                : config.key === 'exercicios'
+                  ? ['exercicio', item.enunciado, ...(item.alternativas || []), item.respostaCorreta].join('|')
+                  : [item.titulo, item.subtitulo, item.conteudo, ...(item.links || []).map((link) => link.url)].join('|');
               if (!unique.has(key)) unique.set(key, item);
             });
           nextContents[config.key] = [...unique.values()];
@@ -152,9 +163,12 @@ function StudentCourseViewPage() {
     }
   };
 
-  const handleSubmitRating = () => {
+  const handleSubmitRating = async () => {
     if (ratingStars === 0) return;
-    saveCourseRating(currentUserId, id, ratingStars, ratingFeedback);
+    await api.put('/preferencia', { usuarioId: currentUserId, cursoId: Number(id), tipo: 'AVALIACAO', valor: String(ratingStars) });
+    saveCourseRating(currentUserId, id, ratingStars);
+    const { data } = await api.get('/preferencia/curso', { params: { cursoId: id, usuarioId: currentUserId } });
+    setRatingSummary({ average: Number(data.average) || 0, count: Number(data.count) || 0 });
     setShowRatingModal(false);
     setFeedback({ type: 'success', message: `Avaliação de ${ratingStars} estrela${ratingStars > 1 ? 's' : ''} registrada. Obrigado!` });
   };
@@ -170,6 +184,7 @@ function StudentCourseViewPage() {
         onBack={goBack}
         brandDetail={`${NIVEIS[course.categoria] || course.categoria} - ${course.nome}`}
         onHome={() => navigate('/')}
+        onMyCourses={() => navigate('/student', { state: { section: 'courses' } })}
         navItems={[
           ...(userType === 'student' ? [{ label: 'Meus cursos', onClick: () => navigate(homePath, { state: { section: 'courses' } }) }] : []),
           { label: 'Perfil', onClick: () => navigate('/profile') },
@@ -214,9 +229,9 @@ function StudentCourseViewPage() {
           </div>
 
           {(() => {
-            const avg = calcCourseAverage(id);
-            const count = getRatingsForCourse(id).length;
-            return avg !== null ? (
+            const avg = ratingSummary.average;
+            const count = ratingSummary.count;
+            return avg > 0 ? (
               <div className="course-rating-display">
                 {[1,2,3,4,5].map((s) => (
                   <svg key={s} width="16" height="16" viewBox="0 0 24 24" fill={s <= Math.round(avg) ? '#f59e0b' : 'none'} stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -234,7 +249,7 @@ function StudentCourseViewPage() {
           <div className="hero-actions">
             <button className="btn btn-primary" onClick={() => navigate('/chat', { state: { openUserId: course.professorId } })}>Chat com Professor</button>
             {studentStatus === 'Concluido' || savedProgress >= 100 ? (
-              <button className="btn btn-secondary" onClick={async () => { await persistProgress(0, false); setSavedProgress(0); setStudentStatus('Em progresso'); setCompletedMaterials(new Set()); setCompletedExercises(new Set()); }}>
+              <button className="btn btn-secondary" onClick={async () => { await api.delete('/preferencia', { params: { usuarioId: currentUserId, cursoId: id, tipo: 'AVALIACAO' } }).catch(() => {}); removeCourseRating(currentUserId, id); await persistProgress(0, false); setSavedProgress(0); setStudentStatus('Em progresso'); setCompletedMaterials(new Set()); setCompletedExercises(new Set()); }}>
                 Reiniciar curso
               </button>
             ) : null}
@@ -264,17 +279,6 @@ function StudentCourseViewPage() {
               ))}
             </div>
             {ratingStars > 0 && <p className="rating-stars-label">{ratingStars} estrela{ratingStars > 1 ? 's' : ''}</p>}
-
-            <div className="form-group" style={{ marginTop: '12px' }}>
-              <label>Feedback (opcional)</label>
-              <textarea
-                className="publish-textarea"
-                rows={3}
-                placeholder="Conte o que achou do curso..."
-                value={ratingFeedback}
-                onChange={(e) => setRatingFeedback(e.target.value)}
-              />
-            </div>
 
             <div className="rating-modal-actions">
               <button

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function AppHeader({
   variant = 'default',
@@ -19,6 +20,7 @@ function AppHeader({
   subtitle,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
   const menuRef = useRef(null);
   const isLoggedIn = Boolean(localStorage.getItem('userId'));
   const isAdmin = localStorage.getItem('nivelAcesso') === 'ADMIN';
@@ -27,30 +29,33 @@ function AppHeader({
   const isPresentation = variant === 'home';
   const dashboardPath = isAdmin ? '/admin' : isTeacher ? '/teacher' : '/student';
   const standardNavItems = isPresentation ? [] : [
-    { label: 'Início', onClick: () => window.location.assign(dashboardPath) },
-    ...(isAdmin ? [{ label: 'Painel Admin', onClick: onAdminPanel || (() => window.location.assign('/admin')) }] : []),
-    ...(!isAdmin ? [{ label: 'Meus cursos', onClick: onMyCourses || (() => window.location.assign(dashboardPath)) }] : []),
-    ...((isStudent || isTeacher) ? [{ label: 'Chat', onClick: () => window.location.assign('/chat') }] : []),
+    { label: 'Início', onClick: () => navigate(dashboardPath) },
+    ...(isAdmin ? [{ label: 'Painel Admin', onClick: onAdminPanel || (() => navigate('/admin', { state: { section: 'panel' } })) }] : []),
+    ...(!isAdmin ? [{ label: 'Meus cursos', onClick: onMyCourses || (() => navigate(dashboardPath)) }] : []),
+    ...((isStudent || isTeacher) ? [{ label: 'Chat', onClick: () => navigate('/chat') }] : []),
   ];
-  const reservedLabels = new Set(['perfil', 'tema', 'sair', 'painel', 'painel do professor', 'painel admin']);
+  // Itens fornecidos pela tela atual devem substituir os itens padrão do menu.
+  // Isso permite, por exemplo, que "Meus cursos" preserve a seção correta ao
+  // ser acionado dentro de uma tela de curso.
+  const reservedLabels = new Set(['perfil', 'tema', 'sair', 'painel', 'painel do professor', 'painel admin', 'meus cursos']);
   const effectiveNavItems = [...standardNavItems, ...navItems.filter((item) => !reservedLabels.has(item.label.toLowerCase()))]
     .filter((item, index, items) => items.findIndex((candidate) => candidate.label.toLowerCase() === item.label.toLowerCase()) === index);
   const handleBack = isPresentation ? null : (onBack || (() => {
     const historyIndex = Number(window.history.state?.idx);
-    if (isLoggedIn && Number.isFinite(historyIndex) && historyIndex > 1) {
-      window.history.back();
+    if (isLoggedIn && Number.isFinite(historyIndex) && historyIndex > 0) {
+      navigate(-1);
       return;
     }
     if (isLoggedIn) {
-      window.location.assign(dashboardPath);
+      navigate(dashboardPath);
       return;
     }
-    if (window.history.length > 1) window.history.back();
-    else window.location.assign('/');
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
   }));
 
   const handleHome = () => {
-    window.location.assign('/');
+    (onHome || (() => navigate('/')))();
   };
 
   useEffect(() => {

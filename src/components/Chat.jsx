@@ -27,7 +27,9 @@ function Chat() {
       try {
         const usersResponse = await api.get(`/chat/contatos/${currentUserId}`);
         const allUsers = usersResponse.data || [];
-        const filteredUsers = allUsers.filter((user) => Number(user.id) !== currentUserId);
+        const filteredUsers = [...new Map(allUsers
+          .filter((user) => Number(user.id) !== currentUserId)
+          .map((user) => [Number(user.id), user])).values()];
         setUsers(filteredUsers);
         const openUserId = location.state?.openUserId;
         if (openUserId) {

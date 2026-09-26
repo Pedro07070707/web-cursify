@@ -98,7 +98,7 @@ function ChatWorkspace({
                 <div className="chat-item-avatar">{getInitials(user.nome)}</div>
                 <div className="chat-item-info">
                   <strong>{user.nome}</strong>
-                  <span>{user.lastMessage?.cursoNome ? `${getUserRoleLabel(user.nivelAcesso)} (${user.lastMessage.cursoNome})` : user.lastMessage?.mensagem || getUserRoleLabel(user.nivelAcesso)}</span>
+                  <span>{user.lastMessage?.mensagem || 'Nenhuma mensagem ainda'}</span>
                 </div>
               </button>
             ))
@@ -115,8 +115,8 @@ function ChatWorkspace({
             <div className="chat-panel-header">
               <div className="chat-panel-avatar">{getInitials(selectedChat.nome)}</div>
               <div>
-                <h3>{selectedChat.nome}</h3>
-                <p>{getUserRoleLabel(selectedChat.nivelAcesso)}{messages[0]?.cursoNome ? ` (${messages[0].cursoNome})` : ''}</p>
+                <h3>{selectedChat.nome}{selectedChat.cursoNome ? ` (${selectedChat.cursoNome})` : messages[0]?.cursoNome ? ` (${messages[0].cursoNome})` : ''}</h3>
+                <p>{getUserRoleLabel(selectedChat.nivelAcesso)}</p>
               </div>
             </div>
 
