@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../utils/api';
 import AppHeader from './AppHeader';
 import ChatWorkspace from './ChatWorkspace';
@@ -19,6 +19,7 @@ function Chat() {
   const currentUserId = rawUserId ? Number(rawUserId) : null;
   const dashboardPath = getDashboardPathByRole(nivelAcesso);
 
+  const location = useLocation();
   const chat = useChatWorkspace({ currentUserId, users, userName });
 
   useEffect(() => {
@@ -28,6 +29,11 @@ function Chat() {
         const allUsers = usersResponse.data || [];
         const filteredUsers = allUsers.filter((user) => Number(user.id) !== currentUserId);
         setUsers(filteredUsers);
+        const openUserId = location.state?.openUserId;
+        if (openUserId) {
+          const target = allUsers.find((u) => Number(u.id) === Number(openUserId));
+          if (target) chat.handleSelectChat(target);
+        }
       } catch (error) {
         console.error('Erro ao carregar dados do chat:', error);
       }

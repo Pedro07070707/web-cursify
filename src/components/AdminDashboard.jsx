@@ -404,6 +404,7 @@ function AdminDashboardPage() {
                         <small>CPF: {user.cpf || '-'}</small>
                       </div>
                       <div className="approval-item-actions">
+                        <button type="button" className="btn btn-ghost" onClick={() => navigate(`/admin/professor/${user.id}`)}>Visualizar perfil</button>
                         <button type="button" className="btn btn-primary" onClick={() => handleApproveTeacher(user.id, user.nome)}>Aprovar</button>
                         <button type="button" className="btn btn-danger" onClick={() => handleRejectTeacher(user.id, user.nome)}>Rejeitar</button>
                       </div>

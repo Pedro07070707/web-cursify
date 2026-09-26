@@ -50,9 +50,7 @@ function AppHeader({
   }));
 
   const handleHome = () => {
-    if (isLoggedIn) window.location.assign(dashboardPath);
-    else if (onHome) onHome();
-    else window.location.assign('/');
+    window.location.assign('/');
   };
 
   useEffect(() => {

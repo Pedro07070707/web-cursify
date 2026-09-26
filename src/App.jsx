@@ -22,6 +22,7 @@ import ManageCourseContent from './components/ManageCourseContent';
 import CourseCatalog from './components/CourseCatalog';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import TeacherProfileView from './components/TeacherProfileView';
 import './App.css';
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
           <Route path="/catalog" element={<CourseCatalog />} />
           <Route path="/esqueci-senha" element={<ForgotPassword />} />
           <Route path="/redefinir-senha" element={<ResetPassword />} />
+          <Route path="/admin/professor/:id" element={<TeacherProfileView />} />
         </Routes>
       </div>
     </Router>

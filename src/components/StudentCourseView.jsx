@@ -232,7 +232,7 @@ function StudentCourseViewPage() {
           <CourseContentListSection locked={studentStatus === 'Concluido' || savedProgress >= 100} title="Exercicios" items={contents.exercicios} typeKey="exercicios" emptyMessage="Nenhum exercicio disponivel." onResolved={(exerciseId) => { if (studentStatus === 'Concluido' || savedProgress >= 100) return; setCompletedExercises((current) => { const next = new Set(current).add(exerciseId); persistProgress(Math.max(savedProgress, Math.min(100, savedProgress + Math.round(100 / (totalActivities || 1))))); return next; }); }} />
 
           <div className="hero-actions">
-            <button className="btn btn-primary" onClick={() => navigate('/chat')}>Chat com Professor</button>
+            <button className="btn btn-primary" onClick={() => navigate('/chat', { state: { openUserId: course.professorId } })}>Chat com Professor</button>
             {studentStatus === 'Concluido' || savedProgress >= 100 ? (
               <button className="btn btn-secondary" onClick={async () => { await persistProgress(0, false); setSavedProgress(0); setStudentStatus('Em progresso'); setCompletedMaterials(new Set()); setCompletedExercises(new Set()); }}>
                 Reiniciar curso
